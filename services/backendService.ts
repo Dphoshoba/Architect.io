@@ -1,3 +1,4 @@
+
 import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types';
 
 /**
@@ -9,6 +10,16 @@ const RENDER_URL = 'https://architect-io.onrender.com';
 const API_URL = `${RENDER_URL}/api`;
 
 export const backendService = {
+  async checkHealth(): Promise<string> {
+    try {
+      const response = await fetch(`${RENDER_URL}/health`);
+      if (response.ok) return await response.text();
+      return 'FAIL';
+    } catch (e) {
+      return 'FAIL';
+    }
+  },
+
   async createCheckoutSession(plan: PlanType, price: number) {
     try {
       const response = await fetch(`${API_URL}/create-checkout-session`, {
@@ -16,13 +27,16 @@ export const backendService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, price })
       });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server responded with ${response.status}`);
+      }
       const data = await response.json();
       if (data.url) return data;
-      throw new Error("No URL returned");
-    } catch (e) {
+      throw new Error("No checkout URL returned from server.");
+    } catch (e: any) {
       console.error("Backend error:", e);
-      // Fallback for UI if backend is not yet fully configured with keys
-      return { url: '#error' };
+      throw e;
     }
   },
 

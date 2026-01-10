@@ -2,36 +2,33 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
+/**
+ * MASTER PROMPT ARCHITECT ENGINE
+ * Implements the "Master Prompt Builder" specification.
+ * Handles platform-specific strategies for Gemini, ChatGPT, Claude, and Llama.
+ */
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Expert Prompt Architect
-GOAL: Design high-performance, ready-to-paste prompts for various AI platforms.
+TASK: Take structured input and transform it into a high-performance, ready-to-paste prompt.
 
-CORE BEHAVIORS:
-1. PLATFORM STRATEGIES:
-   - Gemini: Persona, Task, Context, Format. Natural language. Multi-modal hints.
-   - OpenAI (ChatGPT/o-series): Instructions at TOP. Delimiters ("""). Specific length/format.
-   - Claude: Roles, XML tags (<context>, <task>). Explicit "Think step-by-step".
-   - Llama/Open Source: High structure, simple delimiters (###), few-shot emphasis.
-   - Others (Cohere, Copilot): Clear roles, numbered instructions, explicit schemas.
+PLATFORM-SPECIFIC STRATEGIES:
+- Gemini: Use natural language. Structure: Persona, Task, Context, Format. Encourage follow-ups.
+- OpenAI (ChatGPT/o-series): Instructions at TOP. Use triple-quotes (""") as delimiters. Specific schemas.
+- Claude: Use structured roles. Clear sections. Explicit XML-like tags (e.g., <context>). Ask to "think step-by-step".
+- Llama/Open Source: Extreme explicitness. Simple headers (### Task). Few-shot examples required.
+- Generic: Role -> Task -> Context -> Constraints -> Format -> Step-by-step.
 
-2. STRUCTURE:
-   - Role declaration
-   - Primary instruction
-   - Context section
-   - Constraints & Quality (Positive instructions)
-   - Reasoning Section (Hidden/Brief/Detailed based on input)
+CONSTRUCTION GUIDELINES:
+1. Build a SINGLE text block.
+2. Logic: Persona + Goal + Context + Constraints + Reasoning Visibility.
+3. Apply techniques: Chain-of-Thought for logic, Schemas for extraction, Tone for creative.
+4. Brevity: Use concise, precise instructions (e.g., "3 bullets" instead of "short").
 
-3. TECHNIQUES:
-   - Planning/Reasoning -> Chain of Thought.
-   - Creative -> Style/Audience focus.
-   - Data -> Grounding/RAG instructions.
-
-OUTPUT REQUIREMENTS (Strict JSON):
-{
-  "FINAL_PROMPT": "A single, fully composed prompt string starting with 'FINAL_PROMPT:'",
-  "NOTES_FOR_HUMAN_PROMPT_ENGINEER": ["Bullet 1 explaining choice", "Bullet 2 explaining platform-specific technique..."],
-  "VISUAL_INSPIRATION_PROMPT": "A prompt for gemini-2.5-flash-image to visualize the UI/Outcome"
-}
+OUTPUT FORMAT:
+Return a JSON object with:
+- FINAL_PROMPT: The full specialized prompt string.
+- NOTES_FOR_HUMAN_PROMPT_ENGINEER: 2-5 bullets explaining design choices.
+- VISUAL_INSPIRATION_PROMPT: A description for an image generator.
 `;
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
@@ -46,7 +43,7 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       task_type: ${input.task_type}
       domain_context: ${input.domain_context}
       user_persona: ${input.user_persona}
-      audience_persona: ${input.audience_persona || 'Unspecified'}
+      audience_persona: ${input.audience_persona || 'Not specified'}
       tone_style: ${input.tone_style}
       output_format: ${input.output_format}
       length_and_depth: ${input.length_and_depth}
@@ -54,7 +51,6 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       few_shot_examples: ${input.few_shot_examples || 'None'}
       constraints_and_pitfalls: ${input.constraints_and_pitfalls || 'None'}
       static_resources: ${input.static_resources || 'None'}
-      language: ${input.language}
     `,
     config: {
       systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
@@ -63,7 +59,10 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
         type: Type.OBJECT,
         properties: {
           FINAL_PROMPT: { type: Type.STRING },
-          NOTES_FOR_HUMAN_PROMPT_ENGINEER: { type: Type.ARRAY, items: { type: Type.STRING } },
+          NOTES_FOR_HUMAN_PROMPT_ENGINEER: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING } 
+          },
           VISUAL_INSPIRATION_PROMPT: { type: Type.STRING }
         },
         required: ["FINAL_PROMPT"]
@@ -78,9 +77,9 @@ export const magicFillMetaInputs = async (description: string, language: string)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analyze: "${description}". Language: ${language}.`,
+    contents: `Extract parameters for: "${description}". Language: ${language}.`,
     config: {
-      systemInstruction: "Map this task to PromptInput parameters: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context, length_and_depth.",
+      systemInstruction: "Break down the user request into: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context, length_and_depth.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -107,14 +106,14 @@ export const testArchitectedPrompt = async (systemInstruction: string, userMessa
     contents: userMessage,
     config: { systemInstruction, temperature: 0.7 }
   });
-  return response.text || "";
+  return response.text || "Simulation error.";
 };
 
 export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `Professional digital art, clean UI aesthetic: ${prompt}` }] },
+    contents: { parts: [{ text: `High-quality, conceptual, professional: ${prompt}` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -127,9 +126,9 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `KIT_REQUEST: "${goal}". PROMPT_REF: "${prompt}". Language: ${language}.`,
+    contents: `Launch Kit for: "${goal}". Based on: "${prompt}". Language: ${language}.`,
     config: {
-      systemInstruction: "You are a CMO. Generate a full marketing launch kit. Return JSON with: social_ads, landing_page, email_sequence, video_script, audio_script.",
+      systemInstruction: "You are a Growth Marketer. Synthesize social ads, landing page copy, and an email sequence in JSON format.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
