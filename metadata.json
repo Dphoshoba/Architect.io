@@ -1,0 +1,7 @@
+{
+  "name": "Prompt Architect Master",
+  "description": "A high-performance prompt engineering suite that generates optimized, ready-to-paste prompts for various AI models like Gemini, ChatGPT, Claude, and Llama based on structured input and best practices.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
