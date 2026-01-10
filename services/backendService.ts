@@ -2,13 +2,10 @@ import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types';
 
 /**
  * ARCHITECT.IO BACKEND SERVICE
- * Communicates with the external Node.js server hosted on Render.com.
- * 
- * NOTE: Replace the RENDER_URL with your actual Render service URL 
- * (e.g., https://architectio-backend.onrender.com)
+ * Communicates with the live Node.js server on Render.
  */
 
-const RENDER_URL = 'https://YOUR-APP-NAME.onrender.com'; 
+const RENDER_URL = 'https://architect-io.onrender.com'; 
 const API_URL = `${RENDER_URL}/api`;
 
 export const backendService = {
@@ -23,26 +20,16 @@ export const backendService = {
       if (data.url) return data;
       throw new Error("No URL returned");
     } catch (e) {
-      console.warn("Backend unavailable, falling back to simulation...");
-      return { url: '#simulation-mode' };
+      console.error("Backend error:", e);
+      // Fallback for UI if backend is not yet fully configured with keys
+      return { url: '#error' };
     }
-  },
-
-  async triggerPaymentWebhook(plan: PlanType, price: number, user: UserStatus): Promise<WebhookEvent[]> {
-    return [
-      {
-        id: `sim_${Math.random().toString(36).substring(2, 10)}`,
-        type: 'checkout.session.completed',
-        timestamp: Date.now(),
-        status: 'success',
-        payload: { plan, amount: price * 100 }
-      }
-    ];
   },
 
   async getWebhookLogs(): Promise<WebhookEvent[]> {
     try {
       const response = await fetch(`${API_URL}/logs`);
+      if (!response.ok) return [];
       return await response.json();
     } catch (e) {
       return [];
@@ -52,11 +39,10 @@ export const backendService = {
   async getApiKeys(): Promise<ApiKey[]> {
     try {
       const response = await fetch(`${API_URL}/keys`);
+      if (!response.ok) return [];
       return await response.json();
     } catch (e) {
-      return [
-        { id: '1', key: 'am_sim_mode_offline', label: 'Offline Mode (Render Not Connected)', created: Date.now() }
-      ];
+      return [];
     }
   },
 
@@ -71,9 +57,5 @@ export const backendService = {
     } catch (e) {
       return [];
     }
-  },
-
-  async clearLogs() {
-    return [];
   }
 };

@@ -8,20 +8,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 3001;
 
-// DATABASE SIMULATION
+// DATABASE SIMULATION (Replace with Convex/MongoDB for real persistence)
 let webhookLogs = [];
 let apiKeys = [
   { id: '1', key: 'am_live_67a2b92k1c49', label: 'Production Key', created: Date.now() }
 ];
 
-// MIDDLEWARE - Configure CORS to allow your Netlify Frontend
+// MIDDLEWARE
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.FRONTEND_URL || '*', // Your Netlify URL
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'stripe-signature']
 }));
 
-// WEBHOOK HANDLER
+// WEBHOOK HANDLER (Must be before express.json() for Stripe signatures)
 app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -33,7 +33,7 @@ app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error(`⚠️ Webhook Error: ${err.message}`);
+    console.error(`⚠️ Webhook Signature Verification Failed: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -50,13 +50,14 @@ app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req,
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    console.log(`✅ Payment successful: ${session.customer_email}`);
+    // Here you would normally update your database (Convex) to give user credits
+    console.log(`✅ Payment successful for session: ${session.id}`);
   }
 
   res.json({received: true});
 });
 
-// NORMAL JSON PARSING
+// JSON PARSING FOR REST OF ROUTES
 app.use(express.json());
 
 // API ROUTES
@@ -72,7 +73,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
             name: `Architect.io ${plan} Plan`,
             description: `Professional Prompt Engineering Suite - ${plan} Access`
           },
-          unit_amount: price * 100,
+          unit_amount: price * 100, // Stripe expects cents
         },
         quantity: 1,
       }],
@@ -82,6 +83,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     });
     res.json({ url: session.url });
   } catch (e) {
+    console.error(`❌ Stripe Error: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 });
@@ -98,9 +100,10 @@ app.post('/api/keys/rotate', (req, res) => {
   res.json(apiKeys);
 });
 
-// HEALTH CHECK
+// HEALTH CHECK (Required by Render to verify deployment success)
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Render Backend live on port ${port}`);
+  console.log(`📡 Expecting Frontend at: ${process.env.FRONTEND_URL}`);
 });

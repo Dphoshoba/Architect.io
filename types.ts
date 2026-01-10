@@ -29,9 +29,6 @@ export interface PromptInput {
   reasoning_visibility: ReasoningVisibility;
   language: string;
   visual_inspiration_mode: boolean;
-  visual_purpose?: string;
-  brand?: BrandIdentity;
-  // Master Prompt Builder Additions
   few_shot_examples?: string;
   constraints_and_pitfalls?: string;
   static_resources?: string;
@@ -43,8 +40,6 @@ export interface MarketingKit {
   email_sequence: string;
   video_script: string;
   audio_script: string;
-  video_url?: string;
-  audio_blob_url?: string;
 }
 
 export interface PromptOutput {
