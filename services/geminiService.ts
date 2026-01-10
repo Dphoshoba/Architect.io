@@ -4,54 +4,57 @@ import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Expert Prompt Architect
-TASK: Design high-performance, ready-to-paste prompts for various AI models based on structured input.
+GOAL: Design high-performance, ready-to-paste prompts for various AI platforms.
 
-CORE BEHAVIOR:
-1. Infer Platform-Specific Strategy based on 'target_AI':
-   - Gemini / Vertex / Workspace: Natural, conversational language. Explicitly include Persona, Task, Context, and Format.
-   - OpenAI / ChatGPT / o-series: Clear instructions at the top. Delimit context with triple quotes (""").
-   - Claude (Anthropic): Structured roles, XML-like tags (e.g., <context>), and permission to "think step by step".
-   - Llama / Open Source: Extremely explicit and structured. Avoid compression. Use simple delimiters like "###".
-   - Default: Generic structure (Role -> Task -> Context -> Constraints -> Format -> Step-by-step).
+CORE BEHAVIORS:
+1. PLATFORM STRATEGIES:
+   - Gemini: Persona, Task, Context, Format. Natural language. Multi-modal hints.
+   - OpenAI (ChatGPT/o-series): Instructions at TOP. Delimiters ("""). Specific length/format.
+   - Claude: Roles, XML tags (<context>, <task>). Explicit "Think step-by-step".
+   - Llama/Open Source: High structure, simple delimiters (###), few-shot emphasis.
+   - Others (Cohere, Copilot): Clear roles, numbered instructions, explicit schemas.
 
-2. Design Prompt Structure:
-   - A single text block containing: Role Declaration, Primary Instruction (Goal, Type, Depth), Context (Domain & Resources), Constraints & Quality (Positive instructions), and Reasoning (tuned by 'reasoning_visibility').
+2. STRUCTURE:
+   - Role declaration
+   - Primary instruction
+   - Context section
+   - Constraints & Quality (Positive instructions)
+   - Reasoning Section (Hidden/Brief/Detailed based on input)
 
-3. Apply Technique Selection:
-   - Reasoning/Planning: Use chain-of-thought hints.
-   - Extraction/Transformation: Use clear schemas and few-shot examples.
-   - Creative: Specify style, audience, and variations.
-   - Code: Use leading tokens and request comments/tests.
+3. TECHNIQUES:
+   - Planning/Reasoning -> Chain of Thought.
+   - Creative -> Style/Audience focus.
+   - Data -> Grounding/RAG instructions.
 
-4. Enforce Clarity & Brevity: Use concise, unambiguous sentences. No fluff.
-
-OUTPUT FORMAT (Strict JSON):
+OUTPUT REQUIREMENTS (Strict JSON):
 {
-  "FINAL_PROMPT": "The fully composed prompt string",
-  "NOTES_FOR_HUMAN_PROMPT_ENGINEER": ["Bullet 1 explaining choice", "Bullet 2..."],
-  "VISUAL_INSPIRATION_PROMPT": "A prompt for an image generator (like DALL-E/Midjourney) to visualize the result/context"
+  "FINAL_PROMPT": "A single, fully composed prompt string starting with 'FINAL_PROMPT:'",
+  "NOTES_FOR_HUMAN_PROMPT_ENGINEER": ["Bullet 1 explaining choice", "Bullet 2 explaining platform-specific technique..."],
+  "VISUAL_INSPIRATION_PROMPT": "A prompt for gemini-2.5-flash-image to visualize the UI/Outcome"
 }
 `;
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const model = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model,
     contents: `
-      TARGET_AI: ${input.target_AI}
-      GOAL: ${input.high_level_goal}
-      TASK_TYPE: ${input.task_type}
-      CONTEXT: ${input.domain_context}
-      USER_PERSONA: ${input.user_persona}
-      AUDIENCE_PERSONA: ${input.audience_persona || 'Not specified'}
-      TONE_STYLE: ${input.tone_style}
-      OUTPUT_FORMAT: ${input.output_format}
-      LENGTH_DEPTH: ${input.length_and_depth}
-      REASONING: ${input.reasoning_visibility}
-      FEW_SHOT: ${input.few_shot_examples || 'None'}
-      CONSTRAINTS: ${input.constraints_and_pitfalls || 'Standard quality'}
-      RESOURCES: ${input.static_resources || 'None'}
-      LANGUAGE: ${input.language}
+      target_AI: ${input.target_AI}
+      high_level_goal: ${input.high_level_goal}
+      task_type: ${input.task_type}
+      domain_context: ${input.domain_context}
+      user_persona: ${input.user_persona}
+      audience_persona: ${input.audience_persona || 'Unspecified'}
+      tone_style: ${input.tone_style}
+      output_format: ${input.output_format}
+      length_and_depth: ${input.length_and_depth}
+      reasoning_visibility: ${input.reasoning_visibility}
+      few_shot_examples: ${input.few_shot_examples || 'None'}
+      constraints_and_pitfalls: ${input.constraints_and_pitfalls || 'None'}
+      static_resources: ${input.static_resources || 'None'}
+      language: ${input.language}
     `,
     config: {
       systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
@@ -67,34 +70,7 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       }
     }
   });
-  
-  try {
-    return JSON.parse(response.text || "{}");
-  } catch (e) {
-    throw new Error("Failed to parse prompt architecture JSON.");
-  }
-};
 
-export const generateMarketingKit = async (prompt: string, goal: string, language: string): Promise<MarketingKit> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Based on this generated prompt: "${prompt}" and original goal: "${goal}", create a Marketing Kit in ${language}.`,
-    config: {
-      systemInstruction: `You are a Growth Marketer. Return JSON with: social_ads, landing_page, email_sequence, video_script, audio_script.`,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          social_ads: { type: Type.STRING },
-          landing_page: { type: Type.STRING },
-          email_sequence: { type: Type.STRING },
-          video_script: { type: Type.STRING },
-          audio_script: { type: Type.STRING }
-        }
-      }
-    }
-  });
   return JSON.parse(response.text || "{}");
 };
 
@@ -102,9 +78,9 @@ export const magicFillMetaInputs = async (description: string, language: string)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Task: "${description}". Language: ${language}.`,
+    contents: `Analyze: "${description}". Language: ${language}.`,
     config: {
-      systemInstruction: "Break down this task into prompt engineering parameters. Return JSON matching the PromptInput structure.",
+      systemInstruction: "Map this task to PromptInput parameters: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context, length_and_depth.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -138,13 +114,34 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `Professional, clean, futuristic product visual: ${prompt}` }] },
+    contents: { parts: [{ text: `Professional digital art, clean UI aesthetic: ${prompt}` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
-    }
+    if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
   }
-  throw new Error("No image generated.");
+  return "";
+};
+
+export const generateMarketingKit = async (prompt: string, goal: string, language: string): Promise<MarketingKit> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `KIT_REQUEST: "${goal}". PROMPT_REF: "${prompt}". Language: ${language}.`,
+    config: {
+      systemInstruction: "You are a CMO. Generate a full marketing launch kit. Return JSON with: social_ads, landing_page, email_sequence, video_script, audio_script.",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          social_ads: { type: Type.STRING },
+          landing_page: { type: Type.STRING },
+          email_sequence: { type: Type.STRING },
+          video_script: { type: Type.STRING },
+          audio_script: { type: Type.STRING }
+        }
+      }
+    }
+  });
+  return JSON.parse(response.text || "{}");
 };

@@ -11,11 +11,6 @@ export type TargetAI =
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
 
-export interface BrandIdentity {
-  voice: string;
-  valueProp: string;
-}
-
 export interface PromptInput {
   target_AI: TargetAI;
   high_level_goal: string;
