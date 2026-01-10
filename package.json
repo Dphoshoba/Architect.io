@@ -1,21 +1,22 @@
-
 {
-  "name": "architect-io-backend",
+  "name": "architect-io",
   "version": "1.0.0",
-  "description": "Secure production backend for Architect.io",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "stripe": "^12.0.0",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.0.3"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "@google/genai": "^1.35.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
   }
 }
