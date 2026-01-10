@@ -31,6 +31,10 @@ export interface PromptInput {
   visual_inspiration_mode: boolean;
   visual_purpose?: string;
   brand?: BrandIdentity;
+  // Master Prompt Builder Additions
+  few_shot_examples?: string;
+  constraints_and_pitfalls?: string;
+  static_resources?: string;
 }
 
 export interface MarketingKit {

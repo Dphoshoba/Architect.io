@@ -1,70 +1,78 @@
 
-import { PlanType, UserStatus, WebhookEvent } from '../types';
+import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types';
 
 /**
- * ARCHITECT.IO BACKEND SIMULATOR
- * In a production environment, this file would be replaced by a Node.js/Express 
- * server or Serverless Functions (Vercel/AWS Lambda).
+ * ARCHITECT.IO BACKEND SERVICE
+ * This service communicates with the real Node.js server.
+ * Toggle the API_URL based on your deployment.
  */
 
-const MOCK_DB = {
-  webhooks: [] as WebhookEvent[],
-  apiKeys: [
-    { id: '1', key: 'am_live_67...92k1', label: 'Production Key', created: Date.now() }
-  ]
-};
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001/api' 
+  : '/api'; // Assuming reverse proxy in production (e.g., Vercel/Nginx)
 
 export const backendService = {
-  /**
-   * Simulates a secure call to create a Stripe Checkout Session.
-   * This would normally happen on the server to hide the Stripe Secret Key.
-   */
   async createCheckoutSession(plan: PlanType, price: number) {
-    console.log(`[BACKEND] Creating secure Stripe session for plan: ${plan}`);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const sessionId = `sess_${Math.random().toString(36).substr(2, 9)}`;
-    return { sessionId, url: `https://checkout.stripe.com/pay/${sessionId}` };
+    try {
+      const response = await fetch(`${API_URL}/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, price })
+      });
+      return await response.json();
+    } catch (e) {
+      console.error("Backend offline, falling back to simulation...");
+      // Fallback for demo purposes if backend isn't running
+      return { url: '#simulation-mode' };
+    }
   },
 
-  /**
-   * Simulates the Webhook handler that Stripe calls when payment is confirmed.
-   */
   async triggerPaymentWebhook(plan: PlanType, price: number, user: UserStatus): Promise<WebhookEvent[]> {
-    const events: WebhookEvent[] = [
+    // In production, this is triggered automatically by Stripe.
+    // This method is now only used for the "Simulate Payment" button in the UI.
+    console.info("Simulating payment via local event emission...");
+    return [
       {
-        id: `evt_${Math.random().toString(36).substr(2, 9)}`,
+        id: `sim_${Math.random().toString(36).substring(2, 10)}`,
         type: 'checkout.session.completed',
         timestamp: Date.now(),
         status: 'success',
-        payload: { plan, amount_total: price * 100, currency: 'usd', customer: user.stripeCustomerId || 'cus_new' }
-      },
-      {
-        id: `evt_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'invoice.paid',
-        timestamp: Date.now() + 100,
-        status: 'success',
-        payload: { amount_paid: price * 100, billing_reason: 'subscription_create' }
+        payload: { plan, amount: price * 100 }
       }
     ];
-
-    MOCK_DB.webhooks = [...events, ...MOCK_DB.webhooks].slice(0, 20);
-    return events;
   },
 
   async getWebhookLogs(): Promise<WebhookEvent[]> {
-    return MOCK_DB.webhooks;
-  },
-
-  async getApiKeys() {
-    return MOCK_DB.apiKeys;
-  },
-
-  async rotateApiKey(id: string) {
-    const index = MOCK_DB.apiKeys.findIndex(k => k.id === id);
-    if (index !== -1) {
-      MOCK_DB.apiKeys[index].key = `am_live_${Math.random().toString(36).substr(2, 12)}`;
+    try {
+      const response = await fetch(`${API_URL}/logs`);
+      return await response.json();
+    } catch (e) {
+      return [];
     }
-    return MOCK_DB.apiKeys;
+  },
+
+  async getApiKeys(): Promise<ApiKey[]> {
+    try {
+      const response = await fetch(`${API_URL}/keys`);
+      return await response.json();
+    } catch (e) {
+      return [
+        { id: '1', key: 'am_sim_mode_offline', label: 'Offline Mode', created: Date.now() }
+      ];
+    }
+  },
+
+  async rotateApiKey(id: string): Promise<ApiKey[]> {
+    const response = await fetch(`${API_URL}/keys/rotate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    return await response.json();
+  },
+
+  async clearLogs() {
+    // Note: Log clearing would usually be restricted to admins
+    return [];
   }
 };
