@@ -1,28 +1,22 @@
-import 'dotenv/config';
-import express from 'express';
-import Stripe from 'stripe';
-import cors from 'cors';
-import bodyParser from 'body-parser';
+const express = require('express');
+const serverless = require('serverless-http');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const app = express();
-const port = process.env.PORT || 3001;
+const router = express.Router();
 
-// DATABASE SIMULATION
+// DATABASE SIMULATION (Note: These reset on function cold starts)
 let webhookLogs = [];
 let apiKeys = [
   { id: '1', key: 'am_live_67a2b92k1c49', label: 'Production Key', created: Date.now() }
 ];
 
-// MIDDLEWARE - Configure CORS to allow your Netlify Frontend
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'stripe-signature']
-}));
+app.use(cors());
 
 // WEBHOOK HANDLER
-app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req, res) => {
+router.post('/webhook', bodyParser.raw({type: 'application/json'}), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
 
@@ -33,7 +27,6 @@ app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error(`⚠️ Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -44,9 +37,7 @@ app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req,
     status: 'success',
     payload: event.data.object
   };
-  
   webhookLogs.unshift(logEntry);
-  if (webhookLogs.length > 50) webhookLogs.pop();
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
@@ -56,11 +47,11 @@ app.post('/api/webhook', bodyParser.raw({type: 'application/json'}), async (req,
   res.json({received: true});
 });
 
-// NORMAL JSON PARSING
+// JSON PARSING FOR OTHER ROUTES
 app.use(express.json());
 
 // API ROUTES
-app.post('/api/create-checkout-session', async (req, res) => {
+router.post('/create-checkout-session', async (req, res) => {
   const { plan, price } = req.body;
   try {
     const session = await stripe.checkout.sessions.create({
@@ -77,8 +68,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
         quantity: 1,
       }],
       mode: 'subscription',
-      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/build`,
+      success_url: `${process.env.FRONTEND_URL || req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || req.headers.origin}/build`,
     });
     res.json({ url: session.url });
   } catch (e) {
@@ -86,10 +77,10 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
-app.get('/api/logs', (req, res) => res.json(webhookLogs));
-app.get('/api/keys', (req, res) => res.json(apiKeys));
+router.get('/logs', (req, res) => res.json(webhookLogs));
+router.get('/keys', (req, res) => res.json(apiKeys));
 
-app.post('/api/keys/rotate', (req, res) => {
+router.post('/keys/rotate', (req, res) => {
   const { id } = req.body;
   const index = apiKeys.findIndex(k => k.id === id);
   if (index !== -1) {
@@ -98,9 +89,7 @@ app.post('/api/keys/rotate', (req, res) => {
   res.json(apiKeys);
 });
 
-// HEALTH CHECK
-app.get('/health', (req, res) => res.status(200).send('OK'));
+app.use('/api', router);
+app.use('/.netlify/functions/api', router);
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 Render Backend live on port ${port}`);
-});
+module.exports.handler = serverless(app);

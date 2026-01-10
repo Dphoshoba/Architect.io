@@ -1,15 +1,15 @@
-
 import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types';
 
 /**
  * ARCHITECT.IO BACKEND SERVICE
- * This service communicates with the real Node.js server.
- * Toggle the API_URL based on your deployment.
+ * Communicates with the external Node.js server hosted on Render.com.
+ * 
+ * NOTE: Replace the RENDER_URL with your actual Render service URL 
+ * (e.g., https://architectio-backend.onrender.com)
  */
 
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3001/api' 
-  : '/api'; // Assuming reverse proxy in production (e.g., Vercel/Nginx)
+const RENDER_URL = 'https://YOUR-APP-NAME.onrender.com'; 
+const API_URL = `${RENDER_URL}/api`;
 
 export const backendService = {
   async createCheckoutSession(plan: PlanType, price: number) {
@@ -19,18 +19,16 @@ export const backendService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, price })
       });
-      return await response.json();
+      const data = await response.json();
+      if (data.url) return data;
+      throw new Error("No URL returned");
     } catch (e) {
-      console.error("Backend offline, falling back to simulation...");
-      // Fallback for demo purposes if backend isn't running
+      console.warn("Backend unavailable, falling back to simulation...");
       return { url: '#simulation-mode' };
     }
   },
 
   async triggerPaymentWebhook(plan: PlanType, price: number, user: UserStatus): Promise<WebhookEvent[]> {
-    // In production, this is triggered automatically by Stripe.
-    // This method is now only used for the "Simulate Payment" button in the UI.
-    console.info("Simulating payment via local event emission...");
     return [
       {
         id: `sim_${Math.random().toString(36).substring(2, 10)}`,
@@ -57,22 +55,25 @@ export const backendService = {
       return await response.json();
     } catch (e) {
       return [
-        { id: '1', key: 'am_sim_mode_offline', label: 'Offline Mode', created: Date.now() }
+        { id: '1', key: 'am_sim_mode_offline', label: 'Offline Mode (Render Not Connected)', created: Date.now() }
       ];
     }
   },
 
   async rotateApiKey(id: string): Promise<ApiKey[]> {
-    const response = await fetch(`${API_URL}/keys/rotate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    return await response.json();
+    try {
+      const response = await fetch(`${API_URL}/keys/rotate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      return await response.json();
+    } catch (e) {
+      return [];
+    }
   },
 
   async clearLogs() {
-    // Note: Log clearing would usually be restricted to admins
     return [];
   }
 };
