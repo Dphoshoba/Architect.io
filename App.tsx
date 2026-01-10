@@ -1,8 +1,5 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from "./convex/_generated/api";
-import { PromptInput, PromptOutput, MarketingKit } from './types';
+import { PromptInput, PromptOutput, MarketingKit, UserStatus, HistoryItem, WebhookEvent } from './types';
 import { TextInput, TextArea, Select } from './components/InputGroup';
 import { 
   generateArchitectPrompt, 
@@ -12,33 +9,37 @@ import {
   generateMarketingKit
 } from './services/geminiService';
 
-const DEMO_USER_ID = "user_architect_123"; // In a real app, get this from an auth provider like Clerk
-
+/**
+ * Architect.io: Master Prompt Engineering Suite
+ * Pure Standalone Mode (Vercel/Netlify Ready)
+ */
 const App: React.FC = () => {
+  // --- UI STATE ---
+  const [activeTab, setActiveTab] = useState<'build' | 'history' | 'dev'>('build');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<PromptOutput | null>(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'build' | 'history' | 'dev'>('build');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Convex Real-Time Data
-  const history = useQuery(api.functions.getHistory, { userId: DEMO_USER_ID }) || [];
-  const userStatus = useQuery(api.functions.getUserStatus, { userId: DEMO_USER_ID });
-  const logs = useQuery(api.functions.getLogs) || [];
-  const apiKeys = useQuery(api.functions.getApiKeys) || [];
-  const saveToVault = useMutation(api.functions.savePrompt);
+  // --- LOCAL DATA VAULT ---
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [userStatus, setUserStatus] = useState<UserStatus>({
+    plan: 'Architect',
+    creditsRemaining: 1000,
+    totalCredits: 1000
+  });
+  const [logs, setLogs] = useState<WebhookEvent[]>([]);
 
+  // --- FORM STATE ---
   const [simpleDesc, setSimpleDesc] = useState('');
   const [isMagicFilling, setIsMagicFilling] = useState(false);
   const [generatedVisualUrl, setGeneratedVisualUrl] = useState<string | null>(null);
-
-  // Growth Hub State
   const [isGeneratingKit, setIsGeneratingKit] = useState(false);
   const [marketingKit, setMarketingKit] = useState<MarketingKit | null>(null);
   const [showGrowthHub, setShowGrowthHub] = useState(false);
 
-  // Playground State
+  // --- PLAYGROUND STATE ---
   const [testInput, setTestInput] = useState('');
   const [testMessages, setTestMessages] = useState<{role:'user'|'assistant', content:string}[]>([]);
   const [isTesting, setIsTesting] = useState(false);
@@ -62,10 +63,37 @@ const App: React.FC = () => {
     static_resources: ""
   });
 
+  // --- PERSISTENCE ENGINE ---
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [testMessages]);
+    const savedVault = localStorage.getItem('architect_vault_v2');
+    const savedCredits = localStorage.getItem('architect_credits');
+    const savedLogs = localStorage.getItem('architect_logs');
 
+    if (savedVault) setHistory(JSON.parse(savedVault));
+    if (savedCredits) setUserStatus(prev => ({ ...prev, creditsRemaining: parseInt(savedCredits) }));
+    if (savedLogs) setLogs(JSON.parse(savedLogs));
+  }, []);
+
+  const saveToVault = (newItem: HistoryItem) => {
+    const updated = [newItem, ...history].slice(0, 50);
+    setHistory(updated);
+    localStorage.setItem('architect_vault_v2', JSON.stringify(updated));
+  };
+
+  const addLog = (type: string, status: 'success' | 'failed', payload: any) => {
+    const newLog: WebhookEvent = {
+      id: Math.random().toString(36).substring(7),
+      type,
+      timestamp: Date.now(),
+      status,
+      payload
+    };
+    const updatedLogs = [newLog, ...logs].slice(0, 50);
+    setLogs(updatedLogs);
+    localStorage.setItem('architect_logs', JSON.stringify(updatedLogs));
+  };
+
+  // --- ACTIONS ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -74,6 +102,7 @@ const App: React.FC = () => {
   const handleMagicFill = async () => {
     if (!simpleDesc.trim()) return;
     setIsMagicFilling(true);
+    addLog('magic.fill', 'success', { description: simpleDesc });
     try {
       const suggested = await magicFillMetaInputs(simpleDesc, form.language);
       setForm(prev => ({ ...prev, high_level_goal: simpleDesc, ...suggested }));
@@ -84,11 +113,11 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!form.high_level_goal.trim()) {
-      setError("High Level Goal is required.");
+      setError("High Level Goal is required to proceed.");
       return;
     }
-    if (userStatus && userStatus.creditsRemaining < 25) {
-      setError("Insufficient credits. Please upgrade your plan.");
+    if (userStatus.creditsRemaining < 25) {
+      setError("Insufficient local credits. Reset your browser storage to refill.");
       return;
     }
 
@@ -103,18 +132,31 @@ const App: React.FC = () => {
       const result = await generateArchitectPrompt(form);
       setOutput(result);
 
-      // Persist to Convex (Real-time update for Vault and Credits)
-      await saveToVault({
-        userId: DEMO_USER_ID,
-        input: form,
-        output: result
-      });
+      // Persistence
+      const newItem: HistoryItem = {
+        id: `arch_${Date.now()}`,
+        timestamp: Date.now(),
+        input: { ...form },
+        output: { ...result }
+      };
+      saveToVault(newItem);
+
+      // Deduct credits locally
+      const newCredits = Math.max(0, userStatus.creditsRemaining - 25);
+      setUserStatus(prev => ({ ...prev, creditsRemaining: newCredits }));
+      localStorage.setItem('architect_credits', newCredits.toString());
+
+      addLog('prompt.generate', 'success', { target: form.target_AI });
 
       if (form.visual_inspiration_mode && result.VISUAL_INSPIRATION_PROMPT) {
-        generateVisualImage(result.VISUAL_INSPIRATION_PROMPT).then(setGeneratedVisualUrl).catch(console.error);
+        generateVisualImage(result.VISUAL_INSPIRATION_PROMPT).then(setGeneratedVisualUrl).catch(e => {
+            console.error(e);
+            addLog('visual.generate', 'failed', { error: e.message });
+        });
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Optimization failure.");
+      addLog('prompt.generate', 'failed', { error: err.message });
     } finally {
       setLoading(false);
     }
@@ -127,8 +169,9 @@ const App: React.FC = () => {
       const kit = await generateMarketingKit(output.FINAL_PROMPT, form.high_level_goal, form.language);
       setMarketingKit(kit);
       setShowGrowthHub(true);
+      addLog('marketing.kit', 'success', { goal: form.high_level_goal });
     } catch (e) {
-      setError("Failed to generate Growth Kit.");
+      setError("Growth Kit generation failed.");
     } finally {
       setIsGeneratingKit(false);
     }
@@ -156,201 +199,361 @@ const App: React.FC = () => {
   };
 
   const filteredHistory = useMemo(() => {
-    if (!searchTerm.trim()) return history;
-    return history.filter(h => h.input.high_level_goal.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!searchTerm) return history;
+    return history.filter(item => 
+      item.input.high_level_goal.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [history, searchTerm]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [testMessages]);
+
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-slate-100 flex flex-col lg:flex-row font-sans">
-      {/* SIDEBAR */}
-      <aside className="w-full lg:w-[450px] bg-[#11141b] border-r border-white/5 flex flex-col h-screen sticky top-0 z-50 overflow-hidden shadow-2xl">
-        <div className="p-8 border-b border-white/5">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white shadow-2xl">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tighter text-white uppercase">Architect.io</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${userStatus ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  {userStatus ? 'Convex Cloud Connected' : 'Connecting to Cloud...'}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-1 bg-white/5 p-1 rounded-xl">
+    <div className="flex flex-col h-screen bg-[#0a0c10] font-sans selection:bg-indigo-500/30">
+      {/* GLOBAL NAVIGATION */}
+      <header className="flex-none h-16 border-b border-white/5 bg-[#0a0c10]/80 backdrop-blur-xl flex items-center justify-between px-6 z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-lg shadow-indigo-500/20">A</div>
+          <h1 className="text-lg font-black tracking-tighter text-white uppercase italic">Architect.io</h1>
+          <div className="h-4 w-px bg-white/10 mx-2"></div>
+          <nav className="flex items-center gap-1">
             {(['build', 'history', 'dev'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{tab}</button>
+              <button 
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white/10 text-white shadow-inner' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {tab}
+              </button>
             ))}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Local Balance</span>
+            <span className="text-xs font-mono font-bold text-indigo-400">{userStatus.creditsRemaining} CR</span>
+          </div>
+          <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none">Standalone Node</span>
           </div>
         </div>
+      </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-          {activeTab === 'build' ? (
-            <>
-              <div className="bg-[#161a23] rounded-3xl p-6 border border-white/5 space-y-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Architect Neural Seed</span>
-                <textarea value={simpleDesc} onChange={e => setSimpleDesc(e.target.value)} placeholder="Describe the task..." className="w-full bg-transparent border-none text-sm placeholder:text-slate-600 focus:ring-0 resize-none min-h-[60px]" />
-                <button onClick={handleMagicFill} disabled={isMagicFilling || !simpleDesc.trim()} className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-                  {isMagicFilling ? "Scanning..." : "Auto-Architect"}
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                <Select label="Platform" name="target_AI" value={form.target_AI} onChange={handleInputChange}>
-                  <option value="Gemini 2.0">Gemini 2.0</option>
-                  <option value="ChatGPT o3">ChatGPT o3</option>
-                  <option value="Claude 3.5">Claude 3.5</option>
-                  <option value="Llama 3.1">Llama 3.1</option>
-                </Select>
-                <TextArea label="High Level Goal" name="high_level_goal" value={form.high_level_goal} onChange={handleInputChange} />
-                <div className="grid grid-cols-2 gap-4">
-                  <TextInput label="Persona" name="user_persona" value={form.user_persona} onChange={handleInputChange} />
-                  <TextInput label="Audience" name="audience_persona" value={form.audience_persona} onChange={handleInputChange} />
-                </div>
-                <TextArea label="Constraints" name="constraints_and_pitfalls" value={form.constraints_and_pitfalls} onChange={handleInputChange} />
-              </div>
-            </>
-          ) : activeTab === 'history' ? (
-            <div className="space-y-4">
-              <input type="text" placeholder="Search Vault..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl text-sm" />
-              {filteredHistory.map(item => (
-                <button key={item._id} onClick={() => { setForm(item.input); setOutput(item.output); setActiveTab('build'); }} className="w-full text-left p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-indigo-600/20 transition-all">
-                  <p className="text-xs font-bold line-clamp-1">{item.input.high_level_goal}</p>
-                  <p className="text-[8px] font-black uppercase text-slate-500 mt-1">{item.input.target_AI} • {new Date(item.timestamp).toLocaleDateString()}</p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="p-6 bg-indigo-600/10 rounded-2xl border border-indigo-600/20 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Architect Credits</p>
-                <p className="text-2xl font-black">{userStatus?.creditsRemaining ?? '...'}</p>
-                <p className="text-[8px] font-black uppercase text-slate-500">/ {userStatus?.totalCredits ?? '...'} total</p>
-              </div>
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cloud Event Logs</h4>
-                {logs.map(log => (
-                   <div key={log._id} className="p-3 bg-white/5 rounded-lg border border-white/5 text-[9px] font-mono">
-                      <div className="flex justify-between text-indigo-400 mb-1">
-                        <span>{log.type}</span>
-                        <span className="text-green-500">{log.status}</span>
+      {/* VIEWPORT CANVAS */}
+      <main className="flex-1 overflow-hidden relative">
+        <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
+          <div className="max-w-7xl mx-auto p-6 lg:p-10">
+            {activeTab === 'build' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* CONFIGURATION PANEL */}
+                <div className="lg:col-span-4 space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+                  <section className="bg-white/5 border border-white/5 rounded-[2rem] p-8 space-y-6 shadow-2xl">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                         <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Seed Strategy</h2>
+                         <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black rounded border border-indigo-500/20 uppercase">Neural Fill</span>
                       </div>
-                      <div className="text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</div>
-                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                      <TextArea 
+                        label="" 
+                        placeholder="Describe the objective in natural language..."
+                        value={simpleDesc}
+                        onChange={(e) => setSimpleDesc(e.target.value)}
+                        className="bg-transparent border-none text-white placeholder:text-slate-600 focus:ring-0 text-sm font-medium leading-relaxed p-0 min-h-[80px]"
+                      />
+                      <button 
+                        onClick={handleMagicFill}
+                        disabled={isMagicFilling || !simpleDesc}
+                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5 transition-all flex items-center justify-center gap-3 disabled:opacity-30"
+                      >
+                        {isMagicFilling ? "Scanning Matrices..." : "✨ Infer Logic Gate"}
+                      </button>
+                    </div>
 
-        <div className="p-8 border-t border-white/5 bg-[#11141b]/80">
-          <button onClick={handleGenerate} disabled={loading} className="w-full py-5 bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-2xl disabled:opacity-50">
-            {loading ? "Architecting..." : "Deploy Blueprint"}
-          </button>
-        </div>
-      </aside>
+                    <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto bg-[#0a0c10] p-8 lg:p-20">
-        {output ? (
-          <div className="max-w-5xl mx-auto space-y-16 animate-in fade-in duration-700">
-            <header className="flex justify-between items-end">
-              <div className="space-y-2">
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em]">Master Output</span>
-                <h2 className="text-6xl font-black text-white tracking-tighter leading-none">Blueprint Ready.</h2>
-              </div>
-              <div className="flex gap-4">
-                <button onClick={handleGenerateKit} disabled={isGeneratingKit} className="px-8 py-4 bg-white/5 hover:bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/10 transition-all">
-                  {isGeneratingKit ? "Generating Kit..." : "Growth Hub"}
-                </button>
-                <button onClick={() => copyToClipboard(output.FINAL_PROMPT)} className="px-10 py-5 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">
-                  {copied ? 'Copied' : 'Copy Primary String'}
-                </button>
-              </div>
-            </header>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Select label="Platform" name="target_AI" value={form.target_AI} onChange={handleInputChange} className="bg-white/5 border-white/10 text-white rounded-xl text-xs font-bold h-12">
+                        <option value="Gemini 2.0">Gemini 2.0</option>
+                        <option value="ChatGPT o3">ChatGPT o3</option>
+                        <option value="Claude 3.5">Claude 3.5</option>
+                        <option value="Llama 3.1">Llama 3.1</option>
+                      </Select>
+                      <Select label="Task Domain" name="task_type" value={form.task_type} onChange={handleInputChange} className="bg-white/5 border-white/10 text-white rounded-xl text-xs font-bold h-12">
+                        <option value="Strategy">Strategic</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Creative">Creative</option>
+                        <option value="Academic">Academic</option>
+                      </Select>
+                    </div>
 
-            {showGrowthHub && marketingKit && (
-              <section className="bg-indigo-600 rounded-[3rem] p-10 lg:p-16 shadow-2xl space-y-10">
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-100">Market Launch Kit</span>
-                  <div className="h-px flex-1 bg-white/20"></div>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <TextInput label="Persona" name="user_persona" value={form.user_persona} onChange={handleInputChange} className="bg-white/5 border-white/10 text-white rounded-xl text-xs font-bold h-12" />
+                        <TextInput label="Audience" name="audience_persona" value={form.audience_persona} onChange={handleInputChange} className="bg-white/5 border-white/10 text-white rounded-xl text-xs font-bold h-12" />
+                      </div>
+                      <TextArea label="Constraints" name="constraints_and_pitfalls" value={form.constraints_and_pitfalls} onChange={handleInputChange} className="bg-white/5 border-white/10 text-white rounded-2xl text-xs font-bold h-24" />
+                    </div>
+
+                    <button 
+                      onClick={handleGenerate}
+                      disabled={loading}
+                      className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 disabled:opacity-50 transition-all text-xs active:scale-[0.98]"
+                    >
+                      {loading ? "Forging..." : "Synthesize Prompt"}
+                    </button>
+                    {error && <p className="text-[10px] text-red-500 font-bold text-center uppercase tracking-widest">{error}</p>}
+                  </section>
                 </div>
-                <div className="grid lg:grid-cols-3 gap-8">
-                  <div className="bg-white/10 p-8 rounded-3xl border border-white/10 space-y-4">
-                    <h4 className="font-black text-xs uppercase text-indigo-100">Social Ads</h4>
-                    <p className="text-xs text-white/80 leading-relaxed whitespace-pre-wrap">{marketingKit.social_ads}</p>
-                  </div>
-                  <div className="bg-white/10 p-8 rounded-3xl border border-white/10 space-y-4">
-                    <h4 className="font-black text-xs uppercase text-indigo-100">Landing Page</h4>
-                    <p className="text-xs text-white/80 leading-relaxed whitespace-pre-wrap">{marketingKit.landing_page}</p>
-                  </div>
-                  <div className="bg-white/10 p-8 rounded-3xl border border-white/10 space-y-4">
-                    <h4 className="font-black text-xs uppercase text-indigo-100">Email Sequence</h4>
-                    <p className="text-xs text-white/80 leading-relaxed whitespace-pre-wrap">{marketingKit.email_sequence}</p>
-                  </div>
+
+                {/* OUTPUT DISPLAY */}
+                <div className="lg:col-span-8 space-y-10">
+                  {output ? (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                      {/* Master Prompt Output */}
+                      <section className="bg-white/5 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                        <div className="p-8 lg:p-12 space-y-8">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic">Blueprint Ready.</h3>
+                              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Optimized for {form.target_AI} Ecosystem</p>
+                            </div>
+                            <button 
+                              onClick={() => copyToClipboard(output.FINAL_PROMPT)}
+                              className="px-8 py-3 bg-white text-black text-[10px] font-black rounded-full hover:bg-slate-200 transition-all uppercase tracking-widest shadow-xl"
+                            >
+                              {copied ? "Copied" : "Copy String"}
+                            </button>
+                          </div>
+                          <div className="bg-black/40 p-10 rounded-[2rem] border border-white/5 text-lg font-medium text-slate-300 leading-relaxed font-mono whitespace-pre-wrap max-h-[600px] overflow-y-auto custom-scrollbar shadow-inner">
+                            {output.FINAL_PROMPT}
+                          </div>
+                        </div>
+                        
+                        {/* Notes Section */}
+                        <div className="bg-indigo-500/5 p-8 border-t border-white/5 grid md:grid-cols-2 gap-8">
+                           <div className="space-y-4">
+                             <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Architectural Records</h4>
+                             <ul className="space-y-3">
+                               {output.NOTES_FOR_HUMAN_PROMPT_ENGINEER?.map((note, i) => (
+                                 <li key={i} className="text-xs text-slate-400 flex gap-3">
+                                   <span className="text-indigo-500 font-black">0{i+1}</span>
+                                   <span className="leading-normal">{note}</span>
+                                 </li>
+                               ))}
+                             </ul>
+                           </div>
+                           {generatedVisualUrl && (
+                             <div className="space-y-4">
+                               <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Reference Visual</h4>
+                               <img src={generatedVisualUrl} alt="Concept UI" className="w-full rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-transform duration-500" />
+                             </div>
+                           )}
+                        </div>
+                      </section>
+
+                      {/* Simulation & Growth */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <button 
+                          onClick={handleGenerateKit}
+                          disabled={isGeneratingKit}
+                          className="group relative overflow-hidden py-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-[2rem] text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          <span className="relative text-[10px] font-black uppercase tracking-[0.3em]">
+                            {isGeneratingKit ? "Analyzing Markets..." : "Build Growth Kit"}
+                          </span>
+                        </button>
+                        <button 
+                          onClick={() => setShowGrowthHub(!showGrowthHub)}
+                          className="py-8 bg-white/5 border border-white/5 rounded-[2rem] text-slate-300 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em]">
+                            {showGrowthHub ? "Close Lab" : "Open Simulator"}
+                          </span>
+                        </button>
+                      </div>
+
+                      {showGrowthHub && marketingKit && (
+                        <section className="bg-indigo-950/40 border border-indigo-500/20 p-10 rounded-[3rem] animate-in zoom-in-95 duration-500">
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                             <div className="p-6 bg-indigo-500/10 rounded-2xl space-y-4 border border-indigo-500/10">
+                               <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Ad Ecosystem</h4>
+                               <p className="text-xs text-indigo-100/70 leading-relaxed whitespace-pre-wrap">{marketingKit.social_ads}</p>
+                             </div>
+                             <div className="p-6 bg-indigo-500/10 rounded-2xl space-y-4 border border-indigo-500/10">
+                               <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Landing Blueprint</h4>
+                               <p className="text-xs text-indigo-100/70 leading-relaxed whitespace-pre-wrap">{marketingKit.landing_page}</p>
+                             </div>
+                             <div className="p-6 bg-indigo-500/10 rounded-2xl space-y-4 border border-indigo-500/10">
+                               <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Growth Loop</h4>
+                               <p className="text-xs text-indigo-100/70 leading-relaxed whitespace-pre-wrap">{marketingKit.email_sequence}</p>
+                             </div>
+                          </div>
+                        </section>
+                      )}
+
+                      {/* Playground Interface */}
+                      <section className="bg-slate-900 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                        <div className="p-10 space-y-8">
+                          <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Simulation Environment</h3>
+                            <div className="flex gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50"></div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/20"></div>
+                            </div>
+                          </div>
+                          
+                          <div className="h-[400px] overflow-y-auto space-y-6 pr-4 custom-scrollbar">
+                            {testMessages.length === 0 && (
+                              <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-20 italic">
+                                <svg className="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg>
+                                <p className="text-xs uppercase tracking-[0.3em] font-black">Awaiting Initialization</p>
+                              </div>
+                            )}
+                            {testMessages.map((msg, i) => (
+                              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
+                                <div className={`max-w-[80%] p-5 rounded-3xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white/5 text-slate-300 rounded-tl-none border border-white/5'}`}>
+                                  {msg.content}
+                                </div>
+                              </div>
+                            ))}
+                            {isTesting && <div className="text-[10px] font-black text-indigo-500 animate-pulse uppercase tracking-widest ml-2">Engine Synthesizing Response...</div>}
+                            <div ref={chatEndRef} />
+                          </div>
+
+                          <form onSubmit={handleRunTest} className="flex gap-4">
+                            <input 
+                              type="text" 
+                              placeholder="Simulate user input to verify your prompt..."
+                              value={testInput}
+                              onChange={(e) => setTestInput(e.target.value)}
+                              className="flex-1 bg-black/40 border border-white/5 text-white text-sm rounded-2xl px-6 py-4 outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-slate-700"
+                            />
+                            <button 
+                              type="submit"
+                              disabled={isTesting || !testInput.trim()}
+                              className="bg-white text-black px-8 rounded-2xl hover:bg-slate-200 disabled:opacity-30 font-black text-[10px] uppercase tracking-widest transition-all"
+                            >
+                              Run
+                            </button>
+                          </form>
+                        </div>
+                      </section>
+                    </div>
+                  ) : (
+                    <div className="h-full min-h-[600px] flex flex-col items-center justify-center text-center p-12 bg-white/5 border border-white/5 rounded-[4rem] animate-in fade-in duration-1000">
+                      <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-[2.5rem] flex items-center justify-center mb-10 shadow-2xl shadow-indigo-500/20">
+                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                        </svg>
+                      </div>
+                      <h3 className="font-black text-3xl text-white tracking-tighter uppercase italic leading-none">Architect Prime</h3>
+                      <p className="text-slate-500 max-w-[320px] mt-4 text-xs font-bold uppercase tracking-[0.2em] leading-relaxed">Synthesize production-grade prompts by configuring your parameters on the left.</p>
+                    </div>
+                  )}
                 </div>
-              </section>
+              </div>
             )}
 
-            <section className="bg-[#11141b] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden">
-               <div className="p-12 lg:p-20 border-b border-white/5">
-                  <pre className="text-xl leading-relaxed font-mono text-slate-300 whitespace-pre-wrap">{output.FINAL_PROMPT}</pre>
-               </div>
-               <div className="p-10 bg-indigo-600/5 grid lg:grid-cols-2 gap-10">
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Architect Notes</h4>
-                    <ul className="space-y-3">
-                      {output.NOTES_FOR_HUMAN_PROMPT_ENGINEER?.map((note, i) => (
-                        <li key={i} className="text-xs text-slate-400 flex gap-3"><span className="text-indigo-500 font-black">0{i+1}.</span>{note}</li>
-                      ))}
-                    </ul>
+            {activeTab === 'history' && (
+              <div className="space-y-12 animate-in fade-in duration-500">
+                <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-5xl font-black text-white tracking-tighter uppercase italic">The Vault.</h2>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2">Immutable Persistence Shard</p>
                   </div>
-                  {generatedVisualUrl && (
-                    <img src={generatedVisualUrl} className="w-full aspect-video object-cover rounded-3xl border border-white/10 shadow-lg" alt="Concept" />
-                  )}
-               </div>
-            </section>
+                  <div className="relative w-full sm:w-96">
+                    <input 
+                      type="text" 
+                      placeholder="Query local vault..." 
+                      className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-full text-sm text-white outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </header>
 
-            <section className="bg-[#161a23] rounded-[3rem] border border-white/5 p-12 lg:p-20 shadow-2xl flex flex-col h-[600px]">
-               <div className="flex items-center gap-4 mb-10"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Simulator</span><div className="h-px flex-1 bg-white/5"></div></div>
-               <div className="flex-1 overflow-y-auto space-y-8 mb-10 pr-4 custom-scrollbar">
-                 {testMessages.map((m, i) => (
-                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] p-8 rounded-[2rem] text-sm leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-300 border border-white/5'}`}>{m.content}</div>
-                   </div>
-                 ))}
-                 {isTesting && <div className="text-[10px] font-black text-indigo-500 animate-pulse uppercase tracking-widest">Processing...</div>}
-                 <div ref={chatEndRef} />
-               </div>
-               <form onSubmit={handleRunTest} className="relative">
-                 <textarea value={testInput} onChange={e => setTestInput(e.target.value)} placeholder="Simulate user input..." className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] px-8 py-6 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all resize-none" rows={1} />
-                 <button type="submit" disabled={!testInput.trim() || isTesting} className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-indigo-600 text-white rounded-full shadow-lg disabled:opacity-30"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg></button>
-               </form>
-            </section>
+                {filteredHistory.length === 0 ? (
+                  <div className="p-32 rounded-[4rem] bg-white/5 border-2 border-dashed border-white/5 text-center space-y-4">
+                    <p className="font-black text-slate-600 uppercase text-xs tracking-widest leading-none">Zero entries detected</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredHistory.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="bg-white/5 p-8 rounded-[3rem] border border-white/5 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer group flex flex-col h-full" 
+                        onClick={() => {
+                          setForm(item.input);
+                          setOutput(item.output);
+                          setActiveTab('build');
+                        }}
+                      >
+                        <div className="flex items-start justify-between mb-6">
+                          <span className="px-3 py-1 bg-white text-black text-[9px] font-black rounded-full uppercase">{item.input.target_AI}</span>
+                          <span className="text-[10px] text-slate-600 font-bold">{new Date(item.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <h3 className="font-black text-white text-lg line-clamp-2 mb-4 tracking-tight leading-tight group-hover:text-indigo-400 transition-colors uppercase italic">{item.input.high_level_goal}</h3>
+                        <p className="text-xs text-slate-500 line-clamp-4 leading-relaxed mb-8 flex-grow font-mono">{item.output.FINAL_PROMPT}</p>
+                        <div className="pt-6 border-t border-white/5 flex items-center justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                           <span>{item.input.task_type}</span>
+                           <span className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Deploy Node &rarr;</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'dev' && (
+              <div className="space-y-12 animate-in fade-in duration-500 h-full flex flex-col">
+                <div>
+                  <h2 className="text-5xl font-black text-white tracking-tighter uppercase italic">Console.</h2>
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2">Real-time Local Execution Trace</p>
+                </div>
+                
+                <div className="flex-1 bg-black border border-white/5 rounded-[2rem] overflow-hidden flex flex-col min-h-[500px]">
+                  <div className="bg-white/5 px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-slate-500">arch_kernel_0.1.0-st</span>
+                  </div>
+                  <div className="p-10 font-mono text-[11px] space-y-4 overflow-y-auto custom-scrollbar">
+                    {logs.length === 0 && <div className="text-slate-800 italic">No cycles executed yet...</div>}
+                    {logs.map((log) => (
+                      <div key={log.id} className="flex gap-6 border-b border-white/5 pb-4 last:border-0 hover:bg-white/5 px-4 -mx-4 transition-colors">
+                        <span className="text-slate-700 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                        <span className="text-indigo-500 font-bold shrink-0">{log.type}</span>
+                        <span className={`font-black shrink-0 ${log.status === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>{log.status.toUpperCase()}</span>
+                        <span className="text-slate-500 truncate italic">shard_payload: {JSON.stringify(log.payload)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        ) : loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center h-full">
-             <div className="w-32 h-32 border-[6px] border-indigo-500/10 border-t-indigo-600 rounded-[3rem] animate-spin"></div>
-             <p className="mt-12 text-2xl font-black text-white uppercase tracking-[0.2em] animate-pulse">Constructing Blueprint...</p>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-4xl mx-auto space-y-12 h-full">
-             <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mb-8">
-               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
-             </div>
-             <h1 className="text-7xl lg:text-9xl font-black text-white tracking-tighter leading-[0.8] uppercase">Architect Master.</h1>
-             <p className="text-xl text-slate-500 font-medium max-w-2xl">The expert engine for high-performance prompt engineering. Real-time Cloud Connected.</p>
-             <button onClick={() => setActiveTab('build')} className="px-12 py-6 bg-white text-black font-black uppercase text-xs tracking-[0.3em] rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-2xl">Start Architecting</button>
-          </div>
-        )}
+        </div>
       </main>
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.3); }
       `}</style>
     </div>
   );

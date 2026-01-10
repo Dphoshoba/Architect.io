@@ -59,14 +59,15 @@ export const getUserStatus = query({
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
     
+    // FIX: Queries cannot perform database writes like ctx.db.insert.
+    // Instead of attempting to auto-provision in a query, we return a default object.
     if (!user) {
-      const id = await ctx.db.insert("userStatus", {
+      return {
         userId: args.userId,
         plan: "Starter",
         creditsRemaining: 450,
         totalCredits: 1000,
-      });
-      return await ctx.db.get(id);
+      };
     }
     return user;
   },
@@ -74,7 +75,8 @@ export const getUserStatus = query({
 
 export const getLogs = query({
   handler: async (ctx) => {
-    return await ctx.db.query("logs").order("desc").take(20).collect();
+    // FIX: .take(20) returns a Promise resolving to an array; .collect() is not required and is not defined on the promise result.
+    return await ctx.db.query("logs").order("desc").take(20);
   },
 });
 
