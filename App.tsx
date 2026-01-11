@@ -446,8 +446,19 @@ const App: React.FC = () => {
                   <section className="bg-[#0e1014]/90 border border-white/5 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur-xl animate-fade-in">
                     <div className="space-y-8">
                       <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-2">
-                        <h2 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Matrix Synthesis</h2>
-                        <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest italic">V4_SYNC</span>
+                        <div className="flex flex-col">
+                          <h2 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Matrix Synthesis</h2>
+                          <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest italic leading-none mt-1">V4_SYNC</span>
+                        </div>
+                        <button 
+                          onClick={startVoiceLab}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-600/20 transition-all group"
+                        >
+                          <svg className={`w-3.5 h-3.5 ${isVoiceActive ? 'animate-pulse text-rose-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                          </svg>
+                          <span className="text-[9px] font-black uppercase tracking-widest">Voice Lab</span>
+                        </button>
                       </div>
                       
                       <div className="space-y-3">
