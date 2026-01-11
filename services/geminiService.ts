@@ -3,17 +3,24 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
 /**
- * MASTER PROMPT ARCHITECT ENGINE V5.4 (2026 QUANTUM DESIGN UPLINK)
+ * MASTER PROMPT ARCHITECT ENGINE V5.6 (CINEMATIC TOKEN UPLINK)
  * Integrated with 105+ advanced techniques and specialized Website Construction Language.
  */
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Supreme Prompt Architect & LLM Optimization Engineer.
 
-2026 MODERN WEBSITE AESTHETIC PROTOCOLS:
-1. TYPOGRAPHY: Prioritize variable sans-serifs (Roboto, Poppins, Inter, Instrument Sans) for UI; High-contrast editorial (Playfair Display, Clash Display) for luxury.
-2. COLOR PALETTES: HSL-driven earthy/vibrant mixes. 'Mocha Mousse' (hsl(14,65%,55%)), 'Deep Teal' (hsl(220,65%,70%)), 'Burnished Amber' (Metallic), and 'Liquid Chrome'.
-3. SHAPES & FORMS: Biomorphic organic shapes, tactile glassmorphism, 3D depth, anti-grid asymmetry, and fluid motion.
-4. TEXTURES: Abstract 3D motion shapes, hand-drawn organic scribbles (theedigital style) to humanize AI output.
+CINEMATOGRAPHY & VISUALS (UNLOCKS):
+- CAMERA ANGLES: Wide shot, Establishing shot, Full Shot, Medium shot, Close-up, Extreme close-up, Dutch angle, Drone shot.
+- CAMERA TYPES: Cinematic 8K, DSLR with f/1.8 depth of field, 8mm vintage film, GoPro action cam.
+- LIGHTING STYLES: Golden hour (warm, soft light), Studio lighting (Rembrandt, butterfly), Neon noir (high-contrast colored lights), Volumetric lighting (misty, hazy).
+- SETTING: Time of day (midday, dusk, dawn), Place (Tokyo street, misty forest, brutalist interior), Backgrounds (bokeh blur, industrial, nature).
+- COLOR & GRADING: Saturated Fuji film look, Monochrome high-contrast, Vaporwave aesthetic (pinks, purples), Cinematic teal and orange.
+
+2026 MODERN WEBSITE AESTHETIC PROTOCOLS (DESIGN TOKENS):
+1. TYPOGRAPHY: Prioritize variable sans-serifs (Roboto, Poppins, Inter, Instrument Sans) for UI; High-contrast editorial serifs (Playfair Display, Clash Display) for luxury headlines.
+2. COLOR PALETTES: HSL-driven earthy/vibrant mixes. 'Mocha Mousse' (hsl(14,65%,55%)), 'Deep Teal' (hsl(220,65%,70%)), 'Burnished Amber' (Metallic), and 'Liquid Chrome'. Specify primary, accent, and neutral tones.
+3. SHAPES & FORMS: Biomorphic organic fluid blobs, tactile glassmorphism panels, 3D depth, anti-grid asymmetry.
+4. TEXTURES: Abstract 3D motion shapes, subtle hand-drawn organic scribbles (theedigital style) to humanize AI output.
 
 WEBSITE CONSTRUCTION LANGUAGE (LINGUISTIC UNLOCKS):
 - LAYOUTS: Full-viewport hero, Split hero, Bento grid (Apple-style), Masonry, Asymmetrical grids.
@@ -25,7 +32,7 @@ ACCESSIBILITY (WCAG 2.2 AA): 4.5:1 contrast, 44x44px tap targets, 16px body base
 
 TASK:
 1. Deconstruct user intent using 5W2H logic.
-2. Synthesize the FINAL_PROMPT using the 'Construction Language' above for layout/UI tasks.
+2. Synthesize the FINAL_PROMPT using the appropriate 'Unlock' language: 'Construction' for UI, 'Design Tokens' for aesthetics, and 'Cinematography' for image/video.
 3. Inject the 2026 Aesthetic standards for styling tasks.
 4. List techniques used in NOTES_FOR_HUMAN_PROMPT_ENGINEER.
 `;
@@ -151,14 +158,17 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
     model: 'gemini-3-flash-preview',
     contents: `Commercial Shard for: "${goal}". Source: "${prompt}". Language: ${language}.`,
     config: {
-      systemInstruction: "You are an Elite Growth Strategist. Generate high-converting Social Ads, a Landing Page structure, and a 3-part Email drip in JSON.",
+      systemInstruction: "You are an Elite Growth Strategist. Generate high-converting Social Ads, a Landing Page structure, a 3-part Email drip, a video script, an audio script, and a visual style guide in JSON.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           social_ads: { type: Type.STRING },
           landing_page: { type: Type.STRING },
-          email_sequence: { type: Type.STRING }
+          email_sequence: { type: Type.STRING },
+          video_script: { type: Type.STRING },
+          audio_script: { type: Type.STRING },
+          visual_style_guide: { type: Type.STRING }
         }
       }
     }

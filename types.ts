@@ -50,6 +50,7 @@ export interface MarketingKit {
   email_sequence: string;
   video_script: string;
   audio_script: string;
+  visual_style_guide: string;
 }
 
 export interface PromptOutput {

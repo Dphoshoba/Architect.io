@@ -115,14 +115,34 @@ const WEBSITE_PATTERNS = [
     ]
   },
   {
-    category: "Design Styles (2026)",
+    category: "Design Tokens (2026)",
     patterns: [
-      { name: "Minimal / Clean", text: "Focus on variable sans-serifs and negative space." },
-      { name: "Luxury / Editorial", text: "High-contrast serifs and magazine-style layout." },
-      { name: "Futuristic / AI-driven", text: "Burnished amber accents and liquid chrome metallics." },
-      { name: "Brutalist", text: "Raw, unpolished aesthetics with heavy typography." },
-      { name: "Neumorphism", text: "Soft extrusions and inner shadows." },
-      { name: "Glassmorphism", text: "Layered semi-transparent panels with backdrop-blur." }
+      { name: "Typography: UI Sans + Editorial Serif", text: "Primary UI font: Inter. Headline font: Playfair Display." },
+      { name: "Typography: Modern Geometric", text: "Primary UI font: Poppins. Headline font: Clash Display." },
+      { name: "Palette: Mocha Mousse & Gold", text: "Use a warm, earthy palette based on Mocha Mousse (hsl(14,65%,55%)) with gold and muted rose accents." },
+      { name: "Palette: Deep Teal & Verdant", text: "Use a calming palette of Deep Teal (hsl(220,65%,70%)) with verdant green and sunny yellow accents." },
+      { name: "Shapes: Biomorphic Fluid Blobs", text: "Incorporate biomorphic, anti-grid fluid shapes in the hero section." },
+      { name: "Shapes: Tactile Glassmorphism", text: "Use layered, tactile glassmorphism panels for cards and info sections." },
+      { name: "Texture: Hand-Drawn Organics", text: "Overlay subtle hand-drawn scribble patterns to add organic personality." },
+      { name: "Texture: Abstract 3D Motion", text: "Use abstract 3D motion shapes with a metallic or glass texture in the background." }
+    ]
+  },
+  {
+    category: "Cinematography & Visuals",
+    patterns: [
+      { name: "Angle: Wide Establishing Shot", text: "A wide establishing shot to set the scene." },
+      { name: "Angle: Extreme Close-Up", text: "An extreme close-up to emphasize detail." },
+      { name: "Angle: Drone Shot", text: "A sweeping drone shot from above." },
+      { name: "Camera: Cinematic 8K", text: "Shot on a cinematic 8K camera with anamorphic lens flare." },
+      { name: "Camera: DSLR f/1.8", text: "DSLR photo with a shallow depth of field (f/1.8) and beautiful bokeh." },
+      { name: "Camera: 8mm Vintage", text: "8mm vintage film look with grain and light leaks." },
+      { name: "Lighting: Golden Hour", text: "Bathed in warm, soft golden hour light." },
+      { name: "Lighting: Neon Noir", text: "High-contrast neon noir lighting with vibrant pink and cyan." },
+      { name: "Lighting: Volumetric", text: "Volumetric lighting creating visible light rays in a misty environment." },
+      { name: "Setting: Tokyo Midday", text: "A bustling Tokyo street at midday." },
+      { name: "Setting: Forest Dawn", text: "A misty forest at dawn." },
+      { name: "Color: Saturated Film", text: "Vibrant, saturated Fuji film color grading." },
+      { name: "Color: High-Contrast B&W", text: "High-contrast monochrome (black and white)." }
     ]
   }
 ];
@@ -812,21 +832,24 @@ const App: React.FC = () => {
                                <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em] italic">Marketing Shards</h3>
                                <div className="h-px w-20 bg-indigo-500/30 mt-4"></div>
                              </div>
-                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-10">
                                 {[
                                    { l: 'Social Shard', c: marketingKit.social_ads },
                                    { l: 'Landing Shard', c: marketingKit.landing_page },
-                                   { l: 'Email Drip Shard', c: marketingKit.email_sequence }
+                                   { l: 'Email Drip Shard', c: marketingKit.email_sequence },
+                                   { l: 'Video Script Shard', c: marketingKit.video_script },
+                                   { l: 'Audio Script Shard', c: marketingKit.audio_script },
+                                   { l: 'Visual Style Guide', c: marketingKit.visual_style_guide }
                                 ].map((a, i) => (
-                                   <div key={i} className="space-y-4 group">
-                                      <div className="flex justify-between items-center">
-                                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{a.l}</h4>
-                                         <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                           <button onClick={() => copy(a.c)} className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Copy</button>
-                                         </div>
-                                      </div>
-                                      <div className="p-6 bg-black/40 rounded-[2rem] text-[12px] text-slate-300 border border-white/5 min-h-[220px] whitespace-pre-wrap leading-relaxed select-all custom-scrollbar overflow-y-auto max-h-[400px] font-mono italic">{a.c}</div>
-                                   </div>
+                                  a.c && <div key={i} className="space-y-4 group">
+                                     <div className="flex justify-between items-center">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{a.l}</h4>
+                                        <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button onClick={() => copy(a.c)} className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Copy</button>
+                                        </div>
+                                     </div>
+                                     <div className="p-6 bg-black/40 rounded-[2rem] text-[12px] text-slate-300 border border-white/5 min-h-[220px] whitespace-pre-wrap leading-relaxed select-all custom-scrollbar overflow-y-auto max-h-[400px] font-mono italic">{a.c}</div>
+                                  </div>
                                 ))}
                              </div>
                           </section>
