@@ -26,6 +26,7 @@ const TARGET_MODELS: TargetAI[] = [
   "Claude 3.5 Sonnet", "Claude 3.5 Haiku",
   "DeepSeek R1", "DeepSeek V3",
   "Grok 3",
+  "Sora",
   "Llama 3.3", "Llama 3.1",
   "Qwen 2.5 Max", "Mistral Large 2", "Cohere Command R+",
   "Generic"

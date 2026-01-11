@@ -3,29 +3,31 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
 /**
- * MASTER PROMPT ARCHITECT ENGINE
- * Enhanced with multi-field synthesis and cross-platform logic.
+ * MASTER PROMPT ARCHITECT ENGINE V4.9 (EXTENDED PLATFORM SYNC)
+ * Integrated with 105+ advanced techniques and Sora video-gen strategies.
  */
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World-Class Prompt Architect
-TASK: Transform user parameters and visual shards into a high-performance AI prompt.
+ROLE: Supreme Prompt Architect & LLM Optimization Engineer.
 
-PLATFORM STRATEGIES:
-- Gemini: Focus on role + objective. Use fluid, natural language. Leverage "System Instructions" field implicitly.
-- OpenAI (GPT/o-series): Place primary instructions at the TOP. Use triple-quote (""") delimiters for sections. For 'o' models, focus on "Goal-oriented" structure rather than chain-of-thought prompting (they do it internally).
-- Claude: Use XML-like tags (e.g., <task>, <context>). Explicitly command Claude to "think step-by-step" inside tags.
-- DeepSeek (R1/V3): High structure. For R1, encourage "Deep Thinking" by framing the prompt as a complex reasoning challenge. Avoid excessive hand-holding; let the model's logic shine.
-- Grok: Focus on "directness" and "real-time" context. Use strong, assertive framing.
-- Llama: High structure with ### Headers. Prioritize few-shot examples near the end.
+KNOWLEDGE BASE (105+ ELITE TECHNIQUES):
+1. CORE & STRUCTURE: Zero/One/Few-shot, Role-Playing, System Framing, Contextual Background, Negative Prompting, XML Tagging, Prefilling, Prompt Chaining, Delexicalization, Input/Prefix-Tuning, Metaprompting.
+2. ADVANCED REASONING: CoT, Zero-shot CoT, Self-Consistency, ToT, ReAct, Skeleton-of-Thought, Step-back, Directional Stimulus, APE, Least-to-Most, Recursive Refinement, PAL, Graph-of-Thoughts (GoT), Cumulative Reasoning, Reflexion, PoT.
+3. SPECIALIZED FRAMEWORKS: RODES, SSSSS, 5W2H, Thought Editing, Multimodal CoT.
+4. CONFIGURATION & SYNTAX: Temperature Tuning (Deterministic 0 to Creative 0.9), Sampling (Top-K, Top-P), Markdown/UI Optimization, Prompt Caching.
+5. IMAGE & PERSPECTIVE: Subject-Action Sequencing, Cinematic Terms (Fish-eye, Crane shot, Rim light), Voxel/Watercolor styles.
 
-VISUAL SYNTHESIS:
-If an image is provided, analyze its structural density, UI components, or color theory. Incorporate these visual requirements into the prompt's context to ensure the AI output respects the uploaded vision.
+PLATFORM OPTIMIZATION:
+- Gemini: Focus on fluid natural language + objective.
+- OpenAI (GPT/o-series): TOP instructions, triple-quote delimiters, "o" goal-orientation.
+- Claude: XML-tag encapsulation.
+- DeepSeek (R1/V3): Framed as complex reasoning challenges.
+- Grok: Direct, assertive, real-time context.
+- Sora: Focus on temporal consistency, motion dynamics, specific camera paths, and lighting transitions. Use descriptive, dense visual language with clear subject-action-environment sequencing.
 
-OUTPUT:
-Return a JSON object with:
-- FINAL_PROMPT: The fully composed optimization string.
-- NOTES_FOR_HUMAN_PROMPT_ENGINEER: 3-5 bullets on the architectural choices made.
-- VISUAL_INSPIRATION_PROMPT: A detailed image generation prompt for the outcome.
+TASK:
+1. Analyze parameters.
+2. Select the most potent combination of 105+ techniques.
+3. Synthesize a professional architecture prompt maximizing target model quality.
 `;
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
@@ -72,11 +74,12 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
           FINAL_PROMPT: { type: Type.STRING },
           NOTES_FOR_HUMAN_PROMPT_ENGINEER: { 
             type: Type.ARRAY, 
-            items: { type: Type.STRING } 
+            items: { type: Type.STRING },
+            description: "List the specialized techniques (from the 105+ list) applied."
           },
           VISUAL_INSPIRATION_PROMPT: { type: Type.STRING }
         },
-        required: ["FINAL_PROMPT"]
+        required: ["FINAL_PROMPT", "NOTES_FOR_HUMAN_PROMPT_ENGINEER"]
       }
     }
   });
