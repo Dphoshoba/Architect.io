@@ -35,7 +35,7 @@ export const savePrompt = mutation({
       timestamp: Date.now(),
     });
 
-    // Deduct credits
+    // Deduct credits - Synchronized to 10 per run
     const user = await ctx.db
       .query("userStatus")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -43,7 +43,7 @@ export const savePrompt = mutation({
     
     if (user) {
       await ctx.db.patch(user._id, {
-        creditsRemaining: Math.max(0, user.creditsRemaining - 25),
+        creditsRemaining: Math.max(0, user.creditsRemaining - 10),
       });
     }
     
@@ -59,14 +59,12 @@ export const getUserStatus = query({
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
     
-    // FIX: Queries cannot perform database writes like ctx.db.insert.
-    // Instead of attempting to auto-provision in a query, we return a default object.
     if (!user) {
       return {
         userId: args.userId,
         plan: "Starter",
-        creditsRemaining: 450,
-        totalCredits: 1000,
+        creditsRemaining: 100,
+        totalCredits: 100,
       };
     }
     return user;
@@ -75,7 +73,6 @@ export const getUserStatus = query({
 
 export const getLogs = query({
   handler: async (ctx) => {
-    // FIX: .take(20) returns a Promise resolving to an array; .collect() is not required and is not defined on the promise result.
     return await ctx.db.query("logs").order("desc").take(20);
   },
 });
