@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { PromptInput, PromptOutput, MarketingKit, UserStatus, HistoryItem, WebhookEvent } from './types';
+import { PromptInput, PromptOutput, MarketingKit, UserStatus, HistoryItem, WebhookEvent, TargetAI } from './types';
 import { TextInput, TextArea, Select } from './components/InputGroup';
 import { 
   generateArchitectPrompt, 
@@ -18,6 +18,17 @@ const LANGUAGES = [
   "Polish", "Ukrainian", "Thai", "Persian", "Romanian", "Greek", "Czech", "Hungarian", 
   "Swedish", "Indonesian", "Hebrew", "Danish", "Finnish", "Norwegian", "Slovak", 
   "Croatian", "Bulgarian", "Lithuanian", "Slovenian"
+];
+
+const TARGET_MODELS: TargetAI[] = [
+  "Gemini 2.0 Flash", "Gemini 2.0 Pro", "Gemini 1.5 Pro",
+  "ChatGPT o3-mini", "ChatGPT o1", "GPT-4o",
+  "Claude 3.5 Sonnet", "Claude 3.5 Haiku",
+  "DeepSeek R1", "DeepSeek V3",
+  "Grok 3",
+  "Llama 3.3", "Llama 3.1",
+  "Qwen 2.5 Max", "Mistral Large 2", "Cohere Command R+",
+  "Generic"
 ];
 
 const encode = (bytes: Uint8Array) => {
@@ -79,7 +90,7 @@ const App: React.FC = () => {
   const nextStartTime = useRef(0);
 
   const [form, setForm] = useState<PromptInput>({
-    target_AI: "Gemini 2.0",
+    target_AI: "Gemini 2.0 Flash",
     high_level_goal: "",
     task_type: "Reasoning",
     domain_context: "",
@@ -436,10 +447,7 @@ const App: React.FC = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                          <Select label="Target Model" name="target_AI" value={form.target_AI} onChange={handleInputChange}>
-                            <option value="Gemini 2.0">Gemini 2.0</option>
-                            <option value="ChatGPT o3">ChatGPT o3</option>
-                            <option value="Claude 3.5">Claude 3.5</option>
-                            <option value="Llama 3.1">Llama 3.1</option>
+                            {TARGET_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
                          </Select>
                          <Select label="Language Matrix" name="language" value={form.language} onChange={handleInputChange}>
                             {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}

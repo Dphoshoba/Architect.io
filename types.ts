@@ -1,12 +1,21 @@
 
 export type TargetAI = 
-  | "Gemini 2.0" 
-  | "ChatGPT o3" 
-  | "Claude 3.5" 
-  | "Llama 3.1" 
-  | "Mistral" 
-  | "Cohere" 
-  | "Copilot" 
+  | "Gemini 2.0 Flash"
+  | "Gemini 2.0 Pro"
+  | "Gemini 1.5 Pro"
+  | "ChatGPT o3-mini"
+  | "ChatGPT o1"
+  | "GPT-4o"
+  | "Claude 3.5 Sonnet"
+  | "Claude 3.5 Haiku"
+  | "DeepSeek R1"
+  | "DeepSeek V3"
+  | "Grok 3"
+  | "Llama 3.3"
+  | "Llama 3.1"
+  | "Qwen 2.5 Max"
+  | "Mistral Large 2"
+  | "Cohere Command R+"
   | "Generic";
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
