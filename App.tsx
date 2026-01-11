@@ -122,7 +122,6 @@ const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('session_id')) {
       setShowSuccessToast(true);
-      // Professional refill logic: 50k credits is effectively unlimited for prompt engineering
       setUserStatus(prev => ({ 
         ...prev, 
         plan: "Architect", 
@@ -190,7 +189,6 @@ const App: React.FC = () => {
       const res = await generateArchitectPrompt({ ...form, base64Image: visualContext || undefined });
       setOutput(res);
       
-      // Deduct 10 Credits consistently
       setUserStatus(prev => ({ ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 10) }));
 
       const hItem = { id: `arch_${Date.now()}`, timestamp: Date.now(), input: { ...form }, output: { ...res } };
@@ -224,6 +222,33 @@ const App: React.FC = () => {
     const file = new Blob([output.FINAL_PROMPT], { type: 'text/markdown' });
     element.href = URL.createObjectURL(file);
     element.download = `architect_prompt_${Date.now()}.md`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const handleShare = async () => {
+    if (!output?.FINAL_PROMPT) return;
+    const shareData = {
+      title: 'Architect.io Generated Prompt',
+      text: output.FINAL_PROMPT,
+      url: window.location.href
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        copy(output.FINAL_PROMPT);
+        alert("Prompt copied to clipboard! Share it with your team.");
+      }
+    } catch (err) { console.error("Share error", err); }
+  };
+
+  const handleDownloadImage = () => {
+    if (!generatedVisualUrl) return;
+    const element = document.createElement("a");
+    element.href = generatedVisualUrl;
+    element.download = `architect_visualization_${Date.now()}.png`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -486,10 +511,11 @@ const App: React.FC = () => {
                                     <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter">FINAL_PROMPT</h3>
                                     <p className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">Optimized for {form.target_AI} ({form.language})</p>
                                  </div>
-                                 <div className="flex gap-4">
-                                    <button onClick={handleExport} className="px-6 py-4 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl hover:bg-white/10 uppercase tracking-widest transition-all">Export MD</button>
-                                    <button onClick={() => copy(output.FINAL_PROMPT)} className="px-10 py-4 bg-white text-black text-[11px] font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-widest shadow-2xl">
-                                       {copied ? "Copied" : "Copy String"}
+                                 <div className="flex items-center gap-3">
+                                    <button onClick={handleExport} className="px-5 py-3.5 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl hover:bg-white/10 uppercase tracking-widest transition-all" title="Download MD">MD</button>
+                                    <button onClick={handleShare} className="px-5 py-3.5 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-xl hover:bg-indigo-600/20 uppercase tracking-widest transition-all" title="Share Prompt">Share</button>
+                                    <button onClick={() => copy(output.FINAL_PROMPT)} className="px-8 py-3.5 bg-white text-black text-[11px] font-black rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest shadow-2xl">
+                                       {copied ? "Copied" : "Copy"}
                                     </button>
                                  </div>
                               </div>
@@ -511,9 +537,18 @@ const App: React.FC = () => {
                               </div>
                               {generatedVisualUrl && (
                                  <div className="space-y-8">
-                                    <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Outcome Visualization</h4>
-                                    <div className="rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl grayscale-50 hover:grayscale-0 transition-all duration-1000">
+                                    <div className="flex justify-between items-center">
+                                      <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Outcome Visualization</h4>
+                                      <button onClick={handleDownloadImage} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                        Download Visual
+                                      </button>
+                                    </div>
+                                    <div className="relative group rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl grayscale-50 hover:grayscale-0 transition-all duration-1000">
                                        <img src={generatedVisualUrl} alt="Visual" className="w-full" />
+                                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                          <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">Visual Synthesis Complete</div>
+                                       </div>
                                     </div>
                                  </div>
                               )}
@@ -541,7 +576,10 @@ const App: React.FC = () => {
 
                         {marketingKit && (
                           <section className="bg-indigo-950/20 border border-indigo-500/10 p-12 rounded-[4rem] animate-fade-in shadow-2xl">
-                             <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em] mb-12 text-center italic">Marketing Shards</h3>
+                             <div className="flex flex-col items-center mb-12">
+                               <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em] italic">Marketing Shards</h3>
+                               <div className="h-px w-20 bg-indigo-500/30 mt-4"></div>
+                             </div>
                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                                 {[
                                    { l: 'Social Shard', c: marketingKit.social_ads },
@@ -551,7 +589,9 @@ const App: React.FC = () => {
                                    <div key={i} className="space-y-4 group">
                                       <div className="flex justify-between items-center">
                                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{a.l}</h4>
-                                         <button onClick={() => copy(a.c)} className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Copy</button>
+                                         <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                           <button onClick={() => copy(a.c)} className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Copy</button>
+                                         </div>
                                       </div>
                                       <div className="p-6 bg-black/40 rounded-[2rem] text-[12px] text-slate-300 border border-white/5 min-h-[220px] whitespace-pre-wrap leading-relaxed select-all custom-scrollbar overflow-y-auto max-h-[400px] font-mono italic">{a.c}</div>
                                    </div>
