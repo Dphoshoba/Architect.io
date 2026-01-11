@@ -8,7 +8,7 @@ interface BaseProps {
 
 export const TextInput: React.FC<BaseProps & React.InputHTMLAttributes<HTMLInputElement>> = ({ label, description, ...props }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-bold text-slate-700 uppercase tracking-tight ml-1">{label}</label>
+    <label className="text-xs font-bold text-slate-400 uppercase tracking-tight ml-1">{label}</label>
     {description && <p className="text-[10px] text-slate-500 mb-0.5 ml-1">{description}</p>}
     <input
       {...props}
@@ -19,7 +19,7 @@ export const TextInput: React.FC<BaseProps & React.InputHTMLAttributes<HTMLInput
 
 export const TextArea: React.FC<BaseProps & React.TextareaHTMLAttributes<HTMLTextAreaElement>> = ({ label, description, ...props }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-bold text-slate-700 uppercase tracking-tight ml-1">{label}</label>
+    <label className="text-xs font-bold text-slate-400 uppercase tracking-tight ml-1">{label}</label>
     {description && <p className="text-[10px] text-slate-500 mb-0.5 ml-1">{description}</p>}
     <textarea
       {...props}
@@ -31,7 +31,7 @@ export const TextArea: React.FC<BaseProps & React.TextareaHTMLAttributes<HTMLTex
 
 export const Select: React.FC<BaseProps & React.SelectHTMLAttributes<HTMLSelectElement>> = ({ label, description, children, ...props }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-bold text-slate-700 uppercase tracking-tight ml-1">{label}</label>
+    <label className="text-xs font-bold text-slate-400 uppercase tracking-tight ml-1">{label}</label>
     {description && <p className="text-[10px] text-slate-500 mb-0.5 ml-1">{description}</p>}
     <div className="relative">
       <select
