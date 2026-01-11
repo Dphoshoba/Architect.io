@@ -36,6 +36,97 @@ const TARGET_MODELS: TargetAI[] = [
   "Generic"
 ];
 
+const SMART_SUGGESTIONS = {
+  goals: [
+    { label: "Dark SaaS", text: "Dark-mode, futuristic SaaS website with glassmorphism cards and parallax hero." },
+    { label: "Luxury Editorial", text: "Luxury editorial landing page with high-contrast Playfair Display typography and asymmetrical grids." },
+    { label: "Bento Dashboard", text: "Performance-focused admin dashboard with bento box widgets and real-time metric cards." },
+    { label: "Biomorphic Portfolio", text: "Organic, biomorphic portfolio with Mocha Mousse earth tones and hand-drawn organic scribbles." },
+    { label: "Cinematic E-comm", text: "Cinematic e-commerce storefront with video hero and horizontal card snap scrolling." }
+  ],
+  audience: [
+    { label: "Enterprise Execs", text: "Global Enterprise SaaS decision makers looking for high-end aesthetic performance." },
+    { label: "Gen-Alpha Mobile", text: "Gen-Alpha mobile users who favor 3D motion shapes and bioluminescent pops." },
+    { label: "Accessibility-First", text: "Users requiring strict WCAG 2.2 AA compliance and high-contrast accessibility standards." },
+    { label: "Luxury Buyers", text: "Sophisticated luxury buyers seeking tranquil palettes and premium editorial layouts." }
+  ],
+  fragments: [
+    { label: "Full Hero Unlock", text: "A full-viewport hero with centered headline and above-fold CTA." },
+    { label: "Bento Layout", text: "Apple-style bento box layout for the core feature set." },
+    { label: "Sticky Trans-Nav", text: "Sticky nav starts transparent and becomes solid on scroll." },
+    { label: "Masonry Shard", text: "Pinterest-style staggered masonry grid for project showcase." },
+    { label: "Smooth Feedback", text: "Button ripple effect and hover feedback (scale 1.05 and soft shadow)." }
+  ],
+  constraints: [
+    { label: "WCAG 2.2 Sync", text: "Maintain minimum 4.5:1 contrast ratios and 44x44px tap targets." },
+    { label: "Depth Limit", text: "Limit visual depth to max 3 layers for a clean, professional hierarchy." },
+    { label: "Smoothness Core", text: "Ensure 60fps smoothness for all reveals and micro-interactions." },
+    { label: "Modern Hierarchy", text: "Strict typography: H1 Hero (60px), H2 Subhead (48px), H3 Feature (32px)." }
+  ]
+};
+
+const WEBSITE_PATTERNS = [
+  {
+    category: "Core Layouts",
+    patterns: [
+      { name: "Full-screen Hero", text: "Full-viewport hero with centered headline and CTA." },
+      { name: "Split Hero", text: "Two-column split hero (text left, visual right)." },
+      { name: "Video Hero", text: "Autoplay muted background video hero." },
+      { name: "Bento Grid", text: "Apple-style bento box layout for features." },
+      { name: "Masonry Grid", text: "Pinterest-style staggered grid." },
+      { name: "Asymmetrical Grid", text: "Intentional uneven column layout." }
+    ]
+  },
+  {
+    category: "Navigation Patterns",
+    patterns: [
+      { name: "Sticky Nav", text: "Header remains visible on scroll." },
+      { name: "Dynamic Nav", text: "Nav starts transparent and becomes solid on scroll." },
+      { name: "Mega Menu", text: "Dropdown with multi-column content." },
+      { name: "Sidebar Nav", text: "Left-aligned persistent sidebar." }
+    ]
+  },
+  {
+    category: "Components",
+    patterns: [
+      { name: "Testimonial Slider", text: "Quote carousel with avatars." },
+      { name: "Infinite Logo Carousel", text: "Infinite scrolling partner logos." },
+      { name: "Hover-Lift Cards", text: "Feature cards elevate on hover with soft shadow." },
+      { name: "Glassmorphism Cards", text: "Frosted glass cards with background blur." },
+      { name: "Pricing Cards", text: "Tiered pricing cards with highlight plan." }
+    ]
+  },
+  {
+    category: "Storytelling",
+    patterns: [
+      { name: "Timeline Section", text: "Vertical timeline with milestones." },
+      { name: "Step-by-step Flow", text: "Numbered process section." },
+      { name: "Scroll Storytelling", text: "Content reveals on scroll." },
+      { name: "Case Study Block", text: "Problem -> Solution -> Result layout." }
+    ]
+  },
+  {
+    category: "Motion & Interactions",
+    patterns: [
+      { name: "Scroll-triggered Fade", text: "Staggered fade-in reveals on scroll." },
+      { name: "Parallax Scroll", text: "Foreground moves faster than background." },
+      { name: "Micro-interactions", text: "Button ripple and hover feedback (150ms ease)." },
+      { name: "Skeleton Screens", text: "Shimmer loading states." }
+    ]
+  },
+  {
+    category: "Design Styles (2026)",
+    patterns: [
+      { name: "Minimal / Clean", text: "Focus on variable sans-serifs and negative space." },
+      { name: "Luxury / Editorial", text: "High-contrast serifs and magazine-style layout." },
+      { name: "Futuristic / AI-driven", text: "Burnished amber accents and liquid chrome metallics." },
+      { name: "Brutalist", text: "Raw, unpolished aesthetics with heavy typography." },
+      { name: "Neumorphism", text: "Soft extrusions and inner shadows." },
+      { name: "Glassmorphism", text: "Layered semi-transparent panels with backdrop-blur." }
+    ]
+  }
+];
+
 const encode = (bytes: Uint8Array) => {
   let binary = '';
   const len = bytes.byteLength;
@@ -60,6 +151,47 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
   }
   return buffer;
 }
+
+const SuggestionDropdown: React.FC<{ items: { label: string, text: string }[], onSelect: (val: string) => void }> = ({ items, onSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2 py-1 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-md hover:bg-indigo-600/20 transition-all text-[9px] font-black uppercase tracking-widest italic"
+      >
+        <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+        Knowledge
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-64 bg-[#0e1014] border border-white/10 rounded-2xl shadow-2xl z-[60] overflow-hidden animate-fade-in backdrop-blur-xl">
+          <div className="p-2 grid grid-cols-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
+            {items.map((item, i) => (
+              <button 
+                key={i} 
+                onClick={() => { onSelect(item.text); setIsOpen(false); }}
+                className="text-left px-4 py-2.5 hover:bg-indigo-600/10 rounded-xl transition-all group"
+              >
+                <div className="text-[10px] font-black text-slate-200 group-hover:text-white uppercase leading-none">{item.label}</div>
+                <div className="text-[8px] text-slate-500 italic mt-1 line-clamp-2">{item.text}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'build' | 'history' | 'manual' | 'dev'>('build');
@@ -88,6 +220,7 @@ const App: React.FC = () => {
 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
+  const [showPatternLibrary, setShowPatternLibrary] = useState(false);
   
   const audioContexts = useRef<{ input: AudioContext; output: AudioContext } | null>(null);
   const liveSession = useRef<any>(null);
@@ -156,6 +289,13 @@ const App: React.FC = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const insertSuggestion = (field: keyof PromptInput, text: string) => {
+    setForm(prev => ({ 
+      ...prev, 
+      [field]: prev[field] ? `${prev[field]}\n${text}` : text 
+    }));
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -214,6 +354,11 @@ const App: React.FC = () => {
     } finally {
       setIsMagicFilling(false);
     }
+  };
+
+  const insertPattern = (text: string) => {
+    setSimpleDesc(prev => prev ? `${prev} ${text}` : text);
+    setShowPatternLibrary(false);
   };
 
   const handleExport = () => {
@@ -409,6 +554,40 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* PATTERN LIBRARY OVERLAY */}
+      {showPatternLibrary && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-[#0e1014] border border-white/10 w-full max-w-4xl max-h-[85vh] rounded-[3rem] p-10 shadow-2xl overflow-y-auto custom-scrollbar relative">
+            <button onClick={() => setShowPatternLibrary(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="mb-10 text-center">
+              <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Pattern Library</h3>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.4em]">Professional Website Construction Language</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {WEBSITE_PATTERNS.map((cat, idx) => (
+                <div key={idx} className="space-y-4">
+                  <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest border-l-2 border-indigo-600 pl-3">{cat.category}</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {cat.patterns.map((p, pIdx) => (
+                      <button 
+                        key={pIdx} 
+                        onClick={() => insertPattern(p.text)}
+                        className="text-left p-4 bg-white/2 hover:bg-indigo-600/10 border border-white/5 hover:border-indigo-500/30 rounded-2xl transition-all group"
+                      >
+                        <div className="text-[11px] font-black text-slate-200 group-hover:text-white uppercase mb-1">{p.name}</div>
+                        <div className="text-[9px] text-slate-500 font-medium italic group-hover:text-slate-300">{p.text}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* VOICE OVERLAY */}
       {isVoiceActive && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-10 animate-fade-in">
@@ -480,7 +659,22 @@ const App: React.FC = () => {
                       </div>
 
                       <div className="space-y-8">
-                         <TextArea label="Synthesis Seed" placeholder="Describe the outcome you want to architect..." value={simpleDesc} onChange={(e) => setSimpleDesc(e.target.value)} className="bg-black/50 border-white/10 text-white text-xs min-h-[120px]" />
+                         <div className="flex justify-between items-center mb-1 px-1">
+                           <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Synthesis Seed</label>
+                           <button 
+                            onClick={() => setShowPatternLibrary(true)}
+                            className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1.5"
+                           >
+                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                             Pattern Library
+                           </button>
+                         </div>
+                         <TextArea 
+                          placeholder="Describe the outcome you want to architect..." 
+                          value={simpleDesc} 
+                          onChange={(e) => setSimpleDesc(e.target.value)} 
+                          className="bg-black/50 border-white/10 text-white text-xs min-h-[120px]" 
+                         />
                          <button onClick={handleMagicFill} disabled={isMagicFilling || (!simpleDesc && !visualContext)} className="w-full py-4 bg-indigo-600/5 hover:bg-indigo-600/15 text-indigo-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 transition-all italic">
                            {isMagicFilling ? "Inferring Matrix..." : "✨ Matrix Auto-Fill"}
                          </button>
@@ -496,10 +690,37 @@ const App: React.FC = () => {
                       </div>
 
                       <div className="space-y-6">
-                         <TextInput label="Goal Summary" name="high_level_goal" value={form.high_level_goal} onChange={handleInputChange} />
-                         <TextInput label="Target Audience" name="audience_persona" value={form.audience_persona} onChange={handleInputChange} />
-                         <TextArea label="Few-Shot Fragments" name="few_shot_examples" value={form.few_shot_examples} onChange={handleInputChange} placeholder="Paste examples..." />
-                         <TextArea label="Constraints/Pitfalls" name="constraints_and_pitfalls" value={form.constraints_and_pitfalls} onChange={handleInputChange} rows={2} />
+                         <div className="space-y-1.5">
+                           <div className="flex justify-between items-center px-1">
+                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Goal Summary</label>
+                             <SuggestionDropdown items={SMART_SUGGESTIONS.goals} onSelect={(val) => setForm(prev => ({ ...prev, high_level_goal: val }))} />
+                           </div>
+                           <TextInput name="high_level_goal" value={form.high_level_goal} onChange={handleInputChange} placeholder="Objective core..." />
+                         </div>
+
+                         <div className="space-y-1.5">
+                           <div className="flex justify-between items-center px-1">
+                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Target Audience</label>
+                             <SuggestionDropdown items={SMART_SUGGESTIONS.audience} onSelect={(val) => setForm(prev => ({ ...prev, audience_persona: val }))} />
+                           </div>
+                           <TextInput name="audience_persona" value={form.audience_persona} onChange={handleInputChange} placeholder="Who is this for?" />
+                         </div>
+
+                         <div className="space-y-1.5">
+                           <div className="flex justify-between items-center px-1">
+                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Few-Shot Fragments</label>
+                             <SuggestionDropdown items={SMART_SUGGESTIONS.fragments} onSelect={(val) => insertSuggestion('few_shot_examples', val)} />
+                           </div>
+                           <TextArea name="few_shot_examples" value={form.few_shot_examples} onChange={handleInputChange} placeholder="Paste examples..." />
+                         </div>
+
+                         <div className="space-y-1.5">
+                           <div className="flex justify-between items-center px-1">
+                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Constraints/Pitfalls</label>
+                             <SuggestionDropdown items={SMART_SUGGESTIONS.constraints} onSelect={(val) => insertSuggestion('constraints_and_pitfalls', val)} />
+                           </div>
+                           <TextArea name="constraints_and_pitfalls" value={form.constraints_and_pitfalls} onChange={handleInputChange} rows={2} placeholder="Forbidden patterns..." />
+                         </div>
                       </div>
 
                       <div className="pt-6">
