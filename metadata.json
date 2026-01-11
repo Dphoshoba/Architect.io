@@ -1,6 +1,6 @@
 {
-  "name": "Prompt Architect Master",
-  "description": "A high-performance prompt engineering suite that generates optimized, ready-to-paste prompts for various AI models like Gemini, ChatGPT, Claude, and Llama based on structured input and best practices.",
+  "name": "Architect.io Quantum",
+  "description": "High-performance prompt engineering suite for modern AI platforms. Synthesize robust instructions across 35 languages with multi-modal visual context.",
   "requestFramePermissions": [
     "microphone"
   ]

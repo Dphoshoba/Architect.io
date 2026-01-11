@@ -27,6 +27,7 @@ export interface PromptInput {
   few_shot_examples?: string;
   constraints_and_pitfalls?: string;
   static_resources?: string;
+  base64Image?: string; // Multi-modal context support
 }
 
 export interface MarketingKit {

@@ -4,54 +4,67 @@ import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
 /**
  * MASTER PROMPT ARCHITECT ENGINE
- * Implements the "Master Prompt Builder" specification.
- * Handles platform-specific strategies for Gemini, ChatGPT, Claude, and Llama.
+ * Enhanced with multi-field synthesis and cross-platform logic.
  */
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: Expert Prompt Architect
-TASK: Take structured input and transform it into a high-performance, ready-to-paste prompt.
+ROLE: World-Class Prompt Architect
+TASK: Transform user parameters and visual shards into a high-performance AI prompt.
 
-PLATFORM-SPECIFIC STRATEGIES:
-- Gemini: Use natural language. Structure: Persona, Task, Context, Format. Encourage follow-ups.
-- OpenAI (ChatGPT/o-series): Instructions at TOP. Use triple-quotes (""") as delimiters. Specific schemas.
-- Claude: Use structured roles. Clear sections. Explicit XML-like tags (e.g., <context>). Ask to "think step-by-step".
-- Llama/Open Source: Extreme explicitness. Simple headers (### Task). Few-shot examples required.
-- Generic: Role -> Task -> Context -> Constraints -> Format -> Step-by-step.
+PLATFORM STRATEGIES:
+- Gemini: Focus on role + objective. Natural flow.
+- OpenAI: DELIMITERS ("""). Primary instruction at TOP. High constraint precision.
+- Claude: XML Tags (<task>, <context>). Ask for step-by-step thinking.
+- Llama: Explicit headers (### Task). Few-shot emphasis.
 
-CONSTRUCTION GUIDELINES:
-1. Build a SINGLE text block.
-2. Logic: Persona + Goal + Context + Constraints + Reasoning Visibility.
-3. Apply techniques: Chain-of-Thought for logic, Schemas for extraction, Tone for creative.
-4. Brevity: Use concise, precise instructions (e.g., "3 bullets" instead of "short").
+REQUIRED FIELD SYNTHESIS:
+1. Incorporate FEW-SHOT EXAMPLES if provided to define output style.
+2. Embed STATIC RESOURCES as truth sources.
+3. Explicitly list CONSTRAINTS/PITFALLS as negative prompts.
+4. Align TONE & PERSONA for audience resonance.
 
-OUTPUT FORMAT:
+OUTPUT:
 Return a JSON object with:
-- FINAL_PROMPT: The full specialized prompt string.
-- NOTES_FOR_HUMAN_PROMPT_ENGINEER: 2-5 bullets explaining design choices.
-- VISUAL_INSPIRATION_PROMPT: A description for an image generator.
+- FINAL_PROMPT: The optimized string.
+- NOTES_FOR_HUMAN_PROMPT_ENGINEER: Bulleted choices.
+- VISUAL_INSPIRATION_PROMPT: A render prompt for the outcome.
 `;
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+  const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: `
+  const textPart = {
+    text: `
       target_AI: ${input.target_AI}
       high_level_goal: ${input.high_level_goal}
       task_type: ${input.task_type}
       domain_context: ${input.domain_context}
       user_persona: ${input.user_persona}
-      audience_persona: ${input.audience_persona || 'Not specified'}
+      audience_persona: ${input.audience_persona || 'Standard'}
       tone_style: ${input.tone_style}
       output_format: ${input.output_format}
       length_and_depth: ${input.length_and_depth}
       reasoning_visibility: ${input.reasoning_visibility}
+      language: ${input.language}
       few_shot_examples: ${input.few_shot_examples || 'None'}
       constraints_and_pitfalls: ${input.constraints_and_pitfalls || 'None'}
       static_resources: ${input.static_resources || 'None'}
-    `,
+    `
+  };
+
+  const parts: any[] = [textPart];
+  if (input.base64Image) {
+    parts.push({
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: input.base64Image.split(',')[1] || input.base64Image
+      }
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: modelName,
+    contents: { parts },
     config: {
       systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
       responseMimeType: "application/json",
@@ -73,13 +86,23 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   return JSON.parse(response.text || "{}");
 };
 
-export const magicFillMetaInputs = async (description: string, language: string): Promise<Partial<PromptInput>> => {
+export const magicFillMetaInputs = async (description: string, language: string, base64Image?: string): Promise<Partial<PromptInput>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [{ text: `Map this seed into architectural parameters: "${description}". Language: ${language}.` }];
+  if (base64Image) {
+    parts.push({
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: base64Image.split(',')[1] || base64Image
+      }
+    });
+  }
+
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Extract parameters for: "${description}". Language: ${language}.`,
+    contents: { parts },
     config: {
-      systemInstruction: "Break down the user request into: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context, length_and_depth.",
+      systemInstruction: "Extract: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context, length_and_depth. Be highly technical.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -113,7 +136,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `High-quality, conceptual, professional: ${prompt}` }] },
+    contents: { parts: [{ text: `Hyper-realistic professional visualization of the prompt's final output: ${prompt}` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -126,18 +149,16 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Launch Kit for: "${goal}". Based on: "${prompt}". Language: ${language}.`,
+    contents: `Commercial Kit for: "${goal}". Source: "${prompt}". Language: ${language}.`,
     config: {
-      systemInstruction: "You are a Growth Marketer. Synthesize social ads, landing page copy, and an email sequence in JSON format.",
+      systemInstruction: "You are an Elite CMO. Generate highly conversion-optimized Social Ad copy, a Landing Page structure, and a 3-part Email drip campaign in JSON format.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           social_ads: { type: Type.STRING },
           landing_page: { type: Type.STRING },
-          email_sequence: { type: Type.STRING },
-          video_script: { type: Type.STRING },
-          audio_script: { type: Type.STRING }
+          email_sequence: { type: Type.STRING }
         }
       }
     }
