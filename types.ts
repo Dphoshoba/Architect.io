@@ -1,26 +1,15 @@
 
 export type TargetAI = 
-  | "Gemini 2.0 Flash"
-  | "Gemini 2.0 Pro"
-  | "Gemini 1.5 Pro"
+  | "Gemini 3 Flash"
+  | "Gemini 3 Pro"
+  | "Gemini 2.5 Flash"
+  | "Gemini 2.5 Pro"
   | "ChatGPT o3-mini"
   | "ChatGPT o1"
   | "GPT-4o"
   | "Claude 3.5 Sonnet"
-  | "Claude 3.5 Haiku"
   | "DeepSeek R1"
-  | "DeepSeek V3"
-  | "Grok 3"
-  | "Sora"
   | "Nano Banana / Gemini 3 Pro"
-  | "Adobe Firefly"
-  | "Imagen 4"
-  | "Canva"
-  | "Llama 3.3"
-  | "Llama 3.1"
-  | "Qwen 2.5 Max"
-  | "Mistral Large 2"
-  | "Cohere Command R+"
   | "Generic";
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
@@ -38,10 +27,13 @@ export interface PromptInput {
   reasoning_visibility: ReasoningVisibility;
   language: string;
   visual_inspiration_mode: boolean;
-  few_shot_examples?: string;
-  constraints_and_pitfalls?: string;
-  static_resources?: string;
-  base64Image?: string; // Multi-modal context support
+  base64Image?: string; 
+  // Website Shards
+  web_type?: string;
+  web_layout_blocks?: string;
+  web_aesthetic?: string;
+  web_typography?: string;
+  web_colors?: string;
 }
 
 export interface MarketingKit {
@@ -67,20 +59,21 @@ export interface HistoryItem {
   output: PromptOutput;
 }
 
-export type PlanType = "Starter" | "Architect" | "Agency";
+// Added missing types for backend service integration
+export type PlanType = "Starter" | "Pro" | "Enterprise";
 
 export interface UserStatus {
-  plan: PlanType;
+  userId: string;
+  plan: string;
   creditsRemaining: number;
   totalCredits: number;
-  stripeCustomerId?: string;
 }
 
 export interface WebhookEvent {
   id: string;
   type: string;
   timestamp: number;
-  status: 'success' | 'pending' | 'failed';
+  status: string;
   payload: any;
 }
 

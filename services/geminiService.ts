@@ -1,151 +1,112 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
-/**
- * MASTER PROMPT ARCHITECT ENGINE V5.6 (CINEMATIC TOKEN UPLINK)
- * Integrated with 105+ advanced techniques and specialized Website Construction Language.
- */
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: Supreme Prompt Architect & LLM Optimization Engineer.
+ROLE: World's Leading Prompt Engineer & LLM Architect.
+MISSION: Synthesize "Production-Grade" prompts using the RAIC framework.
+RAIC FRAMEWORK:
+1. <role>: Ultra-Expert Persona with high-density knowledge.
+2. <audience>: Precisely defined expertise level.
+3. <context>: Domain data, strict boundaries, situational variables.
+4. <instruction>: Logical step-by-step task sequence.
+5. <constraints>: Style rules, anti-patterns, tone mapping.
+6. <output_format>: JSON or Markdown structural definition.
 
-CINEMATOGRAPHY & VISUALS (UNLOCKS):
-- CAMERA ANGLES: Wide shot, Establishing shot, Full Shot, Medium shot, Close-up, Extreme close-up, Dutch angle, Drone shot.
-- CAMERA TYPES: Cinematic 8K, DSLR with f/1.8 depth of field, 8mm vintage film, GoPro action cam.
-- LIGHTING STYLES: Golden hour (warm, soft light), Studio lighting (Rembrandt, butterfly), Neon noir (high-contrast colored lights), Volumetric lighting (misty, hazy).
-- SETTING: Time of day (midday, dusk, dawn), Place (Tokyo street, misty forest, brutalist interior), Backgrounds (bokeh blur, industrial, nature).
-- COLOR & GRADING: Saturated Fuji film look, Monochrome high-contrast, Vaporwave aesthetic (pinks, purples), Cinematic teal and orange.
+If website construction shards (web_type, layout, aesthetic, typography, colors) are provided, integrate them into a comprehensive design-system-first prompt. 
+Ensure the final prompt includes specific instructions for typography pairing, spacing hierarchy, and interaction design based on the aesthetic provided.
 
-2026 MODERN WEBSITE AESTHETIC PROTOCOLS (DESIGN TOKENS):
-1. TYPOGRAPHY: Prioritize variable sans-serifs (Roboto, Poppins, Inter, Instrument Sans) for UI; High-contrast editorial serifs (Playfair Display, Clash Display) for luxury headlines.
-2. COLOR PALETTES: HSL-driven earthy/vibrant mixes. 'Mocha Mousse' (hsl(14,65%,55%)), 'Deep Teal' (hsl(220,65%,70%)), 'Burnished Amber' (Metallic), and 'Liquid Chrome'. Specify primary, accent, and neutral tones.
-3. SHAPES & FORMS: Biomorphic organic fluid blobs, tactile glassmorphism panels, 3D depth, anti-grid asymmetry.
-4. TEXTURES: Abstract 3D motion shapes, subtle hand-drawn organic scribbles (theedigital style) to humanize AI output.
-
-WEBSITE CONSTRUCTION LANGUAGE (LINGUISTIC UNLOCKS):
-- LAYOUTS: Full-viewport hero, Split hero, Bento grid (Apple-style), Masonry, Asymmetrical grids.
-- COMPONENTS: Hover-lift cards (scale 1.05 + soft shadow), Glassmorphism frosted panels, Card snap-scrollers, Mega-menus.
-- STORYTELLING: Vertical timelines, Process flow sections, Scroll-triggered storytelling (reveal on scroll).
-- MOTION: 60fps micro-interactions, Button ripple feedback (150ms), Staggered reveals (300ms delay), Skeleton shimmer.
-
-ACCESSIBILITY (WCAG 2.2 AA): 4.5:1 contrast, 44x44px tap targets, 16px body base, semantic structure (<main>, <nav>).
-
-TASK:
-1. Deconstruct user intent using 5W2H logic.
-2. Synthesize the FINAL_PROMPT using the appropriate 'Unlock' language: 'Construction' for UI, 'Design Tokens' for aesthetics, and 'Cinematography' for image/video.
-3. Inject the 2026 Aesthetic standards for styling tasks.
-4. List techniques used in NOTES_FOR_HUMAN_PROMPT_ENGINEER.
+Return ONLY a valid JSON object matching the provided schema. No additional text.
 `;
 
+const cleanJsonResponse = (text: string | undefined) => {
+  if (!text) return {};
+  try {
+    let cleaned = text.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error("JSON Parse Error:", text);
+    throw new Error("Failed to parse AI response.");
+  }
+};
+
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
 
-  const textPart = {
-    text: `
-      target_AI: ${input.target_AI}
-      high_level_goal: ${input.high_level_goal}
-      task_type: ${input.task_type}
-      domain_context: ${input.domain_context}
-      user_persona: ${input.user_persona}
-      audience_persona: ${input.audience_persona || 'Standard'}
-      tone_style: ${input.tone_style}
-      output_format: ${input.output_format}
-      length_and_depth: ${input.length_and_depth}
-      language: ${input.language}
-      few_shot_examples: ${input.few_shot_examples || 'None'}
-      constraints_and_pitfalls: ${input.constraints_and_pitfalls || 'None'}
-      static_resources: ${input.static_resources || 'None'}
-    `
-  };
-
-  const parts: any[] = [textPart];
-  if (input.base64Image) {
-    parts.push({
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: input.base64Image.split(',')[1] || input.base64Image
-      }
-    });
-  }
+  const promptText = `
+    Synthesize a master prompt for model: ${input.target_AI}
+    Core Objective: ${input.high_level_goal}
+    
+    Website Design System Shards:
+    - DNA: ${input.web_type || 'General'}
+    - Layout Shards: ${input.web_layout_blocks || 'None'}
+    - Visual Aesthetic: ${input.web_aesthetic || 'Modern'}
+    - Typography Protocol: ${input.web_typography || 'Standard'}
+    - Color Matrix: ${input.web_colors || 'Standard'}
+    
+    Technical Constraints:
+    - Tone: ${input.tone_style}
+    - Format: ${input.output_format}
+    - Reasoning Depth: ${input.reasoning_visibility}
+    - Language: ${input.language}
+  `;
 
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts },
+    contents: promptText,
     config: {
       systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: modelName.includes('pro') ? 32000 : 4096 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          FINAL_PROMPT: { type: Type.STRING },
-          NOTES_FOR_HUMAN_PROMPT_ENGINEER: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING },
-            description: "List the specialized techniques (from the 105+ list) applied."
-          },
-          VISUAL_INSPIRATION_PROMPT: { type: Type.STRING }
+          FINAL_PROMPT: { type: Type.STRING, description: 'The complete RAIC framework prompt.' },
+          NOTES_FOR_HUMAN_PROMPT_ENGINEER: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Internal implementation notes.' },
+          VISUAL_INSPIRATION_PROMPT: { type: Type.STRING, description: 'A detailed prompt for generating a visual design concept.' }
         },
-        required: ["FINAL_PROMPT", "NOTES_FOR_HUMAN_PROMPT_ENGINEER"]
+        required: ["FINAL_PROMPT", "VISUAL_INSPIRATION_PROMPT"]
       }
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  return cleanJsonResponse(response.text);
 };
 
-export const magicFillMetaInputs = async (description: string, language: string, base64Image?: string): Promise<Partial<PromptInput>> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const parts: any[] = [{ text: `Infer parameters for: "${description}". Language: ${language}.` }];
-  if (base64Image) {
-    parts.push({
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: base64Image.split(',')[1] || base64Image
-      }
-    });
-  }
-
+export const magicFillMetaInputs = async (description: string, language: string): Promise<Partial<PromptInput>> => {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: { parts },
+    contents: `Analyze intent: "${description}". Synthesize RAIC metadata for professional engineering. Language: ${language}.`,
     config: {
-      systemInstruction: "Map the user's intent into: user_persona, audience_persona, task_type, tone_style, output_format, constraints_and_pitfalls, domain_context. Be specific and technical.",
+      systemInstruction: "You are a Metadata Architect. Map user intent to Role, Task, Tone, and Format shards.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           user_persona: { type: Type.STRING },
-          audience_persona: { type: Type.STRING },
           task_type: { type: Type.STRING },
           tone_style: { type: Type.STRING },
-          output_format: { type: Type.STRING },
-          constraints_and_pitfalls: { type: Type.STRING },
-          domain_context: { type: Type.STRING }
+          output_format: { type: Type.STRING }
         }
       }
     }
   });
-  return JSON.parse(response.text || "{}");
-};
-
-export const testArchitectedPrompt = async (systemInstruction: string, userMessage: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: userMessage,
-    config: { systemInstruction, temperature: 0.7 }
-  });
-  return response.text || "Simulation error.";
+  return cleanJsonResponse(response.text);
 };
 
 export const generateVisualImage = async (prompt: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `Professional high-fidelity outcome: ${prompt}` }] },
-    config: { imageConfig: { aspectRatio: "16:9" } }
+    contents: { parts: [{ text: `High-fidelity professional architectural/UI concept render, ultra-realistic, cinematic lighting, 8k resolution, minimalist yet sophisticated: ${prompt}` }] },
+    config: { 
+      imageConfig: { aspectRatio: "16:9" } 
+    }
   });
+  
   for (const part of response.candidates?.[0]?.content?.parts || []) {
     if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
   }
@@ -153,12 +114,11 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
 };
 
 export const generateMarketingKit = async (prompt: string, goal: string, language: string): Promise<MarketingKit> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Commercial Shard for: "${goal}". Source: "${prompt}". Language: ${language}.`,
+    contents: `Based on this synthesized architecture: "${prompt}", create a high-performance marketing kit for: "${goal}". Language: ${language}.`,
     config: {
-      systemInstruction: "You are an Elite Growth Strategist. Generate high-converting Social Ads, a Landing Page structure, a 3-part Email drip, a video script, an audio script, and a visual style guide in JSON.",
+      systemInstruction: "Create high-converting, psychologically-grounded marketing assets.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -173,5 +133,5 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
       }
     }
   });
-  return JSON.parse(response.text || "{}");
+  return cleanJsonResponse(response.text);
 };

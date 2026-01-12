@@ -1,7 +1,8 @@
 {
-  "name": "Architect.io Quantum",
-  "description": "High-performance prompt engineering suite for modern AI platforms. Synthesize robust instructions across 35 languages with multi-modal visual context.",
   "requestFramePermissions": [
-    "microphone"
-  ]
+    "microphone",
+    "camera"
+  ],
+  "name": "Architect.io Quantum",
+  "description": ""
 }

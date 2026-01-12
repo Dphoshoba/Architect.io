@@ -1,946 +1,333 @@
-
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { PromptInput, PromptOutput, MarketingKit, UserStatus, HistoryItem, WebhookEvent, TargetAI } from './types';
-import { TextInput, TextArea, Select } from './components/InputGroup';
+import React, { useState, useEffect } from 'react';
+import { PromptInput, PromptOutput, MarketingKit, TargetAI } from './types';
+import { TextArea, Select } from './components/InputGroup';
 import { 
   generateArchitectPrompt, 
-  testArchitectedPrompt, 
   magicFillMetaInputs, 
   generateVisualImage,
   generateMarketingKit
 } from './services/geminiService';
-import { backendService } from './services/backendService';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 
-const LANGUAGES = [
-  "English", "Spanish", "French", "German", "Italian", "Portuguese", "Dutch", "Russian", 
-  "Chinese", "Japanese", "Korean", "Arabic", "Hindi", "Bengali", "Turkish", "Vietnamese", 
-  "Polish", "Ukrainian", "Thai", "Persian", "Romanian", "Greek", "Czech", "Hungarian", 
-  "Swedish", "Indonesian", "Hebrew", "Danish", "Finnish", "Norwegian", "Slovak", 
-  "Croatian", "Bulgarian", "Lithuanian", "Slovenian"
-];
-
-const TARGET_MODELS: TargetAI[] = [
-  "Gemini 2.0 Flash", "Gemini 2.0 Pro", "Gemini 1.5 Pro",
-  "ChatGPT o3-mini", "ChatGPT o1", "GPT-4o",
-  "Claude 3.5 Sonnet", "Claude 3.5 Haiku",
-  "DeepSeek R1", "DeepSeek V3",
-  "Grok 3",
-  "Sora",
-  "Nano Banana / Gemini 3 Pro",
-  "Adobe Firefly",
-  "Imagen 4",
-  "Canva",
-  "Llama 3.3", "Llama 3.1",
-  "Qwen 2.5 Max", "Mistral Large 2", "Cohere Command R+",
-  "Generic"
-];
-
-const SMART_SUGGESTIONS = {
-  goals: [
-    { label: "Dark SaaS", text: "Dark-mode, futuristic SaaS website with glassmorphism cards and parallax hero." },
-    { label: "Luxury Editorial", text: "Luxury editorial landing page with high-contrast Playfair Display typography and asymmetrical grids." },
-    { label: "Bento Dashboard", text: "Performance-focused admin dashboard with bento box widgets and real-time metric cards." },
-    { label: "Biomorphic Portfolio", text: "Organic, biomorphic portfolio with Mocha Mousse earth tones and hand-drawn organic scribbles." },
-    { label: "Cinematic E-comm", text: "Cinematic e-commerce storefront with video hero and horizontal card snap scrolling." }
-  ],
-  audience: [
-    { label: "Enterprise Execs", text: "Global Enterprise SaaS decision makers looking for high-end aesthetic performance." },
-    { label: "Gen-Alpha Mobile", text: "Gen-Alpha mobile users who favor 3D motion shapes and bioluminescent pops." },
-    { label: "Accessibility-First", text: "Users requiring strict WCAG 2.2 AA compliance and high-contrast accessibility standards." },
-    { label: "Luxury Buyers", text: "Sophisticated luxury buyers seeking tranquil palettes and premium editorial layouts." }
-  ],
-  fragments: [
-    { label: "Full Hero Unlock", text: "A full-viewport hero with centered headline and above-fold CTA." },
-    { label: "Bento Layout", text: "Apple-style bento box layout for the core feature set." },
-    { label: "Sticky Trans-Nav", text: "Sticky nav starts transparent and becomes solid on scroll." },
-    { label: "Masonry Shard", text: "Pinterest-style staggered masonry grid for project showcase." },
-    { label: "Smooth Feedback", text: "Button ripple effect and hover feedback (scale 1.05 and soft shadow)." }
-  ],
-  constraints: [
-    { label: "WCAG 2.2 Sync", text: "Maintain minimum 4.5:1 contrast ratios and 44x44px tap targets." },
-    { label: "Depth Limit", text: "Limit visual depth to max 3 layers for a clean, professional hierarchy." },
-    { label: "Smoothness Core", text: "Ensure 60fps smoothness for all reveals and micro-interactions." },
-    { label: "Modern Hierarchy", text: "Strict typography: H1 Hero (60px), H2 Subhead (48px), H3 Feature (32px)." }
-  ]
+const Icons = {
+  Sparkles: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+  Globe: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  Check: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>,
+  ChevronDown: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>,
+  ArrowLeft: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
+  Robot: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2m6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2M9 16a1 1 0 1 0 0 2 1 1 0 0 0 0-2m6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" /></svg>,
+  Shield: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A3.33 3.33 0 0018.377 2.864l-6.377-2.318a1 1 0 00-.636 0L4.987 2.864a3.33 3.33 0 00-2.241 3.12c0 5.23 3.593 10.395 8.783 12.028a1 1 0 00.636 0c5.19-1.633 8.783-6.798 8.783-12.028a3.33 3.33 0 00-.544-1.748z" /></svg>,
+  Copy: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
 };
 
-const WEBSITE_PATTERNS = [
-  {
-    category: "Core Layouts",
-    patterns: [
-      { name: "Full-screen Hero", text: "Full-viewport hero with centered headline and CTA." },
-      { name: "Split Hero", text: "Two-column split hero (text left, visual right)." },
-      { name: "Video Hero", text: "Autoplay muted background video hero." },
-      { name: "Bento Grid", text: "Apple-style bento box layout for features." },
-      { name: "Masonry Grid", text: "Pinterest-style staggered grid." },
-      { name: "Asymmetrical Grid", text: "Intentional uneven column layout." }
-    ]
-  },
-  {
-    category: "Navigation Patterns",
-    patterns: [
-      { name: "Sticky Nav", text: "Header remains visible on scroll." },
-      { name: "Dynamic Nav", text: "Nav starts transparent and becomes solid on scroll." },
-      { name: "Mega Menu", text: "Dropdown with multi-column content." },
-      { name: "Sidebar Nav", text: "Left-aligned persistent sidebar." }
-    ]
-  },
-  {
-    category: "Components",
-    patterns: [
-      { name: "Testimonial Slider", text: "Quote carousel with avatars." },
-      { name: "Infinite Logo Carousel", text: "Infinite scrolling partner logos." },
-      { name: "Hover-Lift Cards", text: "Feature cards elevate on hover with soft shadow." },
-      { name: "Glassmorphism Cards", text: "Frosted glass cards with background blur." },
-      { name: "Pricing Cards", text: "Tiered pricing cards with highlight plan." }
-    ]
-  },
-  {
-    category: "Storytelling",
-    patterns: [
-      { name: "Timeline Section", text: "Vertical timeline with milestones." },
-      { name: "Step-by-step Flow", text: "Numbered process section." },
-      { name: "Scroll Storytelling", text: "Content reveals on scroll." },
-      { name: "Case Study Block", text: "Problem -> Solution -> Result layout." }
-    ]
-  },
-  {
-    category: "Motion & Interactions",
-    patterns: [
-      { name: "Scroll-triggered Fade", text: "Staggered fade-in reveals on scroll." },
-      { name: "Parallax Scroll", text: "Foreground moves faster than background." },
-      { name: "Micro-interactions", text: "Button ripple and hover feedback (150ms ease)." },
-      { name: "Skeleton Screens", text: "Shimmer loading states." }
-    ]
-  },
-  {
-    category: "Design Tokens (2026)",
-    patterns: [
-      { name: "Typography: UI Sans + Editorial Serif", text: "Primary UI font: Inter. Headline font: Playfair Display." },
-      { name: "Typography: Modern Geometric", text: "Primary UI font: Poppins. Headline font: Clash Display." },
-      { name: "Palette: Mocha Mousse & Gold", text: "Use a warm, earthy palette based on Mocha Mousse (hsl(14,65%,55%)) with gold and muted rose accents." },
-      { name: "Palette: Deep Teal & Verdant", text: "Use a calming palette of Deep Teal (hsl(220,65%,70%)) with verdant green and sunny yellow accents." },
-      { name: "Shapes: Biomorphic Fluid Blobs", text: "Incorporate biomorphic, anti-grid fluid shapes in the hero section." },
-      { name: "Shapes: Tactile Glassmorphism", text: "Use layered, tactile glassmorphism panels for cards and info sections." },
-      { name: "Texture: Hand-Drawn Organics", text: "Overlay subtle hand-drawn scribble patterns to add organic personality." },
-      { name: "Texture: Abstract 3D Motion", text: "Use abstract 3D motion shapes with a metallic or glass texture in the background." }
-    ]
-  },
-  {
-    category: "Cinematography & Visuals",
-    patterns: [
-      { name: "Angle: Wide Establishing Shot", text: "A wide establishing shot to set the scene." },
-      { name: "Angle: Extreme Close-Up", text: "An extreme close-up to emphasize detail." },
-      { name: "Angle: Drone Shot", text: "A sweeping drone shot from above." },
-      { name: "Camera: Cinematic 8K", text: "Shot on a cinematic 8K camera with anamorphic lens flare." },
-      { name: "Camera: DSLR f/1.8", text: "DSLR photo with a shallow depth of field (f/1.8) and beautiful bokeh." },
-      { name: "Camera: 8mm Vintage", text: "8mm vintage film look with grain and light leaks." },
-      { name: "Lighting: Golden Hour", text: "Bathed in warm, soft golden hour light." },
-      { name: "Lighting: Neon Noir", text: "High-contrast neon noir lighting with vibrant pink and cyan." },
-      { name: "Lighting: Volumetric", text: "Volumetric lighting creating visible light rays in a misty environment." },
-      { name: "Setting: Tokyo Midday", text: "A bustling Tokyo street at midday." },
-      { name: "Setting: Forest Dawn", text: "A misty forest at dawn." },
-      { name: "Color: Saturated Film", text: "Vibrant, saturated Fuji film color grading." },
-      { name: "Color: High-Contrast B&W", text: "High-contrast monochrome (black and white)." }
-    ]
-  }
-];
-
-const encode = (bytes: Uint8Array) => {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
+const SHARDS = {
+  web_type: ["Luxury Salon", "SaaS Analytics", "Fashion E-commerce", "Crypto Portfolio", "Architect Portfolio", "EdTech LMS", "Boutique Hotel", "Healthcare Portal", "Real Estate Engine", "Logistics Hub", "Creative Agency", "Restaurant / Menu", "Esports Community", "Talent Job Board", "Event Microsite"],
+  web_layout_blocks: ["Full Hero", "Split Hero", "Bento Grid", "Parallax Sections", "Sticky Mega-Menu", "Masonry Gallery", "Pricing Matrix", "Comparison Table", "Stats Overlay", "Testimonial Carousel", "Interactive Timeline", "Accordion FAQ", "Video Background", "Floating CTA"],
+  web_aesthetic: ["Glassmorphism", "Minimalist White", "Futuristic Dark", "Editorial Serif", "Neumorphism", "Raw Brutalist", "Cinematic Wide", "Apple-style Polish", "Clean SaaS Blue", "Retro 80s Cyber", "Monochrome Luxury"],
+  web_typography: ["Modern Sans (Inter)", "Editorial Serif (Playfair)", "Technical Mono (JetBrains)", "Bold Display (Bebas)", "System Native (SF Pro)", "Geometric Sans (Poppins)"],
+  web_colors: ["Midnight (#050608)", "SaaS Blue (#2563EB)", "Electric Indigo (#6366F1)", "Emerald Glow", "Golden Noir", "Slate & Snow", "Cyber Gradient"],
 };
 
-const decode = (base64: string) => {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-  return bytes;
+const GUIDED_FLOWS = {
+  'Website': { title: 'WEBSITE CONSTRUCTOR', icon: Icons.Globe, questions: [
+    { key: 'web_type', label: 'Platform DNA' },
+    { key: 'web_layout_blocks', label: 'Layout Shards' },
+    { key: 'web_aesthetic', label: 'Visual Aesthetic' },
+    { key: 'web_typography', label: 'Typography' },
+    { key: 'web_colors', label: 'Color Matrix' },
+  ]},
+  'Protocol': { title: 'SYSTEM PROTOCOL', icon: Icons.Shield, questions: [
+    { key: 'target_AI', label: 'Intelligence Target' },
+    { key: 'reasoning_visibility', label: 'Reasoning Mode' },
+    { key: 'tone_style', label: 'Operational Tone' },
+  ]}
 };
 
-async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-  }
-  return buffer;
-}
-
-const SuggestionDropdown: React.FC<{ items: { label: string, text: string }[], onSelect: (val: string) => void }> = ({ items, onSelect }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-md hover:bg-indigo-600/20 transition-all text-[9px] font-black uppercase tracking-widest italic"
-      >
-        <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-        Knowledge
-      </button>
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-[#0e1014] border border-white/10 rounded-2xl shadow-2xl z-[60] overflow-hidden animate-fade-in backdrop-blur-xl">
-          <div className="p-2 grid grid-cols-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-            {items.map((item, i) => (
-              <button 
-                key={i} 
-                onClick={() => { onSelect(item.text); setIsOpen(false); }}
-                className="text-left px-4 py-2.5 hover:bg-indigo-600/10 rounded-xl transition-all group"
-              >
-                <div className="text-[10px] font-black text-slate-200 group-hover:text-white uppercase leading-none">{item.label}</div>
-                <div className="text-[8px] text-slate-500 italic mt-1 line-clamp-2">{item.text}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+const TARGET_MODELS: TargetAI[] = ["Gemini 3 Flash", "Gemini 3 Pro", "GPT-4o", "Claude 3.5 Sonnet", "DeepSeek R1"];
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'build' | 'history' | 'manual' | 'dev'>('build');
+  const [activeTab, setActiveTab] = useState<'BUILD' | 'HISTORY'>('BUILD');
+  const [isGuidedMode, setIsGuidedMode] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [genError, setGenError] = useState<string | null>(null);
   const [output, setOutput] = useState<PromptOutput | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [backendHealth, setBackendHealth] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [userStatus, setUserStatus] = useState<UserStatus>({
-    plan: "Starter",
-    creditsRemaining: 100,
-    totalCredits: 100
-  });
-  
-  const [logs, setLogs] = useState<WebhookEvent[]>([]);
-  const [simpleDesc, setSimpleDesc] = useState('');
-  const [isMagicFilling, setIsMagicFilling] = useState(false);
-  const [generatedVisualUrl, setGeneratedVisualUrl] = useState<string | null>(null);
+  const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
   const [marketingKit, setMarketingKit] = useState<MarketingKit | null>(null);
-  const [isGeneratingKit, setIsGeneratingKit] = useState(false);
-  const [visualContext, setVisualContext] = useState<string | null>(null);
-
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
-  const [showPatternLibrary, setShowPatternLibrary] = useState(false);
-  
-  const audioContexts = useRef<{ input: AudioContext; output: AudioContext } | null>(null);
-  const liveSession = useRef<any>(null);
-  const sources = useRef<Set<AudioBufferSourceNode>>(new Set());
-  const nextStartTime = useRef(0);
-
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [form, setForm] = useState<PromptInput>({
-    target_AI: "Gemini 2.0 Flash",
-    high_level_goal: "",
-    task_type: "Reasoning",
-    domain_context: "",
-    user_persona: "",
-    audience_persona: "",
-    tone_style: "Professional",
-    output_format: "Markdown",
-    length_and_depth: "Detailed",
-    reasoning_visibility: "brief",
-    language: "English",
-    visual_inspiration_mode: true,
-    few_shot_examples: "",
-    constraints_and_pitfalls: "",
-    static_resources: ""
+    target_AI: "Gemini 3 Flash", high_level_goal: "", task_type: "Synthesis", domain_context: "",
+    user_persona: "Lead Prompt Architect", tone_style: "Professional", output_format: "Markdown",
+    length_and_depth: "Detailed", reasoning_visibility: "brief", language: "English",
+    visual_inspiration_mode: true
   });
+  const [guidedState, setGuidedState] = useState({ category: null as string | null, index: 0 });
 
-  useEffect(() => {
-    const saved = localStorage.getItem('architect_vault_v4');
-    if (saved) setHistory(JSON.parse(saved));
-
-    const savedStatus = localStorage.getItem('architect_status');
-    if (savedStatus) setUserStatus(JSON.parse(savedStatus));
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('session_id')) {
-      setShowSuccessToast(true);
-      setUserStatus(prev => ({ 
-        ...prev, 
-        plan: "Architect", 
-        creditsRemaining: 50000, 
-        totalCredits: 50000 
-      }));
-      setTimeout(() => setShowSuccessToast(false), 8000);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    const check = async () => {
-      try {
-        const h = await backendService.checkHealth();
-        setBackendHealth(h === 'OK' ? 'online' : 'offline');
-        if (h === 'OK') {
-          const l = await backendService.getWebhookLogs();
-          setLogs(l);
-        }
-      } catch { setBackendHealth('offline'); }
-    };
-    check();
-    const inv = setInterval(check, 20000);
-    return () => clearInterval(inv);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('architect_status', JSON.stringify(userStatus));
-  }, [userStatus]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const insertSuggestion = (field: keyof PromptInput, text: string) => {
-    setForm(prev => ({ 
-      ...prev, 
-      [field]: prev[field] ? `${prev[field]}\n${text}` : text 
-    }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const r = new FileReader();
-      r.onloadend = () => setVisualContext(r.result as string);
-      r.readAsDataURL(file);
-    }
-  };
-
-  const handleUpgrade = async () => {
+  const handleExecute = async () => {
+    if (!form.high_level_goal) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await backendService.createCheckoutSession("Architect", 49);
-      if (res.url) window.location.href = res.url;
-    } catch (e: any) {
-      setGenError("Billing Gateway Offline. Ensure backend is deployed.");
+      const res = await generateArchitectPrompt(form);
+      setOutput(res);
+      if (form.visual_inspiration_mode && res.VISUAL_INSPIRATION_PROMPT) {
+        const img = await generateVisualImage(res.VISUAL_INSPIRATION_PROMPT);
+        setGeneratedVisual(img);
+      }
+      const kit = await generateMarketingKit(res.FINAL_PROMPT, form.high_level_goal, form.language);
+      setMarketingKit(kit);
+    } catch (e) {
+      console.error("Synthesis failed:", e);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerate = async () => {
-    if (userStatus.creditsRemaining <= 0) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    if (!form.high_level_goal.trim()) { setGenError("Synthesis seed required."); return; }
-    
-    setLoading(true); setGenError(null); setGeneratedVisualUrl(null); setMarketingKit(null);
-    try {
-      const res = await generateArchitectPrompt({ ...form, base64Image: visualContext || undefined });
-      setOutput(res);
-      
-      setUserStatus(prev => ({ ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 10) }));
-
-      const hItem = { id: `arch_${Date.now()}`, timestamp: Date.now(), input: { ...form }, output: { ...res } };
-      const updatedHistory = [hItem, ...history].slice(0, 50);
-      setHistory(updatedHistory);
-      localStorage.setItem('architect_vault_v4', JSON.stringify(updatedHistory));
-      
-      if (form.visual_inspiration_mode && res.VISUAL_INSPIRATION_PROMPT) {
-        generateVisualImage(res.VISUAL_INSPIRATION_PROMPT).then(setGeneratedVisualUrl);
-      }
-    } catch (err: any) { setGenError(err.message || "Synthesis failure."); }
-    finally { setLoading(false); }
+  const toggleShard = (key: string, value: string) => {
+    const current = (form as any)[key] || "";
+    const items = current.split(', ').filter(Boolean);
+    const updated = items.includes(value) ? items.filter((i: string) => i !== value) : [...items, value];
+    setForm(prev => ({ ...prev, [key]: updated.join(', ') }));
   };
 
-  const handleMagicFill = async () => {
-    if (!simpleDesc && !visualContext) return;
-    setIsMagicFilling(true);
-    try {
-      const suggestions = await magicFillMetaInputs(simpleDesc, form.language, visualContext || undefined);
-      setForm(prev => ({ ...prev, ...suggestions }));
-    } catch (err) {
-      console.error("Magic fill failed", err);
-    } finally {
-      setIsMagicFilling(false);
-    }
-  };
-
-  const insertPattern = (text: string) => {
-    setSimpleDesc(prev => prev ? `${prev} ${text}` : text);
-    setShowPatternLibrary(false);
-  };
-
-  const handleExport = () => {
-    if (!output) return;
-    const element = document.createElement("a");
-    const file = new Blob([output.FINAL_PROMPT], { type: 'text/markdown' });
-    element.href = URL.createObjectURL(file);
-    element.download = `architect_prompt_${Date.now()}.md`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handleShare = async () => {
-    if (!output?.FINAL_PROMPT) return;
-    const shareData = {
-      title: 'Architect.io Generated Prompt',
-      text: output.FINAL_PROMPT,
-      url: window.location.href
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        copy(output.FINAL_PROMPT);
-        alert("Prompt copied to clipboard! Share it with your team.");
-      }
-    } catch (err) { console.error("Share error", err); }
-  };
-
-  const handleDownloadImage = () => {
-    if (!generatedVisualUrl) return;
-    const element = document.createElement("a");
-    element.href = generatedVisualUrl;
-    element.download = `architect_visualization_${Date.now()}.png`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handleGenerateKit = async () => {
-    if (!output?.FINAL_PROMPT) return;
-    setIsGeneratingKit(true);
-    try {
-      const kit = await generateMarketingKit(output.FINAL_PROMPT, form.high_level_goal, form.language);
-      setMarketingKit(kit);
-    } finally { setIsGeneratingKit(false); }
-  };
-
-  const copy = (t: string) => {
-    navigator.clipboard.writeText(t);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const startVoiceLab = async () => {
-    if (isVoiceActive) { stopVoiceLab(); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const inCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      const outCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      audioContexts.current = { input: inCtx, output: outCtx };
-      const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-        callbacks: {
-          onopen: () => {
-            const source = inCtx.createMediaStreamSource(stream);
-            const scriptProcessor = inCtx.createScriptProcessor(4096, 1, 1);
-            scriptProcessor.onaudioprocess = (e) => {
-              const inputData = e.inputBuffer.getChannelData(0);
-              const int16 = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
-              const pcmBlob = { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
-              sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob }));
-            };
-            source.connect(scriptProcessor);
-            scriptProcessor.connect(inCtx.destination);
-            setIsVoiceActive(true);
-          },
-          onmessage: async (m: LiveServerMessage) => {
-            const b64 = m.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (b64) {
-              nextStartTime.current = Math.max(nextStartTime.current, outCtx.currentTime);
-              const buffer = await decodeAudioData(decode(b64), outCtx, 24000, 1);
-              const s = outCtx.createBufferSource();
-              s.buffer = buffer;
-              s.connect(outCtx.destination);
-              s.start(nextStartTime.current);
-              nextStartTime.current += buffer.duration;
-              sources.current.add(s);
-              s.onended = () => sources.current.delete(s);
-            }
-            if (m.serverContent?.outputTranscription) {
-              setVoiceTranscripts(prev => [...prev.slice(-8), `Architect: ${m.serverContent?.outputTranscription?.text}`]);
-            }
-          },
-          onerror: () => stopVoiceLab(),
-          onclose: () => setIsVoiceActive(false),
-        },
-        config: {
-          responseModalities: [Modality.AUDIO],
-          outputAudioTranscription: {},
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-          systemInstruction: 'You are an elite Prompt Architect. Brainstorm with the user.'
-        }
-      });
-      liveSession.current = sessionPromise;
-    } catch { setGenError("Voice Module Initialization Failed."); }
-  };
-
-  const stopVoiceLab = () => {
-    liveSession.current?.then((s: any) => s.close());
-    audioContexts.current?.input.close();
-    audioContexts.current?.output.close();
-    sources.current.forEach(s => s.stop());
-    setIsVoiceActive(false);
+  const SuggestionDropdown = ({ field, items }: { field: string, items: string[] }) => {
+    if (openDropdown !== field) return null;
+    const current = (form as any)[field] || "";
+    const selected = current.split(', ').filter(Boolean);
+    return (
+      <div className="absolute top-full left-0 right-0 mt-3 glass rounded-2xl shadow-2xl z-[100] p-4 max-h-[320px] overflow-y-auto custom-scrollbar animate-fade-in" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{selected.length} Selected</span>
+          <button onClick={() => setOpenDropdown(null)} className="text-[10px] font-black uppercase bg-indigo-600 px-3 py-1 rounded-full text-white">Done</button>
+        </div>
+        <div className="grid grid-cols-1 gap-1">
+          {items.map(item => (
+            <button key={item} onClick={() => toggleShard(field, item)} className={`text-left p-3 rounded-xl text-xs font-bold transition-all flex justify-between items-center ${selected.includes(item) ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'hover:bg-white/5 text-slate-400'}`}>
+              {item} {selected.includes(item) && <Icons.Check className="w-4 h-4" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#050608] text-slate-100 font-sans selection:bg-indigo-500/50">
-      {/* SUCCESS TOAST */}
-      {showSuccessToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-fade-in">
-          <div className="bg-indigo-600 px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-indigo-400/30">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-            <p className="text-xs font-black uppercase tracking-widest text-white italic">Professional License Activated. Credits Refilled.</p>
+    <div className="flex flex-col h-screen bg-[#050608] text-slate-100 overflow-hidden selection:bg-indigo-500/30">
+      <header className="h-20 flex items-center justify-between px-10 border-b border-white/5 bg-[#050608]/80 backdrop-blur-xl z-50">
+        <div className="flex items-center gap-10">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black italic tracking-tighter leading-none">ARCHITECT<span className="text-indigo-500">.IO</span></h1>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Quantum Prompt Synthesis V6.0</p>
           </div>
-        </div>
-      )}
-
-      {/* HEADER */}
-      <header className="flex-none h-16 border-b border-white/5 bg-[#050608]/90 backdrop-blur-xl flex items-center justify-between px-6 z-50">
-        <div className="flex items-center gap-4">
-          <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-          </div>
-          <div>
-            <h1 className="text-base font-black tracking-widest text-white uppercase italic leading-none">Architect.io</h1>
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">V4.0 Quantum Suite</p>
-          </div>
-          <div className="h-6 w-px bg-white/10 mx-2"></div>
-          <nav className="flex gap-1 bg-white/5 p-1 rounded-lg">
-            {['build', 'history', 'manual', 'dev'].map((t: any) => (
-              <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === t ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-                {t}
-              </button>
+          <nav className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
+            {['BUILD', 'HISTORY'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 shadow-[0_0_20px_rgba(79,70,229,0.4)] text-white' : 'text-slate-500 hover:text-slate-300'}`}>{tab}</button>
             ))}
           </nav>
         </div>
-
         <div className="flex items-center gap-6">
-          <div className="hidden lg:flex flex-col items-end mr-2">
-            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">{userStatus.plan} PLAN</p>
-            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">{userStatus.creditsRemaining.toLocaleString()} CREDITS</p>
+          <div className="flex flex-col items-end">
+            <p className="text-[10px] font-black text-slate-500 uppercase">Status</p>
+            <p className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Core Online</p>
           </div>
-          <button onClick={() => setShowUpgradeModal(true)} className="px-5 py-2 bg-white text-black text-[10px] font-black uppercase rounded-lg hover:bg-slate-200 transition-all shadow-xl shadow-white/10">License</button>
+          <button className="bg-white text-black text-[10px] font-black px-6 py-3 rounded-full uppercase hover:bg-slate-200 transition-all shadow-xl active:scale-95">Upgrade Pro</button>
         </div>
       </header>
 
-      {/* UPGRADE MODAL */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[150] flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-[#0e1014] border border-white/5 max-w-lg w-full rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
-            <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-600/10 blur-[100px] rounded-full"></div>
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="text-center space-y-8 relative z-10">
-              <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Growth Access</h2>
-              <p className="text-slate-500 text-[11px] uppercase tracking-[0.2em] leading-relaxed font-bold">Scale your synthesis with Enterprise persistence and Marketing Shard engines.</p>
-              
-              <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-6 text-left">
-                 <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-indigo-400 italic">
-                    <span>Architect Node</span>
-                    <span>$49 / MO</span>
-                 </div>
-                 <ul className="text-[10px] text-slate-300 space-y-4 uppercase font-bold tracking-[0.2em]">
-                    <li className="flex items-center gap-3"><div className="w-2 h-2 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50"></div> 50,000 Refill Credits</li>
-                    <li className="flex items-center gap-3"><div className="w-2 h-2 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50"></div> Multi-Modal Vision Uplink</li>
-                    <li className="flex items-center gap-3"><div className="w-2 h-2 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50"></div> Commercial Kit Generator</li>
-                    <li className="flex items-center gap-3"><div className="w-2 h-2 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50"></div> Unlimited History Vault</li>
-                 </ul>
-              </div>
-              
-              <button onClick={handleUpgrade} disabled={loading} className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-600/30">
-                {loading ? "Initializing..." : "Uplink Professional Tier"}
-              </button>
-              
-              <p className="text-[9px] text-slate-600 uppercase font-black tracking-widest">Secured by Stripe Node</p>
+      <div className="flex-1 overflow-hidden relative">
+        {loading && (
+          <div className="absolute inset-0 z-[1000] bg-black/95 backdrop-blur-3xl flex flex-col items-center justify-center animate-fade-in">
+            <div className="relative w-24 h-24 mb-10">
+               <div className="absolute inset-0 border-[6px] border-indigo-500/10 rounded-full" />
+               <div className="absolute inset-0 border-[6px] border-indigo-500 border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(79,70,229,0.3)]" />
             </div>
+            <p className="text-indigo-400 font-black uppercase tracking-[0.6em] italic animate-pulse text-sm">Synthesizing Neural Shards...</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* PATTERN LIBRARY OVERLAY */}
-      {showPatternLibrary && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-[#0e1014] border border-white/10 w-full max-w-4xl max-h-[85vh] rounded-[3rem] p-10 shadow-2xl overflow-y-auto custom-scrollbar relative">
-            <button onClick={() => setShowPatternLibrary(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="mb-10 text-center">
-              <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Pattern Library</h3>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.4em]">Professional Website Construction Language</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {WEBSITE_PATTERNS.map((cat, idx) => (
-                <div key={idx} className="space-y-4">
-                  <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest border-l-2 border-indigo-600 pl-3">{cat.category}</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {cat.patterns.map((p, pIdx) => (
-                      <button 
-                        key={pIdx} 
-                        onClick={() => insertPattern(p.text)}
-                        className="text-left p-4 bg-white/2 hover:bg-indigo-600/10 border border-white/5 hover:border-indigo-500/30 rounded-2xl transition-all group"
-                      >
-                        <div className="text-[11px] font-black text-slate-200 group-hover:text-white uppercase mb-1">{p.name}</div>
-                        <div className="text-[9px] text-slate-500 font-medium italic group-hover:text-slate-300">{p.text}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+        {activeTab === 'BUILD' && isGuidedMode && !guidedState.category && (
+          <div className="h-full flex flex-col items-center justify-center px-10 relative overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/5 rounded-full blur-[160px] pointer-events-none" />
+            <h2 className="text-[10vw] font-black italic mb-20 opacity-[0.03] uppercase select-none leading-none text-center pointer-events-none absolute">SELECT DOMAIN</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl z-10">
+              {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
+                <button key={key} onClick={() => setGuidedState({ category: key, index: 0 })} className="group relative h-[320px] glass rounded-[4rem] p-16 flex flex-col items-center justify-center transition-all duration-500 hover:border-indigo-500/50 hover:scale-[1.03] hover:shadow-[0_40px_80px_rgba(0,0,0,0.5)]">
+                  <flow.icon className="w-20 h-20 text-indigo-400 mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500" />
+                  <h3 className="text-xl font-black tracking-[0.4em] uppercase text-white italic">{flow.title}</h3>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-4 opacity-0 group-hover:opacity-100 transition-opacity">Launch Synthesis Flow</p>
+                </button>
               ))}
             </div>
+            <button onClick={() => setIsGuidedMode(false)} className="mt-20 text-slate-600 font-black uppercase text-[11px] hover:text-indigo-400 transition-colors tracking-widest border-b border-transparent hover:border-indigo-500 pb-1">Enter Manual Architect Mode</button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* VOICE OVERLAY */}
-      {isVoiceActive && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-10 animate-fade-in">
-           <div className="max-w-2xl w-full space-y-12 text-center">
-             <div className="relative inline-block">
-               <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse scale-150"></div>
-               <div className="relative w-32 h-32 bg-indigo-600 rounded-full flex items-center justify-center border-8 border-indigo-500/30 shadow-2xl">
-                 <div className="flex gap-2 items-center">
-                   {[...Array(7)].map((_, i) => (
-                     <div key={i} className="w-1.5 bg-white rounded-full animate-bounce" style={{ height: `${20 + Math.random() * 50}px`, animationDelay: `${i * 0.1}s` }}></div>
-                   ))}
-                 </div>
-               </div>
-             </div>
-             <div className="space-y-4">
-               <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Voice Laboratory</h2>
-               <p className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.5em]">Live Conceptual Uplink</p>
-             </div>
-             <div className="h-48 overflow-y-auto space-y-4 bg-black/60 p-8 rounded-[2rem] border border-white/5 text-left custom-scrollbar shadow-inner font-mono text-xs">
-               {voiceTranscripts.length === 0 && <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest text-center py-10 italic">Awaiting technical signals...</p>}
-               {voiceTranscripts.map((t, i) => <p key={i} className="text-slate-300 animate-fade-in py-2 border-b border-white/5 last:border-0">{t}</p>)}
-             </div>
-             <button onClick={stopVoiceLab} className="px-16 py-4 bg-white text-black font-black uppercase text-[11px] rounded-2xl hover:bg-slate-200 transition-all">Terminate Stream</button>
-           </div>
-         </div>
-      )}
-
-      {/* MAIN */}
-      <main className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
-          <div className="max-w-7xl mx-auto p-6 lg:p-10">
-            {activeTab === 'build' && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-4 space-y-6">
-                  <section className="bg-[#0e1014]/90 border border-white/5 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur-xl animate-fade-in">
-                    <div className="space-y-8">
-                      <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-2">
-                        <div className="flex flex-col">
-                          <h2 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Matrix Synthesis</h2>
-                          <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest italic leading-none mt-1">V4_SYNC</span>
-                        </div>
-                        <button 
-                          onClick={startVoiceLab}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-600/20 transition-all group"
-                        >
-                          <svg className={`w-3.5 h-3.5 ${isVoiceActive ? 'animate-pulse text-rose-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                          </svg>
-                          <span className="text-[9px] font-black uppercase tracking-widest">Voice Lab</span>
-                        </button>
+        {activeTab === 'BUILD' && isGuidedMode && guidedState.category && (
+          <div className="h-full flex overflow-hidden bg-[#050608]">
+            <div className="flex-1 flex flex-col p-16 overflow-y-auto custom-scrollbar relative">
+              <button onClick={() => setGuidedState({ category: null, index: 0 })} className="absolute top-16 left-16 flex items-center gap-3 text-[11px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest"><Icons.ArrowLeft className="w-4 h-4" /> Reset Evolution</button>
+              <div className="max-w-4xl mx-auto w-full pt-20 space-y-16">
+                {(() => {
+                  const flow = GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS];
+                  const q = flow.questions[guidedState.index];
+                  const options = (SHARDS as any)[q.key] || (q.key === 'target_AI' ? TARGET_MODELS : []);
+                  return (
+                    <div className="space-y-12 animate-fade-in">
+                      <div className="text-center">
+                        <span className="text-[11px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-4 block italic">{guidedState.category} Evolution Flow</span>
+                        <h2 className="text-7xl font-black italic tracking-tighter uppercase leading-none text-white">{q.label}</h2>
+                        <p className="text-slate-500 mt-6 text-sm font-medium uppercase tracking-widest">Select components to form the core architecture</p>
                       </div>
-                      
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-1 italic">Vision Context Shard</label>
-                        {!visualContext ? (
-                          <div className="group relative border-2 border-dashed border-white/5 hover:border-indigo-500/30 rounded-2xl p-8 transition-all cursor-pointer bg-white/2 hover:bg-white/5">
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                            <div className="flex flex-col items-center gap-2">
-                              <svg className="w-10 h-10 text-slate-600 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Uplink UI Context</span>
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        {options.map((opt: string) => {
+                          const isSelected = ((form as any)[q.key] || "").split(', ').includes(opt);
+                          return (
+                            <button key={opt} onClick={() => toggleShard(q.key, opt)} className={`p-8 rounded-[2rem] text-[13px] font-black uppercase text-center border transition-all duration-300 ${isSelected ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_40px_rgba(79,70,229,0.3)] text-white scale-[1.02]' : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-300'}`}>
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex flex-col items-center gap-6 pt-10">
+                        {guidedState.index < flow.questions.length - 1 ? (
+                          <button onClick={() => setGuidedState(p => ({ ...p, index: p.index + 1 }))} className="px-20 py-5 bg-white text-black font-black uppercase text-xs rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all tracking-widest">Advance To Next Layer</button>
                         ) : (
-                          <div className="relative rounded-2xl overflow-hidden border border-indigo-500/30 group">
-                            <img src={visualContext} alt="Context" className="w-full h-36 object-cover grayscale-50 group-hover:grayscale-0 transition-all duration-700" />
-                            <button onClick={() => setVisualContext(null)} className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-rose-500 text-white rounded-xl transition-all shadow-lg"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                          <div className="w-full max-w-md space-y-8">
+                            <TextArea label="Synthesis Goal" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="Briefly describe the ultimate goal of this prompt..." className="bg-white/5 border-white/10" />
+                            <button onClick={handleExecute} disabled={!form.high_level_goal} className="w-full py-6 bg-indigo-600 text-white font-black uppercase text-xs rounded-full shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all tracking-[0.4em]">Initialize Final Synthesis</button>
                           </div>
                         )}
-                      </div>
-
-                      <div className="space-y-8">
-                         <div className="flex justify-between items-center mb-1 px-1">
-                           <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Synthesis Seed</label>
-                           <button 
-                            onClick={() => setShowPatternLibrary(true)}
-                            className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1.5"
-                           >
-                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                             Pattern Library
-                           </button>
-                         </div>
-                         <TextArea 
-                          placeholder="Describe the outcome you want to architect..." 
-                          value={simpleDesc} 
-                          onChange={(e) => setSimpleDesc(e.target.value)} 
-                          className="bg-black/50 border-white/10 text-white text-xs min-h-[120px]" 
-                         />
-                         <button onClick={handleMagicFill} disabled={isMagicFilling || (!simpleDesc && !visualContext)} className="w-full py-4 bg-indigo-600/5 hover:bg-indigo-600/15 text-indigo-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 transition-all italic">
-                           {isMagicFilling ? "Inferring Matrix..." : "✨ Matrix Auto-Fill"}
-                         </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                         <Select label="Target Model" name="target_AI" value={form.target_AI} onChange={handleInputChange}>
-                            {TARGET_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
-                         </Select>
-                         <Select label="Language Matrix" name="language" value={form.language} onChange={handleInputChange}>
-                            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-                         </Select>
-                      </div>
-
-                      <div className="space-y-6">
-                         <div className="space-y-1.5">
-                           <div className="flex justify-between items-center px-1">
-                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Goal Summary</label>
-                             <SuggestionDropdown items={SMART_SUGGESTIONS.goals} onSelect={(val) => setForm(prev => ({ ...prev, high_level_goal: val }))} />
-                           </div>
-                           <TextInput name="high_level_goal" value={form.high_level_goal} onChange={handleInputChange} placeholder="Objective core..." />
-                         </div>
-
-                         <div className="space-y-1.5">
-                           <div className="flex justify-between items-center px-1">
-                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Target Audience</label>
-                             <SuggestionDropdown items={SMART_SUGGESTIONS.audience} onSelect={(val) => setForm(prev => ({ ...prev, audience_persona: val }))} />
-                           </div>
-                           <TextInput name="audience_persona" value={form.audience_persona} onChange={handleInputChange} placeholder="Who is this for?" />
-                         </div>
-
-                         <div className="space-y-1.5">
-                           <div className="flex justify-between items-center px-1">
-                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Few-Shot Fragments</label>
-                             <SuggestionDropdown items={SMART_SUGGESTIONS.fragments} onSelect={(val) => insertSuggestion('few_shot_examples', val)} />
-                           </div>
-                           <TextArea name="few_shot_examples" value={form.few_shot_examples} onChange={handleInputChange} placeholder="Paste examples..." />
-                         </div>
-
-                         <div className="space-y-1.5">
-                           <div className="flex justify-between items-center px-1">
-                             <label className="text-xs font-black text-slate-300 uppercase tracking-[0.15em] italic">Constraints/Pitfalls</label>
-                             <SuggestionDropdown items={SMART_SUGGESTIONS.constraints} onSelect={(val) => insertSuggestion('constraints_and_pitfalls', val)} />
-                           </div>
-                           <TextArea name="constraints_and_pitfalls" value={form.constraints_and_pitfalls} onChange={handleInputChange} rows={2} placeholder="Forbidden patterns..." />
-                         </div>
-                      </div>
-
-                      <div className="pt-6">
-                        <button onClick={handleGenerate} disabled={loading} className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/40 transition-all text-xs group italic">
-                           {loading ? "Forging..." : "Synthesize Architecture"}
-                        </button>
-                        {genError && <p className="mt-4 text-[10px] text-rose-500 font-bold uppercase tracking-widest text-center animate-pulse">{genError}</p>}
+                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">{guidedState.index + 1} / {flow.questions.length} Layers Defined</p>
                       </div>
                     </div>
-                  </section>
-                </div>
-
-                <div className="lg:col-span-8 space-y-10">
-                   {output ? (
-                      <div className="space-y-10 animate-fade-in">
-                        <section className="bg-[#0e1014] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
-                           <div className="p-12 space-y-8">
-                              <div className="flex items-center justify-between">
-                                 <div>
-                                    <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter">FINAL_PROMPT</h3>
-                                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">Optimized for {form.target_AI} ({form.language})</p>
-                                 </div>
-                                 <div className="flex items-center gap-3">
-                                    <button onClick={handleExport} className="px-5 py-3.5 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl hover:bg-white/10 uppercase tracking-widest transition-all" title="Download MD">MD</button>
-                                    <button onClick={handleShare} className="px-5 py-3.5 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-xl hover:bg-indigo-600/20 uppercase tracking-widest transition-all" title="Share Prompt">Share</button>
-                                    <button onClick={() => copy(output.FINAL_PROMPT)} className="px-8 py-3.5 bg-white text-black text-[11px] font-black rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest shadow-2xl">
-                                       {copied ? "Copied" : "Copy"}
-                                    </button>
-                                 </div>
-                              </div>
-                              <div className="bg-black/80 p-12 rounded-[2.5rem] border border-white/5 text-sm font-medium text-slate-300 leading-relaxed font-mono whitespace-pre-wrap max-h-[700px] overflow-y-auto custom-scrollbar select-all shadow-inner">
-                                 {output.FINAL_PROMPT}
-                              </div>
-                           </div>
-                           <div className="bg-indigo-600/5 p-12 border-t border-white/5 grid md:grid-cols-2 gap-12">
-                              <div className="space-y-8">
-                                 <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Synthesis Notes</h4>
-                                 <ul className="space-y-4">
-                                    {output.NOTES_FOR_HUMAN_PROMPT_ENGINEER?.map((n, i) => (
-                                       <li key={i} className="text-[12px] text-slate-400 flex gap-5 bg-white/5 p-5 rounded-3xl border border-white/5 group transition-all hover:border-indigo-500/30">
-                                          <span className="text-indigo-500 font-black italic">L_{i+1}</span>
-                                          <span>{n}</span>
-                                       </li>
-                                    ))}
-                                 </ul>
-                              </div>
-                              {generatedVisualUrl && (
-                                 <div className="space-y-8">
-                                    <div className="flex justify-between items-center">
-                                      <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Outcome Visualization</h4>
-                                      <button onClick={handleDownloadImage} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
-                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        Download Visual
-                                      </button>
-                                    </div>
-                                    <div className="relative group rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl grayscale-50 hover:grayscale-0 transition-all duration-1000">
-                                       <img src={generatedVisualUrl} alt="Visual" className="w-full" />
-                                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                          <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">Visual Synthesis Complete</div>
-                                       </div>
-                                    </div>
-                                 </div>
-                              )}
-                           </div>
-                        </section>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                           <button onClick={handleGenerateKit} disabled={isGeneratingKit} className="group h-44 overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-800 rounded-[3rem] p-10 text-left transition-all hover:scale-[1.03] shadow-2xl relative">
-                              <p className="text-[10px] font-black text-white/60 uppercase tracking-widest italic">Growth Laboratory</p>
-                              <p className="text-3xl font-black text-white mt-2 italic tracking-tighter">Generate Marketing Kit</p>
-                              <svg className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10 group-hover:rotate-12 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                           </button>
-                           <div className="bg-[#0e1014] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-xl relative overflow-hidden">
-                              <div className="space-y-2">
-                                 <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest italic">Active Matrix</h4>
-                                 <p className="text-xl font-black text-white uppercase italic tracking-tighter">{form.target_AI} NODE</p>
-                                 <p className="text-sm text-slate-500 font-bold uppercase">{form.language} CORE</p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center"><div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div></div>
-                                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Processing Synchronized</span>
-                              </div>
-                           </div>
-                        </div>
-
-                        {marketingKit && (
-                          <section className="bg-indigo-950/20 border border-indigo-500/10 p-12 rounded-[4rem] animate-fade-in shadow-2xl">
-                             <div className="flex flex-col items-center mb-12">
-                               <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em] italic">Marketing Shards</h3>
-                               <div className="h-px w-20 bg-indigo-500/30 mt-4"></div>
-                             </div>
-                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-10">
-                                {[
-                                   { l: 'Social Shard', c: marketingKit.social_ads },
-                                   { l: 'Landing Shard', c: marketingKit.landing_page },
-                                   { l: 'Email Drip Shard', c: marketingKit.email_sequence },
-                                   { l: 'Video Script Shard', c: marketingKit.video_script },
-                                   { l: 'Audio Script Shard', c: marketingKit.audio_script },
-                                   { l: 'Visual Style Guide', c: marketingKit.visual_style_guide }
-                                ].map((a, i) => (
-                                  a.c && <div key={i} className="space-y-4 group">
-                                     <div className="flex justify-between items-center">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{a.l}</h4>
-                                        <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button onClick={() => copy(a.c)} className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Copy</button>
-                                        </div>
-                                     </div>
-                                     <div className="p-6 bg-black/40 rounded-[2rem] text-[12px] text-slate-300 border border-white/5 min-h-[220px] whitespace-pre-wrap leading-relaxed select-all custom-scrollbar overflow-y-auto max-h-[400px] font-mono italic">{a.c}</div>
-                                  </div>
-                                ))}
-                             </div>
-                          </section>
-                        )}
-                      </div>
-                   ) : (
-                      <div className="h-full min-h-[700px] flex flex-col items-center justify-center text-center p-16 bg-[#0e1014]/60 border border-white/5 rounded-[5rem] backdrop-blur-xl group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-indigo-600/5 blur-[120px] rounded-full group-hover:bg-indigo-600/10 transition-colors"></div>
-                        <div className="w-32 h-32 bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-[3.5rem] flex items-center justify-center shadow-2xl border-4 border-white/5 mb-14 group-hover:scale-110 transition-transform duration-700 relative z-10">
-                          <svg className="w-14 h-14 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        </div>
-                        <h3 className="font-black text-5xl text-white tracking-tighter uppercase italic mb-8 relative z-10">Architect Standby.</h3>
-                        <p className="text-slate-500 max-w-[420px] text-[12px] font-bold uppercase tracking-[0.4em] leading-relaxed opacity-60 relative z-10">Initialize an objective seed or uplink a vision shard to begin high-performance synthesis.</p>
-                      </div>
-                   )}
-                </div>
+                  );
+                })()}
               </div>
-            )}
-            
-            {activeTab === 'manual' && (
-              <div className="space-y-20 animate-fade-in max-w-5xl mx-auto py-10">
-                <header className="space-y-6 text-center">
-                  <h2 className="text-7xl font-black text-white tracking-tighter uppercase italic leading-none">The Academy.</h2>
-                  <p className="text-indigo-500 text-xs font-bold uppercase tracking-[0.6em] italic">V4.0 Operational Protocols</p>
-                </header>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                   <section className="bg-[#0e1014] border border-white/5 p-12 rounded-[4rem] shadow-2xl space-y-8">
-                      <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
-                        <svg className="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                      <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Vision Shard Protocols</h3>
-                      <p className="text-xs text-slate-400 leading-relaxed font-medium">Architect.io's multi-modal engine analyzes uploaded images to infer structural patterns and design logic. Uplink a UI screenshot or a logic diagram to provide aesthetic and functional context for the synthesis engine.</p>
-                   </section>
-
-                   <section className="bg-[#0e1014] border border-white/5 p-12 rounded-[4rem] shadow-2xl space-y-8">
-                      <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
-                        <svg className="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                      </div>
-                      <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Cross-Platform Matrix</h3>
-                      <p className="text-xs text-slate-400 leading-relaxed font-medium">Every AI model has a specific "linguistic signature." Architect.io dynamically modifies the prompt structure based on your target model selection.</p>
-                   </section>
-                </div>
-              </div>
-            )}
-            
-            {activeTab === 'history' && (
-              <div className="space-y-16 animate-fade-in">
-                <header className="flex flex-col sm:flex-row items-end justify-between gap-10">
-                  <h2 className="text-7xl font-black text-white tracking-tighter uppercase italic leading-none">The Vault.</h2>
-                  <div className="relative w-full sm:w-[450px]">
-                    <input type="text" placeholder="Search records..." className="w-full px-10 py-6 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm text-white outline-none focus:border-indigo-500 transition-all pl-16 shadow-2xl font-black uppercase italic tracking-widest" />
-                    <svg className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </div>
-                </header>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                  {history.length === 0 && <p className="col-span-full text-center text-slate-600 uppercase font-black tracking-widest italic py-20">The Vault is currently empty.</p>}
-                  {history.map(item => (
-                    <div key={item.id} className="bg-[#0e1014] p-10 rounded-[3.5rem] border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer shadow-2xl group" onClick={() => { setForm(item.input); setOutput(item.output); setActiveTab('build'); }}>
-                      <div className="flex justify-between items-center mb-6">
-                        <span className="px-5 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest">{item.input.target_AI}</span>
-                        <span className="text-[9px] font-mono text-slate-700 uppercase">{new Date(item.timestamp).toLocaleDateString()}</span>
-                      </div>
-                      <h4 className="text-2xl font-black text-white uppercase italic tracking-tighter line-clamp-2 leading-tight group-hover:text-indigo-400 transition-colors">{item.input.high_level_goal}</h4>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'dev' && (
-              <div className="space-y-16 animate-fade-in">
-                <header className="flex flex-row items-end justify-between">
-                  <h2 className="text-7xl font-black text-white tracking-tighter uppercase italic leading-none">Console.</h2>
-                </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   <div className="bg-[#0e1014] border border-white/5 rounded-[3rem] p-10 space-y-8 shadow-2xl">
-                      <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest italic">Backend Node Diagnostic</h4>
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-3 border-b border-white/5 text-[10px] font-mono"><span className="text-slate-500 uppercase font-black">Status</span><span className={backendHealth === 'online' ? 'text-emerald-500' : 'text-rose-500'}>{backendHealth.toUpperCase()}</span></div>
-                        <div className="flex justify-between py-3 border-b border-white/5 text-[10px] font-mono"><span className="text-slate-500 uppercase font-black">Credits</span><span className="text-white">{userStatus.creditsRemaining.toLocaleString()} REMAINING</span></div>
-                        <div className="flex justify-between py-3 border-b border-white/5 text-[10px] font-mono"><span className="text-slate-500 uppercase font-black">Plan</span><span className="text-white italic">{userStatus.plan.toUpperCase()}</span></div>
-                      </div>
-                      <p className="text-[10px] text-slate-700 leading-relaxed font-bold uppercase tracking-widest italic">Render Uplink Operational. Verify secrets for Stripe synchronization.</p>
-                   </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      </main>
+        )}
+
+        {activeTab === 'BUILD' && !isGuidedMode && (
+          <div className="h-full flex overflow-hidden">
+            <aside className="w-[480px] border-r border-white/5 bg-[#08090b] p-12 overflow-y-auto custom-scrollbar space-y-12 flex-shrink-0 relative z-10" onClick={() => setOpenDropdown(null)}>
+              <div className="flex items-center gap-5 text-emerald-400 mb-2">
+                <Icons.Robot className="w-10 h-10" /> 
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.4em] italic">ARCHITECT ACTIVE</h4>
+                  <p className="text-[10px] font-bold text-emerald-600/60 uppercase">Manual Matrix Control Enabled</p>
+                </div>
+              </div>
+              <section className="space-y-4">
+                <TextArea label="Synthesis Seed" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="Describe your prompt requirements..." className="min-h-[160px] text-lg font-medium" />
+                <button onClick={() => { setLoading(true); magicFillMetaInputs(form.high_level_goal, form.language).then(res => { setForm(p => ({ ...p, ...res })); setLoading(false); }); }} className="w-full py-4 border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 text-[11px] font-black uppercase rounded-[1.5rem] flex items-center justify-center gap-3 hover:bg-indigo-500/10 transition-all shadow-lg active:scale-95"><Icons.Sparkles className="w-5 h-5" /> Meta-Fill Architecture</button>
+              </section>
+              
+              <div className="space-y-8 pt-8 border-t border-white/5">
+                <h5 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Design Matrix</h5>
+                {Object.keys(SHARDS).map(key => (
+                  <div key={key} className="relative" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setOpenDropdown(openDropdown === key ? null : key)} className="w-full p-5 bg-white/5 border border-white/5 rounded-[1.5rem] text-left text-[11px] font-black text-slate-400 flex justify-between items-center transition-all hover:border-white/10 hover:bg-white/[0.07] uppercase tracking-widest">
+                      {(key.replace('web_', '').replace('_', ' '))}
+                      <Icons.ChevronDown className={`w-4 h-4 transition-transform duration-300 ${openDropdown === key ? 'rotate-180 text-indigo-400' : ''}`} />
+                    </button>
+                    <SuggestionDropdown field={key} items={(SHARDS as any)[key]} />
+                    { (form as any)[key] && (
+                      <div className="mt-3 text-[10px] font-bold text-indigo-400 italic px-4 flex flex-wrap gap-2">
+                        { (form as any)[key].split(', ').map((s: string) => <span key={s} className="bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">{s}</span>) }
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Select label="Model" value={form.target_AI} onChange={e => setForm(p => ({ ...p, target_AI: e.target.value as any }))}>
+                  {TARGET_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
+                </Select>
+                <Select label="Reasoning" value={form.reasoning_visibility} onChange={e => setForm(p => ({ ...p, reasoning_visibility: e.target.value as any }))}>
+                  <option value="brief">Brief</option>
+                  <option value="detailed">Detailed</option>
+                  <option value="hidden">Hidden</option>
+                </Select>
+              </div>
+
+              <button onClick={handleExecute} disabled={!form.high_level_goal} className="w-full py-7 bg-indigo-600 text-white font-black uppercase tracking-[0.5em] rounded-full shadow-[0_30px_60px_rgba(79,70,229,0.3)] hover:bg-indigo-500 active:scale-95 transition-all text-sm mt-8">Synthesize Shards</button>
+            </aside>
+            <main className="flex-1 p-20 overflow-y-auto custom-scrollbar bg-[#050608] relative">
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
+              {output ? (
+                <div className="max-w-5xl mx-auto space-y-32 pb-40 animate-fade-in">
+                  <div className="space-y-16">
+                    <div className="flex justify-between items-end border-b border-white/10 pb-16">
+                      <div className="space-y-4">
+                        <h3 className="text-8xl font-black italic tracking-tighter uppercase leading-none text-white">Synthesized Shard</h3>
+                        <div className="flex gap-4">
+                          <span className="text-indigo-500 font-black text-[11px] uppercase tracking-widest border border-indigo-500/30 px-3 py-1 rounded-full">Output V6.0</span>
+                          <span className="text-slate-500 font-black text-[11px] uppercase tracking-widest border border-white/10 px-3 py-1 rounded-full">{form.target_AI}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => navigator.clipboard.writeText(output.FINAL_PROMPT)} className="group flex items-center gap-3 px-12 py-5 bg-white text-black font-black uppercase text-xs rounded-full hover:bg-slate-200 transition-all shadow-2xl active:scale-95 tracking-widest"><Icons.Copy className="w-5 h-5 group-hover:scale-110 transition-transform" /> Copy Architecture</button>
+                    </div>
+                    <div className="bg-[#0e0f14] border border-white/5 p-20 rounded-[4rem] text-slate-300 font-mono text-xl leading-relaxed shadow-[0_60px_100px_rgba(0,0,0,0.6)] whitespace-pre-wrap relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-8 text-white/5 pointer-events-none uppercase font-black tracking-[1em] text-4xl transform rotate-90 origin-top-right">ARCHITECT</div>
+                      {output.FINAL_PROMPT}
+                    </div>
+                  </div>
+
+                  {generatedVisual && (
+                    <div className="space-y-12 animate-fade-in">
+                      <h4 className="text-[12px] font-black uppercase text-indigo-500 tracking-[0.6em] italic border-l-4 border-indigo-600 pl-6">Visual Concept Synthesis</h4>
+                      <div className="relative group">
+                        <div className="absolute -inset-4 bg-indigo-500/10 rounded-[4rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <img src={generatedVisual} className="w-full rounded-[3.5rem] border border-white/10 shadow-3xl relative" alt="Synthesis Visual" />
+                      </div>
+                    </div>
+                  )}
+
+                  {marketingKit && (
+                    <div className="space-y-20 pt-20 border-t border-white/5 animate-fade-in">
+                      <div className="flex items-center gap-6">
+                        <Icons.Sparkles className="w-12 h-12 text-emerald-500" />
+                        <div>
+                          <h4 className="text-5xl font-black italic tracking-tighter uppercase text-white">Growth Core</h4>
+                          <p className="text-emerald-500 font-black text-[11px] uppercase tracking-widest mt-2 italic">Multi-Channel Marketing Synthesis Complete</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {[
+                          {t: "Landing Architecture", c: marketingKit.landing_page, i: Icons.Globe}, 
+                          {t: "Acquisition Shards", c: marketingKit.social_ads, i: Icons.Sparkles}, 
+                          {t: "Operational Logic", c: marketingKit.email_sequence, i: Icons.Robot}, 
+                          {t: "Visual Protocol", c: marketingKit.visual_style_guide, i: Icons.Shield}
+                        ].map((item, i) => (
+                          <div key={i} className="bg-[#0e0f14] p-16 rounded-[3.5rem] border border-white/5 space-y-8 group hover:border-indigo-500/20 transition-all duration-500 shadow-2xl">
+                            <div className="flex items-center gap-4">
+                              <item.i className="w-8 h-8 text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                              <h5 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.3em] italic group-hover:text-white transition-colors">{item.t}</h5>
+                            </div>
+                            <div className="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap font-medium">{item.c}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-[0.03] pointer-events-none select-none">
+                  <h1 className="text-[15vw] font-black italic uppercase leading-[0.8] tracking-tighter">AWAITING<br/>QUANTUM<br/>SEED</h1>
+                </div>
+              )}
+            </main>
+          </div>
+        )}
+
+        {activeTab === 'HISTORY' && (
+          <div className="h-full flex flex-col items-center justify-center p-20 animate-fade-in">
+             <div className="text-center space-y-6">
+                <Icons.Robot className="w-20 h-20 text-slate-800 mx-auto" />
+                <h3 className="text-3xl font-black italic uppercase tracking-tighter">Vault Empty</h3>
+                <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">No previous synthesis records found in local memory</p>
+                <button onClick={() => setActiveTab('BUILD')} className="text-indigo-500 font-black uppercase text-[11px] tracking-widest mt-10 border border-indigo-500/20 px-10 py-4 rounded-full hover:bg-indigo-500/10 transition-all">Initialize First Synthesis</button>
+             </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
