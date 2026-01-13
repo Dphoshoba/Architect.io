@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { PromptInput, PromptOutput, MarketingKit } from "../types";
+import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: World's Leading Prompt Engineer & LLM Architect.
@@ -15,14 +15,6 @@ RAIC FRAMEWORK:
 
 MODEL RECOMMENDATION LOGIC:
 Evaluate the final synthesized prompt and suggest 1-3 specific LLMs (e.g., Gemini 3 Pro, GPT-4o, Claude 3.5 Sonnet) that would best execute it.
-Criteria: 
-- Logic Depth (DeepSeek R1/Gemini 3 Pro for complex reasoning)
-- Coding Proficiency (Claude 3.5 Sonnet for code-heavy tasks)
-- General Utility (GPT-4o for versatile creative/vision tasks)
-- Speed (Gemini 3 Flash for extraction/summarization)
-
-STRICT RULE: If a "Negative Prompt" is provided, include a "CRITICAL CONSTRAINTS / AVOIDANCE" section.
-Return ONLY a valid JSON object matching the provided schema.
 `;
 
 const cleanJsonResponse = (text: string | undefined) => {
@@ -39,6 +31,52 @@ const cleanJsonResponse = (text: string | undefined) => {
   }
 };
 
+export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const promptText = `
+    Analyze the current synthesis matrix for a ${input.task_type} project in the ${input.prof_domain || input.web_type || 'General'} domain.
+    Aesthetic: ${input.web_aesthetic || 'Unspecified'}.
+    Goal: ${input.high_level_goal || 'Defining core objective'}.
+
+    Identify 3-4 critical missing design or logic parameters (e.g., Font Hierarchies, Color Chromatics, Interaction Logic, Data Integrity Protocols) that would elevate this to "Mastermind" level.
+    For each category, provide 3 distinct high-fidelity options for the user to choose from.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: promptText,
+    config: {
+      systemInstruction: "You are Dr. Architect, a PhD-holding mastermind. Propose sophisticated refinements for a high-level technical prompt.",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            category: { type: Type.STRING },
+            reasoning: { type: Type.STRING },
+            options: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  label: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  technical_value: { type: Type.STRING }
+                },
+                required: ["label", "description", "technical_value"]
+              }
+            }
+          },
+          required: ["category", "reasoning", "options"]
+        }
+      }
+    }
+  });
+
+  return cleanJsonResponse(response.text);
+};
+
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
@@ -46,14 +84,9 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const promptText = `
     SYNTESIZE MASTER PROMPT:
     Goal: ${input.high_level_goal}
-    Negative Constraints (AVOID THESE): ${input.negative_prompt || 'None'}
-    Target Model Preference: ${input.target_AI}
-    Context: 
-    - Domain: ${input.prof_domain || input.web_type || ''}
-    - Style: ${input.web_aesthetic || ''}
-    - Type: ${input.task_type || ''}
-    - Format: ${input.output_format}
-    Framework: RAIC (Role, Audience, Instruction, Constraints)
+    Negative Constraints: ${input.negative_prompt || 'None'}
+    Context: ${input.prof_domain || input.web_type || ''} | ${input.web_aesthetic || ''}
+    Framework: RAIC
   `;
 
   const response = await ai.models.generateContent({
@@ -90,20 +123,6 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
 
 export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro' | 'imagen' = 'flash'): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  if (model === 'imagen') {
-    const response = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
-      prompt: `Cinematic high-fidelity professional concept: ${prompt}`,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
-        aspectRatio: '16:9',
-      },
-    });
-    return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
-  }
-
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
@@ -115,7 +134,6 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
       } 
     }
   });
-  
   for (const part of response.candidates?.[0]?.content?.parts || []) {
     if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
   }
@@ -126,9 +144,9 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Synthesis marketing kit for: "${goal}". Based on: "${prompt}". Language: ${language}.`,
+    contents: `Marketing assets for: "${goal}" using prompt "${prompt}". Language: ${language}.`,
     config: {
-      systemInstruction: "Create high-converting marketing assets including social ads, landing page copy, and email sequences.",
+      systemInstruction: "Create marketing assets including social ads, landing page copy, email sequences, and style guides.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,

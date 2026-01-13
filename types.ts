@@ -18,6 +18,18 @@ export interface SuggestedModel {
   reasoning: string;
 }
 
+export interface MastermindSuggestionOption {
+  label: string;
+  description: string;
+  technical_value: string;
+}
+
+export interface MastermindSuggestionCategory {
+  category: string;
+  reasoning: string;
+  options: MastermindSuggestionOption[];
+}
+
 export interface PromptInput {
   target_AI: TargetAI;
   high_level_goal: string;
