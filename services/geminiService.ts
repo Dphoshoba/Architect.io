@@ -3,7 +3,8 @@ import { PromptInput, PromptOutput, MarketingKit } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: World's Leading Prompt Engineer & LLM Architect.
-MISSION: Synthesize "Production-Grade" prompts using the RAIC framework.
+MISSION: Synthesize "Production-Grade" prompts using the RAIC framework and recommend the best deployment targets.
+
 RAIC FRAMEWORK:
 1. <role>: Ultra-Expert Persona with high-density knowledge.
 2. <audience>: Precisely defined expertise level.
@@ -12,7 +13,15 @@ RAIC FRAMEWORK:
 5. <constraints>: Style rules, anti-patterns, tone mapping.
 6. <output_format>: JSON or Markdown structural definition.
 
-STRICT RULE: If a "Negative Prompt" is provided, include a "CRITICAL CONSTRAINTS / AVOIDANCE" section in the final output.
+MODEL RECOMMENDATION LOGIC:
+Evaluate the final synthesized prompt and suggest 1-3 specific LLMs (e.g., Gemini 3 Pro, GPT-4o, Claude 3.5 Sonnet) that would best execute it.
+Criteria: 
+- Logic Depth (DeepSeek R1/Gemini 3 Pro for complex reasoning)
+- Coding Proficiency (Claude 3.5 Sonnet for code-heavy tasks)
+- General Utility (GPT-4o for versatile creative/vision tasks)
+- Speed (Gemini 3 Flash for extraction/summarization)
+
+STRICT RULE: If a "Negative Prompt" is provided, include a "CRITICAL CONSTRAINTS / AVOIDANCE" section.
 Return ONLY a valid JSON object matching the provided schema.
 `;
 
@@ -38,7 +47,7 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
     SYNTESIZE MASTER PROMPT:
     Goal: ${input.high_level_goal}
     Negative Constraints (AVOID THESE): ${input.negative_prompt || 'None'}
-    Target Model: ${input.target_AI}
+    Target Model Preference: ${input.target_AI}
     Context: 
     - Domain: ${input.prof_domain || input.web_type || ''}
     - Style: ${input.web_aesthetic || ''}
@@ -58,9 +67,20 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
         type: Type.OBJECT,
         properties: {
           FINAL_PROMPT: { type: Type.STRING },
-          VISUAL_INSPIRATION_PROMPT: { type: Type.STRING }
+          VISUAL_INSPIRATION_PROMPT: { type: Type.STRING },
+          SUGGESTED_MODELS: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                model_name: { type: Type.STRING },
+                reasoning: { type: Type.STRING }
+              },
+              required: ["model_name", "reasoning"]
+            }
+          }
         },
-        required: ["FINAL_PROMPT", "VISUAL_INSPIRATION_PROMPT"]
+        required: ["FINAL_PROMPT", "VISUAL_INSPIRATION_PROMPT", "SUGGESTED_MODELS"]
       }
     }
   });

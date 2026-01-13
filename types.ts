@@ -13,6 +13,11 @@ export type TargetAI =
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
 
+export interface SuggestedModel {
+  model_name: string;
+  reasoning: string;
+}
+
 export interface PromptInput {
   target_AI: TargetAI;
   high_level_goal: string;
@@ -61,6 +66,7 @@ export interface PromptOutput {
   NOTES_FOR_HUMAN_PROMPT_ENGINEER?: string[];
   VISUAL_INSPIRATION_PROMPT?: string;
   MARKETING_KIT?: MarketingKit;
+  SUGGESTED_MODELS?: SuggestedModel[];
 }
 
 export interface HistoryItem {

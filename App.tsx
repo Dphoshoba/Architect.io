@@ -24,6 +24,7 @@ const Icons = {
   Video: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
   File: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Camera: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Cpu: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
 };
 
 const SHARDS = {
@@ -101,7 +102,6 @@ const GUIDED_FLOWS = {
 
 const TARGET_MODELS: TargetAI[] = ["Gemini 3 Flash", "Gemini 3 Pro", "GPT-4o", "Claude 3.5 Sonnet", "DeepSeek R1"];
 
-// Base64 Helpers
 function decode(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -198,7 +198,6 @@ const App: React.FC = () => {
   };
 
   const handleCopyText = async (text: string) => {
-    // Ensuring document is focused or handled through a direct promise
     try {
       if (!window.isSecureContext) {
         throw new Error("Clipboard API requires a secure context");
@@ -207,8 +206,17 @@ const App: React.FC = () => {
       alert("Architect Shard successfully synchronized to clipboard.");
     } catch (err) {
       console.error("Clipboard Failure:", err);
-      // Fallback for focus issue: sometimes prompt or alert helps re-focus if user interacts
-      alert("Clipboard focus interrupted. Please ensure the window is active and try again.");
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert("Architect Shard successfully synchronized to clipboard (fallback mode).");
+      } catch (e) {
+        alert("Manual copy required. Matrix focus interrupted.");
+      }
+      document.body.removeChild(textArea);
     }
   };
 
@@ -280,7 +288,7 @@ const App: React.FC = () => {
       const updated = [newItem, ...history].slice(0, 50);
       setHistory(updated);
       localStorage.setItem('architect_history', JSON.stringify(updated));
-      setUserStatus(p => ({ ...p, creditsRemaining: Math.max(0, p.creditsRemaining - 10) }));
+      setUserStatus(p => ({ ...p, creditsRemaining: Math.max(0, userStatus.creditsRemaining - 10) }));
     } catch (e: any) {
       console.error(e);
       alert("Synthesis matrix failed. Check connectivity.");
@@ -340,7 +348,7 @@ const App: React.FC = () => {
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-          systemInstruction: "You are the Architect.io Quantum Advisor. Synthesize logic prompts through multimodal voice session."
+          systemInstruction: "You are the Architect.io Advisor. Assist in building high-fidelity prompts."
         }
       });
       liveSessionRef.current = await sessionPromise;
@@ -384,7 +392,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-10">
           <div className="flex flex-col cursor-pointer" onClick={() => {setOutput(null); setGuidedState(p => ({...p, category: null, index: 0})); setIsGuidedMode(true);}}>
             <h1 className="text-2xl font-black italic tracking-tighter leading-none">ARCHITECT<span className="text-indigo-500">.IO</span></h1>
-            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 italic">Quantum Synthesis Protocol</p>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 italic leading-none">Quantum Synthesis Protocol</p>
           </div>
           <nav className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
             {['BUILD', 'HISTORY', 'ACCOUNT'].map(tab => (
@@ -411,7 +419,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* GUIDED MODE HUB */}
+        {/* GUIDED HUB */}
         {activeTab === 'BUILD' && isGuidedMode && !guidedState.category && (
           <div className="h-full flex flex-col items-center justify-center px-10 relative overflow-hidden bg-[#050608]">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1400px] h-[1400px] bg-indigo-600/5 rounded-full blur-[200px] pointer-events-none" />
@@ -433,22 +441,21 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* GUIDED MODE FLOW */}
+        {/* GUIDED STEPS */}
         {activeTab === 'BUILD' && isGuidedMode && guidedState.category && (
           <div className="h-full flex overflow-hidden animate-fade-in bg-[#050608]">
             <div className="flex-1 flex flex-col p-16 overflow-y-auto custom-scrollbar relative">
-              <button onClick={() => setGuidedState(p => ({ ...p, category: null, index: 0, refinements: {} }))} className="absolute top-16 left-16 flex items-center gap-3 text-[11px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest italic"><Icons.ArrowLeft className="w-4 h-4" /> Reset Evolution Matrix</button>
+              <button onClick={() => setGuidedState(p => ({ ...p, category: null, index: 0, refinements: {} }))} className="absolute top-16 left-16 flex items-center gap-3 text-[11px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest italic"><Icons.ArrowLeft className="w-4 h-4" /> Reset Architect Protocol</button>
               
               <div className="max-w-7xl mx-auto w-full pt-20 space-y-24">
                 {(() => {
                   const flow = GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS];
-                  
                   if (guidedState.category === 'Live') {
                     return (
                        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col gap-10">
                           <div className="text-center">
-                            <h2 className="text-6xl font-black italic tracking-tighter uppercase text-white mb-4">Voice Protocol</h2>
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs italic">Real-time Multimodal Synthesis</p>
+                            <h2 className="text-6xl font-black italic tracking-tighter uppercase text-white mb-4">Voice Synthesis</h2>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs italic leading-none">Real-time Multimodal Evolution</p>
                           </div>
                           <div className="glass rounded-[3.5rem] p-12 h-[450px] overflow-y-auto custom-scrollbar space-y-4 shadow-2xl">
                              {liveTranscription.length === 0 && <p className="text-slate-800 font-black uppercase text-center py-24 tracking-widest opacity-20 italic">Voice Matrix Standby...</p>}
@@ -483,15 +490,7 @@ const App: React.FC = () => {
                         {options.map((opt: string) => {
                           const isSelected = ((form as any)[q.key] || "").split(', ').includes(opt);
                           return (
-                            <button 
-                              key={opt} 
-                              onClick={() => toggleShard(q.key, opt)} 
-                              className={`p-10 rounded-[2.5rem] text-[13px] font-black uppercase text-center border transition-all duration-300 shadow-xl relative overflow-hidden group ${
-                                isSelected 
-                                ? 'bg-indigo-600 border-indigo-400 text-white scale-[1.05] shadow-[0_0_30px_rgba(79,70,229,0.4)]' 
-                                : 'bg-[#11141d]/80 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-300'
-                              }`}
-                            >
+                            <button key={opt} onClick={() => toggleShard(q.key, opt)} className={`p-10 rounded-[2.5rem] text-[13px] font-black uppercase text-center border transition-all duration-300 shadow-xl relative overflow-hidden group ${isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-[1.05] shadow-[0_0_30px_rgba(79,70,229,0.4)]' : 'bg-[#11141d]/80 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-300'}`}>
                               {opt}
                               <div className={`absolute top-0 left-0 w-full h-1 bg-white/20 transition-transform duration-500 origin-left ${isSelected ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 opacity-20'}`} />
                             </button>
@@ -499,7 +498,6 @@ const App: React.FC = () => {
                         })}
                       </div>
 
-                      {/* Multimodal & Refinement Input */}
                       <div className="w-full max-w-5xl mx-auto space-y-12 mt-12 bg-white/5 p-12 rounded-[4.5rem] border border-white/5 shadow-inner">
                         <div className="relative group">
                           <TextInput 
@@ -513,8 +511,6 @@ const App: React.FC = () => {
                              <button onClick={() => fileInputRef.current?.click()} className="text-slate-500 hover:text-indigo-400 transition-colors" title="Upload Media Reference Shard"><Icons.Photo className="w-8 h-8" /></button>
                              <button onClick={() => fileInputRef.current?.click()} className="text-slate-500 hover:text-indigo-400 transition-colors" title="Upload Document Logic Shard"><Icons.File className="w-8 h-8" /></button>
                              <button className="text-slate-500 hover:text-indigo-400 transition-colors" title="Voice Matrix Transcription"><Icons.Mic className="w-8 h-8" /></button>
-                             <button className="text-slate-500 hover:text-indigo-400 transition-colors" title="Video Reference Link"><Icons.Video className="w-8 h-8" /></button>
-                             <button className="text-slate-500 hover:text-indigo-400 transition-colors" title="Camera Evolution Link"><Icons.Camera className="w-8 h-8" /></button>
                           </div>
                         </div>
                         {form.media_ref_base64 && (
@@ -522,7 +518,7 @@ const App: React.FC = () => {
                              <img src={form.media_ref_base64} className="w-32 h-32 object-cover rounded-3xl shadow-2xl group-hover:scale-105 transition-transform" />
                              <div>
                                <p className="text-[11px] font-black uppercase text-emerald-400 italic tracking-widest leading-none">Visual Reference Shard Synchronized</p>
-                               <button onClick={() => setForm(p => ({...p, media_ref_base64: undefined}))} className="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-3 hover:text-rose-300 flex items-center gap-2 italic"><Icons.Trash className="w-4 h-4" /> Purge Matrix Shard</button>
+                               <button onClick={() => setForm(p => ({...p, media_ref_base64: undefined}))} className="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-3 hover:text-rose-300 flex items-center gap-2 italic"><Icons.Trash className="w-4 h-4" /> Purge Shard</button>
                              </div>
                           </div>
                         )}
@@ -530,35 +526,12 @@ const App: React.FC = () => {
 
                       <div className="flex flex-col items-center gap-12 pt-16">
                         {guidedState.index < flow.questions.length - 1 ? (
-                          <button 
-                            onClick={() => setGuidedState(p => ({ ...p, index: p.index + 1 }))} 
-                            className="px-36 py-10 bg-white text-black font-black uppercase text-[12px] rounded-full shadow-3xl hover:scale-105 transition-all tracking-[0.6em] active:scale-95 italic"
-                          >
-                            Proceed Matrix
-                          </button>
+                          <button onClick={() => setGuidedState(p => ({ ...p, index: p.index + 1 }))} className="px-36 py-10 bg-white text-black font-black uppercase text-[12px] rounded-full shadow-3xl hover:scale-105 transition-all tracking-[0.6em] active:scale-95 italic">Proceed Matrix</button>
                         ) : (
                           <div className="w-full max-w-3xl space-y-12">
-                            <TextArea 
-                              label="Core Project Goal (Positive Matrix)" 
-                              value={form.high_level_goal} 
-                              onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} 
-                              placeholder="Describe the desired synthesis outcome..." 
-                              className="bg-white/5 border-white/10 text-xl py-10 px-12 rounded-[4.5rem] min-h-[180px]" 
-                            />
-                            <TextArea 
-                              label="Avoidance Constraints (Negative Matrix)" 
-                              value={form.negative_prompt} 
-                              onChange={e => setForm(p => ({ ...p, negative_prompt: e.target.value }))} 
-                              placeholder="Describe what the AI should avoid..." 
-                              className="bg-[#1a1c24]/50 border-white/5 text-lg py-10 px-12 rounded-[4.5rem] min-h-[140px]" 
-                            />
-                            <button 
-                              onClick={handleExecute} 
-                              disabled={!form.high_level_goal && Object.keys(guidedState.refinements).length === 0} 
-                              className="w-full py-12 bg-indigo-600 text-white font-black uppercase text-sm rounded-full shadow-[0_0_60px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all tracking-[0.7em] active:scale-95 italic"
-                            >
-                              Initialize Full Synthesis
-                            </button>
+                            <TextArea label="Core Project Goal (Positive Matrix)" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="Describe the desired synthesis outcome..." className="bg-white/5 border-white/10 text-xl py-10 px-12 rounded-[4.5rem] min-h-[180px]" />
+                            <TextArea label="Avoidance Constraints (Negative Matrix)" value={form.negative_prompt} onChange={e => setForm(p => ({ ...p, negative_prompt: e.target.value }))} placeholder="Describe what the AI should avoid..." className="bg-[#1a1c24]/50 border-white/5 text-lg py-10 px-12 rounded-[4.5rem] min-h-[140px]" />
+                            <button onClick={handleExecute} disabled={!form.high_level_goal && Object.keys(guidedState.refinements).length === 0} className="w-full py-12 bg-indigo-600 text-white font-black uppercase text-sm rounded-full shadow-[0_0_60px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all tracking-[0.7em] active:scale-95 italic">Initialize Full Synthesis</button>
                           </div>
                         )}
                       </div>
@@ -570,62 +543,43 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* MANUAL ARCHITECT MATRIX SIDEBAR */}
+        {/* MANUAL MATRIX */}
         {activeTab === 'BUILD' && !isGuidedMode && (
           <div className="h-full flex animate-fade-in bg-[#050608]">
              <aside className="w-[560px] border-r border-white/5 bg-[#08090b] p-12 overflow-y-auto custom-scrollbar space-y-10 flex-shrink-0" onClick={() => setOpenDropdown(null)}>
-               
-               {/* Back to Guided Hub */}
                <button onClick={() => {setIsGuidedMode(true); setGuidedState(p => ({...p, category: null}));}} className="flex items-center gap-3 text-[11px] font-black text-slate-500 hover:text-white transition-colors uppercase tracking-[0.3em] italic mb-6 group">
                  <Icons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Vector Matrix
                </button>
-
                <div className="flex items-center gap-5 text-indigo-500 mb-2">
                  <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-inner">
                    <Icons.Robot className="w-10 h-10" /> 
                  </div>
                  <div>
                    <h4 className="text-[13px] font-black uppercase tracking-[0.6em] italic leading-tight">QUANTUM ARCHITECT</h4>
-                   <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Manual Protocol Synthesis</p>
+                   <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none mt-1">Manual Protocol Synthesis</p>
                  </div>
                </div>
-
                <div className="space-y-8">
                  <div className="relative group">
-                    <TextArea 
-                      label="Synthesis Directive (Core Objective)" 
-                      value={form.high_level_goal} 
-                      onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} 
-                      placeholder="Core project objective shard..." 
-                      className="min-h-[180px] text-lg font-medium pr-16 pt-10 rounded-[3.5rem]" 
-                    />
+                    <TextArea label="Synthesis Directive (Core Objective)" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="Core project objective shard..." className="min-h-[180px] text-lg font-medium pr-16 pt-10 rounded-[3.5rem]" />
                     <div className="absolute right-5 bottom-5 flex flex-col gap-4">
-                       <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-indigo-400 transition-all hover:bg-white/10 shadow-lg" title="Link Media Reference Matrix"><Icons.Photo className="w-6 h-6" /></button>
-                       <button className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-indigo-400 transition-all hover:bg-white/10 shadow-lg" title="Voice Link Shard"><Icons.Mic className="w-6 h-6" /></button>
+                       <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-indigo-400 transition-all hover:bg-white/10 shadow-lg" title="Link Media Shard"><Icons.Photo className="w-6 h-6" /></button>
+                       <button className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-indigo-400 transition-all hover:bg-white/10 shadow-lg" title="Voice Shard"><Icons.Mic className="w-6 h-6" /></button>
                     </div>
                  </div>
-
-                 <TextArea 
-                   label="Avoidance Shards (Negative Constraints)" 
-                   value={form.negative_prompt} 
-                   onChange={e => setForm(p => ({ ...p, negative_prompt: e.target.value }))} 
-                   placeholder="Prohibited patterns/styles..." 
-                   className="min-h-[110px] text-md rounded-[3.5rem]" 
-                 />
+                 <TextArea label="Avoidance Shards (Negative Constraints)" value={form.negative_prompt} onChange={e => setForm(p => ({ ...p, negative_prompt: e.target.value }))} placeholder="Prohibited styles..." className="min-h-[110px] text-md rounded-[3.5rem]" />
                </div>
-
                {form.media_ref_base64 && (
                  <div className="flex items-center gap-5 p-5 bg-white/5 border border-white/5 rounded-[2.5rem] shadow-inner animate-fade-in group">
                    <img src={form.media_ref_base64} className="w-16 h-16 object-cover rounded-2xl shadow-xl group-hover:scale-105 transition-transform" />
                    <div className="flex-1 overflow-hidden">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase italic tracking-widest">Media Matrix Reference Loaded</p>
-                     <button onClick={() => setForm(p => ({...p, media_ref_base64: undefined}))} className="text-rose-500 text-[9px] font-bold uppercase mt-1 tracking-widest italic flex items-center gap-1"><Icons.Trash className="w-3 h-3" /> Purge Reference</button>
+                     <p className="text-[10px] font-black text-emerald-400 uppercase italic tracking-widest leading-none">Media Shard Synchronized</p>
+                     <button onClick={() => setForm(p => ({...p, media_ref_base64: undefined}))} className="text-rose-500 text-[9px] font-bold uppercase mt-1 tracking-widest italic flex items-center gap-1"><Icons.Trash className="w-3 h-3" /> Purge</button>
                    </div>
                  </div>
                )}
-               
                <div className="space-y-6 pt-4 border-t border-white/5">
-                  <h5 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em] italic pb-2">Synthesis Context Shards</h5>
+                  <h5 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em] italic pb-2 leading-none">Synthesis Context Shards</h5>
                   {['web_type', 'prof_domain', 'img_subject', 'web_aesthetic', 'tone_style', 'task_type', 'output_format'].map(key => (
                     <div key={key} className="relative" onClick={e => e.stopPropagation()}>
                        <button onClick={() => setOpenDropdown(openDropdown === key ? null : key)} className="w-full p-6 bg-white/5 border border-white/5 rounded-2xl text-left text-[11px] font-black text-slate-400 flex justify-between items-center transition-all hover:border-white/10 uppercase tracking-widest group italic">
@@ -639,21 +593,18 @@ const App: React.FC = () => {
                     </div>
                   ))}
                </div>
-
                <div className="grid grid-cols-2 gap-5">
                   <Select label="Model Grid" value={form.target_AI} onChange={e => setForm(p => ({ ...p, target_AI: e.target.value as any }))}>
                     {TARGET_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
                   </Select>
-                  <Select label="Matrix Reasoning" value={form.reasoning_visibility} onChange={e => setForm(p => ({ ...p, reasoning_visibility: e.target.value as any }))}>
-                    <option value="brief">Brief Shard</option>
-                    <option value="detailed">Deep Shard</option>
-                    <option value="hidden">Stealth Mode</option>
+                  <Select label="Reasoning" value={form.reasoning_visibility} onChange={e => setForm(p => ({ ...p, reasoning_visibility: e.target.value as any }))}>
+                    <option value="brief">Brief</option>
+                    <option value="detailed">Deep</option>
+                    <option value="hidden">Stealth</option>
                   </Select>
                </div>
-
                <button onClick={handleExecute} disabled={!form.high_level_goal} className="w-full py-11 bg-indigo-600 text-white font-black uppercase tracking-[0.7em] rounded-full shadow-[0_0_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 active:scale-95 transition-all text-xs mt-8 italic">Synthesize Full Matrix</button>
              </aside>
-
              <main className="flex-1 bg-[#050608] flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.02] select-none pointer-events-none flex items-center justify-center">
                    <h1 className="text-[14vw] font-black italic uppercase leading-none tracking-tighter text-center">AWAITING<br/>QUANTUM<br/>SEED</h1>
@@ -662,7 +613,7 @@ const App: React.FC = () => {
                   <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5 shadow-inner">
                     <Icons.Sparkles className="w-12 h-12 text-slate-800 animate-pulse" />
                   </div>
-                  <p className="text-slate-700 font-black uppercase tracking-[1.2em] text-[11px] italic">Terminal Ready for Manual Matrix Definition...</p>
+                  <p className="text-slate-700 font-black uppercase tracking-[1.2em] text-[11px] italic">Ready for Manual Shard Definition...</p>
                 </div>
              </main>
           </div>
@@ -674,46 +625,69 @@ const App: React.FC = () => {
                <div className="absolute top-0 right-0 w-[1200px] h-[1200px] bg-indigo-600/5 rounded-full blur-[200px] pointer-events-none" />
                <div className="max-w-7xl mx-auto pb-48">
                    <div className="flex justify-between items-center mb-10">
-                     <button onClick={() => { setOutput(null); setGuidedState(p => ({ ...p, category: null, index: 0, refinements: {} })); }} className="flex items-center gap-3 text-[11px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest italic group"><Icons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Reset Architect Protocol</button>
+                     <button onClick={() => { setOutput(null); setGuidedState(p => ({ ...p, category: null, index: 0, refinements: {} })); }} className="flex items-center gap-3 text-[11px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest italic group"><Icons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Reset Evolution</button>
                      <div className="flex gap-4">
                         <button onClick={handleShare} className="p-5 bg-white/5 rounded-full text-slate-400 hover:text-indigo-400 hover:bg-white/10 transition-all shadow-xl" title="Share Complete Synthesis"><Icons.Share className="w-7 h-7" /></button>
-                        <button onClick={handleDownloadPrompt} className="p-5 bg-white/5 rounded-full text-slate-400 hover:text-emerald-400 hover:bg-white/10 transition-all shadow-xl" title="Export Prompt Source Shard"><Icons.Download className="w-7 h-7" /></button>
+                        <button onClick={handleDownloadPrompt} className="p-5 bg-white/5 rounded-full text-slate-400 hover:text-emerald-400 hover:bg-white/10 transition-all shadow-xl" title="Export Prompt Shard"><Icons.Download className="w-7 h-7" /></button>
                      </div>
                    </div>
 
                    {output && (
                      <div className="space-y-40">
+                        {/* THE PROMPT */}
                         <div className="space-y-16">
                             <div className="flex justify-between items-end border-b border-white/10 pb-12">
                               <div>
                                 <h3 className="text-8xl font-black italic tracking-tighter uppercase leading-none text-white selection:bg-indigo-500">Synthesized Shard</h3>
-                                <p className="text-indigo-500 font-bold uppercase tracking-[0.6em] mt-6 text-xs italic">RAIC Master Logic Core Definition</p>
+                                <p className="text-indigo-500 font-bold uppercase tracking-[0.6em] mt-6 text-xs italic leading-none">RAIC Master Logic Core Definition</p>
                               </div>
-                              <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="group flex items-center gap-5 px-16 py-6 bg-white text-black font-black uppercase text-[12px] rounded-full hover:bg-slate-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] active:scale-95 tracking-[0.3em] italic"><Icons.Copy className="w-6 h-6" /> Copy Synthesis Shard</button>
+                              <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="group flex items-center gap-5 px-16 py-6 bg-white text-black font-black uppercase text-[12px] rounded-full hover:bg-slate-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] active:scale-95 tracking-[0.3em] italic leading-none"><Icons.Copy className="w-6 h-6" /> Copy Logic</button>
                             </div>
-                            <div className="bg-[#0e0f14] border border-white/5 p-24 rounded-[5.5rem] text-slate-300 font-mono text-2xl leading-relaxed relative overflow-hidden shadow-[0_0_120px_rgba(0,0,0,0.6)] whitespace-pre-wrap selection:bg-indigo-500/50">
-                              <div className="absolute top-0 right-0 p-16 text-white/5 pointer-events-none uppercase font-black tracking-[1.5em] text-8xl transform rotate-90 origin-top-right select-none">QUANTUM</div>
+                            <div className="bg-[#0e0f14] border border-white/5 p-24 rounded-[5.5rem] text-slate-300 font-mono text-2xl leading-relaxed relative overflow-hidden shadow-[0_0_120px_rgba(0,0,0,0.6)] whitespace-pre-wrap selection:bg-indigo-500/50 group">
+                              <div className="absolute top-0 right-0 p-16 text-white/5 pointer-events-none uppercase font-black tracking-[1.5em] text-8xl transform rotate-90 origin-top-right select-none group-hover:opacity-10 transition-opacity">QUANTUM</div>
                               {output.FINAL_PROMPT}
                             </div>
                         </div>
 
+                        {/* MODEL RECOMMENDATIONS */}
+                        {output.SUGGESTED_MODELS && output.SUGGESTED_MODELS.length > 0 && (
+                          <div className="space-y-16 animate-fade-in">
+                            <h4 className="text-[16px] font-black uppercase text-indigo-500 tracking-[1.2em] italic border-l-4 border-indigo-600 pl-10 leading-none">TARGET DEPLOYMENT NODES</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                              {output.SUGGESTED_MODELS.map((rec, i) => (
+                                <div key={i} className="glass p-12 rounded-[4rem] border-indigo-500/10 space-y-6 hover:border-indigo-500/40 transition-all group shadow-2xl">
+                                  <div className="flex items-center gap-4">
+                                    <Icons.Cpu className="w-8 h-8 text-indigo-500 group-hover:scale-110 transition-transform" />
+                                    <h5 className="text-[14px] font-black uppercase text-white tracking-widest">{rec.model_name}</h5>
+                                  </div>
+                                  <p className="text-[12px] text-slate-400 font-medium leading-relaxed italic group-hover:text-slate-200 transition-colors uppercase tracking-wide">
+                                    {rec.reasoning}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* VISUAL RENDER */}
                         {generatedVisual && (
                           <div className="space-y-16 animate-fade-in relative group">
                             <div className="flex justify-between items-center">
-                              <h4 className="text-[16px] font-black uppercase text-indigo-500 tracking-[1.2em] italic border-l-4 border-indigo-600 pl-10">VISUAL MATRIX CORE</h4>
-                              <button onClick={handleDownloadImage} className="flex items-center gap-4 px-10 py-5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-black uppercase text-[11px] tracking-[0.4em] hover:bg-emerald-500 hover:text-white transition-all shadow-2xl italic"><Icons.Download className="w-5 h-5" /> Download 2K Master</button>
+                              <h4 className="text-[16px] font-black uppercase text-indigo-500 tracking-[1.2em] italic border-l-4 border-indigo-600 pl-10 leading-none">VISUAL MATRIX CORE</h4>
+                              <button onClick={handleDownloadImage} className="flex items-center gap-4 px-10 py-5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-black uppercase text-[11px] tracking-[0.4em] hover:bg-emerald-500 hover:text-white transition-all shadow-2xl italic leading-none"><Icons.Download className="w-5 h-5" /> Download 2K Master</button>
                             </div>
                             <img src={generatedVisual} className="w-full rounded-[6.5rem] border border-white/10 shadow-[0_0_180px_rgba(0,0,0,0.8)] group-hover:scale-[1.01] transition-transform duration-1000" alt="Synthesis Visual Render" />
                           </div>
                         )}
 
+                        {/* MARKETING SHARDS */}
                         {marketingKit && (
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 pt-10 animate-fade-in">
                               {Object.entries(marketingKit).map(([k, v], i) => (
                                 <div key={i} className="glass p-16 rounded-[5.5rem] border-white/5 space-y-10 hover:border-indigo-500/30 transition-all shadow-[0_0_80px_rgba(0,0,0,0.4)] group relative overflow-hidden">
                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-1000" />
-                                   <h5 className="text-[12px] font-black uppercase text-indigo-500 tracking-[0.5em] group-hover:text-white transition-colors uppercase italic">{k.replace('_', ' ')}</h5>
-                                   <p className="text-[16px] text-slate-400 leading-relaxed font-medium group-hover:text-slate-200 transition-colors italic">{v}</p>
+                                   <h5 className="text-[12px] font-black uppercase text-indigo-500 tracking-[0.5em] group-hover:text-white transition-colors uppercase italic leading-none">{k.replace('_', ' ')}</h5>
+                                   <p className="text-[16px] text-slate-400 leading-relaxed font-medium group-hover:text-slate-200 transition-colors italic uppercase tracking-wider">{v}</p>
                                 </div>
                               ))}
                            </div>
@@ -724,18 +698,18 @@ const App: React.FC = () => {
            </main>
         )}
 
-        {/* HISTORY & ACCOUNT */}
+        {/* ARCHIVES & ACCOUNT */}
         {activeTab === 'HISTORY' && (
            <div className="h-full p-24 animate-fade-in overflow-y-auto custom-scrollbar bg-[#050608]">
              <div className="max-w-6xl mx-auto space-y-20">
                <div className="flex justify-between items-end border-b border-white/5 pb-14">
-                  <h2 className="text-8xl font-black italic tracking-tighter uppercase text-white">Archives</h2>
+                  <h2 className="text-8xl font-black italic tracking-tighter uppercase text-white leading-none">Archives</h2>
                   {history.length > 0 && <button onClick={() => { setHistory([]); localStorage.removeItem('architect_history'); }} className="text-rose-500 font-black uppercase text-[11px] tracking-widest flex items-center gap-3 hover:text-rose-400 transition-colors italic group"><Icons.Trash className="w-5 h-5 group-hover:scale-110 transition-transform" /> Purge Matrix Records</button>}
                </div>
                {history.length === 0 ? <p className="text-slate-800 font-black uppercase tracking-[1.5em] text-center py-56 opacity-20 text-sm italic">Archives Sync Standby...</p> : (
                  <div className="grid grid-cols-1 gap-12">
                    {history.map(item => (
-                     <div key={item.id} className="glass p-16 rounded-[5.5rem] border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer group flex justify-between items-center" onClick={() => { setOutput(item.output); setForm(item.input); setActiveTab('BUILD'); setIsGuidedMode(false); }}>
+                     <div key={item.id} className="glass p-16 rounded-[5.5rem] border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer group flex justify-between items-center shadow-xl" onClick={() => { setOutput(item.output); setForm(item.input); setActiveTab('BUILD'); setIsGuidedMode(false); }}>
                        <div className="space-y-6">
                           <span className="text-indigo-500 font-black text-[11px] uppercase tracking-widest italic">{new Date(item.timestamp).toLocaleString()}</span>
                           <h4 className="text-5xl font-black italic text-white uppercase group-hover:text-indigo-400 transition-colors tracking-tighter leading-tight">{item.input.high_level_goal.split('\n')[0].substring(0, 80)}...</h4>
@@ -759,7 +733,7 @@ const App: React.FC = () => {
                   <p className="text-6xl font-black uppercase italic text-indigo-400 tracking-tighter leading-none">{userStatus.plan}</p>
                 </div>
                 <div className="glass p-16 rounded-[5.5rem] border-white/5 space-y-8 shadow-2xl">
-                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest italic">Matrix Unit Balance</p>
+                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest italic">Matrix Balance</p>
                   <p className="text-6xl font-black uppercase italic text-emerald-400 tracking-tighter leading-none">{userStatus.creditsRemaining} Units</p>
                 </div>
               </div>
