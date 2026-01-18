@@ -2,19 +2,23 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World's Leading Prompt Engineer & LLM Architect.
-MISSION: Synthesize "Production-Grade" prompts using the RAIC framework and recommend the best deployment targets.
+ROLE: World-class PhD Prompt Architect & Strategist.
+MISSION: Synthesize a "Hyper-Fidelity" prompt using elite frameworks derived from Google's best practices.
 
-RAIC FRAMEWORK:
-1. <role>: Ultra-Expert Persona with high-density knowledge.
-2. <audience>: Precisely defined expertise level.
-3. <context>: Domain data, strict boundaries, situational variables.
-4. <instruction>: Logical step-by-step task sequence.
-5. <constraints>: Style rules, anti-patterns, tone mapping.
-6. <output_format>: JSON or Markdown structural definition.
+FRAMEWORKS AVAILABLE (Select best fit based on context):
+1. Google's 5-Step: Task, Context, References, Evaluate, Iterate.
+2. Building Blocks: Persona + Task + Context + Format.
+3. TTCRFEI: Task, Tone, Context, References, Format, Engage, Iterate.
+4. Get/To/By: Strategic Creative (Get: Audience, To: Outcome, By: Insight/Strategy).
+5. ECIF: Expand (Ideas), Condense (Synthesis), Iterate (Variations), Finesse (Polishing).
 
-MODEL RECOMMENDATION LOGIC:
-Evaluate the final synthesized prompt and suggest 1-3 specific LLMs (e.g., Gemini 3 Pro, GPT-4o, Claude 3.5 Sonnet) that would best execute it.
+OUTPUT REQUIREMENTS:
+- Integrate all selected "Mastermind Refinements" (Typography, Color Blending, Interaction Logic).
+- Ensure the prompt treats the LLM as a "Creative Director" or "Lead Collaborator".
+- Include specific instructions for Multimodality if images/files are provided.
+- Recommend deployment targets based on Logic Depth vs Speed requirements.
+
+Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
 
 const cleanJsonResponse = (text: string | undefined) => {
@@ -34,19 +38,23 @@ const cleanJsonResponse = (text: string | undefined) => {
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const promptText = `
-    Analyze the current synthesis matrix for a ${input.task_type} project in the ${input.prof_domain || input.web_type || 'General'} domain.
-    Aesthetic: ${input.web_aesthetic || 'Unspecified'}.
-    Goal: ${input.high_level_goal || 'Defining core objective'}.
+    CURRENT STATE: ${input.task_type} for ${input.prof_domain || input.web_type || 'General Domain'}.
+    OBJECTIVE: ${input.high_level_goal}.
+    
+    As Dr. Architect PhD, analyze this synthesis matrix. We are missing critical "Polished Editorial Tech" shards.
+    Propose 3 categories of Mastermind refinements.
+    1. Visual Brand DNA (Font Hierarchies, Color Blending/Chromatics).
+    2. Strategic Framework (Which of the 5 frameworks should we anchor to?).
+    3. Interaction Nuance (Boardroom questions, Focus group lenses, or Copywriter Finesse styles).
 
-    Identify 3-4 critical missing design or logic parameters (e.g., Font Hierarchies, Color Chromatics, Interaction Logic, Data Integrity Protocols) that would elevate this to "Mastermind" level.
-    For each category, provide 3 distinct high-fidelity options for the user to choose from.
+    Return 3 categories, each with 3 distinct choice-based options.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: promptText,
     config: {
-      systemInstruction: "You are Dr. Architect, a PhD-holding mastermind. Propose sophisticated refinements for a high-level technical prompt.",
+      systemInstruction: "You are a world-class PhD strategist. Identify gaps in a technical prompt and offer high-level multiple-choice refinements.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -82,11 +90,11 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   
   const promptText = `
-    SYNTESIZE MASTER PROMPT:
+    FINAL SYNTHESIS COMMAND:
     Goal: ${input.high_level_goal}
-    Negative Constraints: ${input.negative_prompt || 'None'}
-    Context: ${input.prof_domain || input.web_type || ''} | ${input.web_aesthetic || ''}
-    Framework: RAIC
+    Negative Matrix: ${input.negative_prompt || 'None'}
+    Refinements Integrated: ${input.domain_context} (Mastermind choices)
+    Framework Target: High-Fidelity Professional Collaborator.
   `;
 
   const response = await ai.models.generateContent({
@@ -126,7 +134,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `High-fidelity professional concept render: ${prompt}` }] },
+    contents: { parts: [{ text: `Editorial polished technology render: ${prompt}. Grid background, glassmorphism elements.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",
@@ -144,9 +152,9 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Marketing assets for: "${goal}" using prompt "${prompt}". Language: ${language}.`,
+    contents: `Collaborative kit for: "${goal}". Language: ${language}.`,
     config: {
-      systemInstruction: "Create marketing assets including social ads, landing page copy, email sequences, and style guides.",
+      systemInstruction: "Create strategic marketing assets including social ads, landing page copy, and email sequences.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
