@@ -2,21 +2,21 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World-class PhD Prompt Architect & Strategist.
-MISSION: Synthesize a "Hyper-Fidelity" prompt using elite frameworks derived from Google's best practices.
+ROLE: Elite PhD Prompt Architect & Lead Strategist (Dr. Architect).
+MISSION: Synthesize a "Hyper-Fidelity" production prompt by applying the most relevant strategic framework.
 
-FRAMEWORKS AVAILABLE (Select best fit based on context):
-1. Google's 5-Step: Task, Context, References, Evaluate, Iterate.
-2. Building Blocks: Persona + Task + Context + Format.
-3. TTCRFEI: Task, Tone, Context, References, Format, Engage, Iterate.
-4. Get/To/By: Strategic Creative (Get: Audience, To: Outcome, By: Insight/Strategy).
-5. ECIF: Expand (Ideas), Condense (Synthesis), Iterate (Variations), Finesse (Polishing).
+FRAMEWORKS KNOWLEDGE BASE:
+1. Google's 5-Step: Task, Context, References, Evaluate, Iterate ("Thoughtfully Create Really Excellent Inputs").
+2. Building Blocks: Persona + Task + Context + Format (Standard successful mental model).
+3. TTCRFEI: Task, Tone, Context, References, Format, Engage, Iterate (Refined structural model).
+4. Get/To/By: Strategic Creative (Get: Audience, To: Outcome/Action, By: Insight/Strategy).
+5. ECIF: Mental Model (Expand ideas, Condense synthesis, Iterate variations, Finesse polishing).
 
-OUTPUT REQUIREMENTS:
-- Integrate all selected "Mastermind Refinements" (Typography, Color Blending, Interaction Logic).
-- Ensure the prompt treats the LLM as a "Creative Director" or "Lead Collaborator".
-- Include specific instructions for Multimodality if images/files are provided.
-- Recommend deployment targets based on Logic Depth vs Speed requirements.
+SYNTHESIS PROTOCOL:
+- Integrate all user-selected "Mastermind Refinements" (Typography, Color Blending, Framework Choice).
+- Treat the LLM as a "Creative Director" or "Lead Collaborator".
+- Use Natural Language, be Specific, be Concise, and make it a Conversation.
+- Include specific instructions for Multimodality (Images/Sound/Video) if shards are provided.
 
 Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
@@ -41,20 +41,19 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
     CURRENT STATE: ${input.task_type} for ${input.prof_domain || input.web_type || 'General Domain'}.
     OBJECTIVE: ${input.high_level_goal}.
     
-    As Dr. Architect PhD, analyze this synthesis matrix. We are missing critical "Polished Editorial Tech" shards.
-    Propose 3 categories of Mastermind refinements.
-    1. Visual Brand DNA (Font Hierarchies, Color Blending/Chromatics).
-    2. Strategic Framework (Which of the 5 frameworks should we anchor to?).
-    3. Interaction Nuance (Boardroom questions, Focus group lenses, or Copywriter Finesse styles).
+    Propose 3 categories of Mastermind refinements to reach PhD-level fidelity:
+    1. Visual Brand DNA: Options for Font Hierarchies (Editorial Serif, Modern Sans) and Color Chromatics (Midnight Glow, SaaS Blue).
+    2. Strategic Framework: Which framework (Google 5-Step, TTCRFEI, Get/To/By, ECIF) anchors this?
+    3. Operational Nuance: Boardroom logic, Copywriter Finesse, or Research Assistant constraints.
 
-    Return 3 categories, each with 3 distinct choice-based options.
+    Return 3 categories, each with 3 distinct options.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: promptText,
     config: {
-      systemInstruction: "You are a world-class PhD strategist. Identify gaps in a technical prompt and offer high-level multiple-choice refinements.",
+      systemInstruction: "You are Dr. Architect PhD. Provide multiple-choice refinements to elevate a prompt to 'Mastermind' status.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -90,11 +89,10 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   
   const promptText = `
-    FINAL SYNTHESIS COMMAND:
+    FINAL MASTER SYNTHESIS:
     Goal: ${input.high_level_goal}
     Negative Matrix: ${input.negative_prompt || 'None'}
-    Refinements Integrated: ${input.domain_context} (Mastermind choices)
-    Framework Target: High-Fidelity Professional Collaborator.
+    Refinements Integrated: ${input.domain_context}
   `;
 
   const response = await ai.models.generateContent({
@@ -134,7 +132,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `Editorial polished technology render: ${prompt}. Grid background, glassmorphism elements.` }] },
+    contents: { parts: [{ text: `Polished Editorial Tech aesthetic: ${prompt}. Cinematic lighting, glassmorphism UI, grid background.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",
@@ -152,9 +150,9 @@ export const generateMarketingKit = async (prompt: string, goal: string, languag
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Collaborative kit for: "${goal}". Language: ${language}.`,
+    contents: `Synthesis kit for goal: "${goal}". Language: ${language}.`,
     config: {
-      systemInstruction: "Create strategic marketing assets including social ads, landing page copy, and email sequences.",
+      systemInstruction: "Generate strategic marketing assets including social ads, email sequences, and a visual style guide.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
