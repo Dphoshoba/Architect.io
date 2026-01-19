@@ -1,3 +1,4 @@
+
 export type TargetAI = 
   | "Gemini 3 Flash"
   | "Gemini 3 Pro"
@@ -62,6 +63,15 @@ export interface PromptInput {
   img_subject?: string;
   img_lighting?: string;
   img_composition?: string;
+  // App Shards
+  app_type?: string;
+  app_platform?: string;
+  app_scope?: string;
+  app_ux_style?: string;
+  app_auth?: string;
+  app_features?: string;
+  app_ai_logic?: string;
+  app_integrations?: string;
 }
 
 export interface MarketingKit {
@@ -79,6 +89,7 @@ export interface PromptOutput {
   VISUAL_INSPIRATION_PROMPT?: string;
   MARKETING_KIT?: MarketingKit;
   SUGGESTED_MODELS?: SuggestedModel[];
+  APP_BLUEPRINT?: string;
 }
 
 export interface HistoryItem {
