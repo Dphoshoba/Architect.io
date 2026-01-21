@@ -1,20 +1,24 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory, InterviewQuestion } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World-Class Product Architect, FinOps Strategist, and Senior Full-Stack Engineer.
-MISSION: Help users transform vague ideas into precise, build-ready app concepts and implementation prompts.
+ROLE: World-Class Product Architect, FinOps Strategist, and Universal SaaS Expert.
+
+MISSION: Transform vague user ideas into crisp, build-ready specifications and implementation prompts.
+
+DOMAIN SPECIALIZATIONS:
+1. UNIVERSAL SAAS ARCHITECT:
+   - Covers: Sales/CRM, Marketing, Support, Operations, HR, Finance, Collaboration, Analytics, DevTools, Security.
+   - Output must include SaaS App Blueprint structure: Summary, Target Users/Pricing, Data Model, Workflows, Screens & UX, Roles, Integrations, MVP vs Future.
+
+2. FINANCE APP ARCHITECT:
+   - Focused on Accounting, Invoicing, Expenses, and Tax workflows.
+   - Priorities: Accuracy, auditability, immutable ledger entries, and clear UX for non-tech users.
 
 CORE BEHAVIOR:
-1. GUIDED DISCOVERY: You act as a high-leverage interviewer.
-2. HYPER-FIDELITY BLUEPRINT: You must output an "APP_BLUEPRINT" covering:
-   - Summary, Target Users/Regions, Core Workflows, Screens & UX, Data Model (entities/relationships), Integrations, Roles & Permissions, Compliance/Audit, and MVP vs Future.
-3. SENIOR-ENGINEER PROMPT: The "FINAL_PROMPT" must be an exhaustive technical directive for a dev agent.
-
-FINANCE DOMAIN SPECIALIZATION:
-- If finance-related, prioritize accuracy, auditability, immutable ledger entries, and tax compliance.
-- Explicitly state tech stack defaults (e.g. Next.js, PostgreSQL, Stripe) if unspecified.
+- Guided Discovery: If technical details are missing (stack, auth, persistence), select sensible defaults and state them.
+- Hyper-Fidelity Blueprint: Generate an "APP_BLUEPRINT" as the source of truth.
+- Senior-Engineer Prompt: Generate a "FINAL_PROMPT" directed at a Senior Full-Stack Engineer.
 
 Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
@@ -36,19 +40,27 @@ const cleanJsonResponse = (text: string | undefined) => {
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const promptText = `
-    CURRENT STATE: ${input.task_type} | ${input.fin_domain || input.app_platform || 'General'}
+    CURRENT STATE: ${input.task_type} | Vector: ${input.saas_category || input.fin_domain || 'General'}
     GOAL: ${input.high_level_goal}
     CONTEXT: ${JSON.stringify(input)}
 
-    Act as a Product Architect. Identify 3 critical missing or ambiguous details (Technical, UX, or Business logic) that would change the architecture.
-    Ask targeted, high-leverage questions. 
+    ACT AS: Senior Product Architect + UX Interviewer.
+    GOAL: Use the "AskUserQuestion" strategy aggressively to probe for missing details.
+    
+    PROBE FOR:
+    - Technical Implementation (stack, auth, persistence, security).
+    - UI/UX (hierarchy, flows, design system).
+    - Product Domain (users, use cases, edge cases).
+    - Constraints (compliance, MVP scope, budget).
+
+    Identify 3-4 critical missing details. Return them as a JSON array of InterviewQuestion objects.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: promptText,
     config: {
-      systemInstruction: "You are a senior product architect. Proactively probe for missing details using high-leverage questions.",
+      systemInstruction: "You are a proactive product architect. Probe for missing details to clarify architecture and UX.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -57,7 +69,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING, description: "Why this detail matters for the build." }
+            context: { type: Type.STRING, description: "Why this detail matters for the final blueprint." }
           },
           required: ["id", "question", "context"]
         }
@@ -72,11 +84,12 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const promptText = `
     CURRENT PROJECT DATA:
-    Type: ${input.task_type}
+    Target AI: ${input.target_AI}
     Objective: ${input.high_level_goal}
-    Current Matrix: ${JSON.stringify(input)}
+    Current State: ${JSON.stringify(input)}
     
-    Identify 3 critical refinement categories. Provide 3 strategic options each.
+    Identify 3 strategic refinement categories (e.g., Visual Brand DNA, Strategic Framework, Operational Nuance).
+    Provide 3 distinct options each.
   `;
 
   const response = await ai.models.generateContent({
@@ -119,8 +132,8 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   
   const promptText = `
-    FINAL SYNTHESIS:
-    ${JSON.stringify(input)}
+    FINAL SYNTHESIS FOR BUILD:
+    Input Data: ${JSON.stringify(input)}
   `;
 
   const response = await ai.models.generateContent({
@@ -161,7 +174,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `High-fidelity product blueprint render: ${prompt}. Dark editorial style, technical overlays.` }] },
+    contents: { parts: [{ text: `High-fidelity architectural product blueprint aesthetic: ${prompt}. Editorial tech style, technical overlays, dark mode.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",

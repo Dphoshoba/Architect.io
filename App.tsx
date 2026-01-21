@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptInput, PromptOutput, MarketingKit, TargetAI, UserStatus, HistoryItem, MastermindSuggestionCategory, InterviewQuestion } from './types';
 import { TextArea, Select, TextInput } from './components/InputGroup';
@@ -25,25 +24,29 @@ const Icons = {
   Cpu: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2-2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   AppWindow: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>,
   Keyboard: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-  Bank: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m5-12h1m-1 4h1m-1 4h1" /></svg>
+  Bank: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m5-12h1m-1 4h1m-1 4h1" /></svg>,
+  Layout: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 9h16m-10 0v10" /></svg>
 };
 
 const MASTERMIND_COACH_INSIGHTS = {
   'Website': ["DNA matters.", "Layout is conversion.", "Aesthetic is brand.", "Type is voice."],
   'App': ["Purpose first.", "Persona is protagonist.", "Platform is boundary.", "V1 is MVP.", "Auth is trust.", "Features are heart.", "UX is journey."],
-  'Finance': ["Accuracy is non-negotiable.", "Tax rules change logic.", "Audit logs are a MUST.", "Roles ensure control.", "Regions dictate VAT/GST.", "Ledger must be immutable."],
+  'SaaS': ["Category defines logic.", "Users define flow.", "Pain point is value.", "Industry sets rules.", "Monetization is scale."],
+  'Finance': ["Accuracy is critical.", "Tax rules change logic.", "Audit logs are a MUST.", "Roles ensure control.", "Regions dictate VAT/GST.", "Ledger must be immutable."],
   'Professional': ["Domain sets boundary.", "Expertise is density.", "Protocol is legal.", "Compliance is mandatory."],
   'Simple': ["Raw directive entry.", "Architect will synthesize."]
 };
 
 const SHARDS = {
-  web_type: [
-    { label: "Luxury Salon", desc: "Elegant, high-end visual focus." },
-    { label: "SaaS Analytics", desc: "Data-heavy monitoring dashboard." }
-  ],
-  app_platform: [
-    { label: "Responsive Web", desc: "Cross-device browser access." },
-    { label: "iOS / Android", desc: "Native smartphone application." }
+  saas_category: [
+    { label: "Sales & CRM", desc: "Pipelines, lead management & communication." },
+    { label: "Marketing", desc: "Automation, campaigns & segmentation." },
+    { label: "Customer Support", desc: "Ticketing, helpdesk & omnichannel care." },
+    { label: "Ops & ERP", desc: "Inventory, supply chain & order logic." },
+    { label: "HR & Payroll", desc: "Recruiting, onboarding & compensation." },
+    { label: "Analytics & BI", desc: "Dashboards, reporting & data visualization." },
+    { label: "DevTools", desc: "CI/CD, monitoring & low-code logic." },
+    { label: "Security & IT", desc: "Compliance, IAM & endpoint management." }
   ],
   fin_domain: [
     { label: "Accounting", desc: "General ledger & chart of accounts." },
@@ -56,23 +59,35 @@ const SHARDS = {
     { label: "Accountants", desc: "Deep compliance & audit tools." },
     { label: "Finance Team", desc: "Enterprise-grade controls." }
   ],
-  fin_compliance: [
-    { label: "Audit Logs", desc: "Track every single logic change." },
-    { label: "Immutable Ledger", desc: "Entries can only be voided, never deleted." },
-    { label: "ISO 27001", desc: "Global security standard for data." }
-  ],
-  app_features: [
-    { label: "AI Assistance", desc: "Smart categorization & advice." },
-    { label: "Real-time Sync", desc: "Live multi-user collaboration." },
-    { label: "Payments", desc: "Integrated checkout (Stripe/Bank)." }
+  app_platform: [
+    { label: "Responsive Web", desc: "Cross-device browser access." },
+    { label: "iOS / Android", desc: "Native smartphone application." }
   ],
   tone_style: [
     { label: "Professional", desc: "Serious, academic, boardroom tone." },
     { label: "Empathetic", desc: "Helpful, clear, non-intimidating." }
+  ],
+  saas_monetization: [
+    { label: "Tiered Subscription", desc: "Standard SaaS pricing levels." },
+    { label: "Usage-based", desc: "Pay for what you consume." },
+    { label: "Freemium", desc: "Basic free tier, paid upgrades." }
   ]
 };
 
 const GUIDED_FLOWS = {
+  'SaaS': { title: 'SAAS ARCHITECT', icon: Icons.Layout, questions: [
+    { key: 'saas_category', label: 'Business Area' },
+    { key: 'user_persona', label: 'Primary User' },
+    { key: 'saas_industry', label: 'Vertical / Industry' },
+    { key: 'saas_monetization', label: 'Monetization Plan' },
+    { key: 'high_level_goal', label: 'Core Pain Point' },
+  ]},
+  'Finance': { title: 'FINANCE ARCHITECT', icon: Icons.Bank, questions: [
+    { key: 'fin_domain', label: 'Finance Domain' },
+    { key: 'fin_users', label: 'Primary User' },
+    { key: 'fin_region', label: 'Region & Currency' },
+    { key: 'high_level_goal', label: 'Core Workflow' },
+  ]},
   'Website': { title: 'WEBSITE CONSTRUCTOR', icon: Icons.Globe, questions: [
     { key: 'web_type', label: 'Platform DNA' },
     { key: 'tone_style', label: 'Tone/Vibe' },
@@ -82,19 +97,6 @@ const GUIDED_FLOWS = {
     { key: 'high_level_goal', label: 'App Purpose' },
     { key: 'user_persona', label: 'Primary User' },
     { key: 'app_platform', label: 'Platform' },
-    { key: 'app_features', label: 'Core Features' },
-  ]},
-  'Finance': { title: 'FINANCE ARCHITECT', icon: Icons.Bank, questions: [
-    { key: 'fin_domain', label: 'Finance Domain' },
-    { key: 'fin_users', label: 'Primary User' },
-    { key: 'fin_region', label: 'Region & Currency' },
-    { key: 'fin_compliance', label: 'Compliance Shards' },
-    { key: 'high_level_goal', label: 'Core Workflow' },
-  ]},
-  'Professional': { title: 'INDUSTRIAL SUITE', icon: Icons.Wrench, questions: [
-    { key: 'prof_domain', label: 'Expert Domain' },
-    { key: 'tone_style', label: 'System Tone' },
-    { key: 'high_level_goal', label: 'Task Objective' },
   ]},
   'Simple': { title: 'SIMPLE PROMPT', icon: Icons.Keyboard, questions: [
     { key: 'high_level_goal', label: 'Direct Command' }
@@ -167,6 +169,7 @@ const App: React.FC = () => {
   };
 
   const enterInterview = async () => {
+    if (guidedState.category === 'Simple' && !form.high_level_goal) return;
     setLoading(true);
     try {
       const q = await generateInterviewQuestions(form);
@@ -206,9 +209,10 @@ const App: React.FC = () => {
     try {
       const refinements = Object.entries(selectedSuggestions).map(([cat, val]) => `[${cat}]: ${val}`).join('\n');
       const finalGoal = `
-        ${form.high_level_goal}
+        PRIMARY OBJECTIVE: ${form.high_level_goal}
+        VECTOR: ${guidedState.category}
         REFINEMENTS: ${refinements}
-        ANSWERS: ${Object.values(interviewAnswers).join(' ')}
+        DISCOVERY ANSWERS: ${Object.values(interviewAnswers).join(' ')}
       `;
 
       const res = await generateArchitectPrompt({ ...form, high_level_goal: finalGoal });
@@ -242,7 +246,7 @@ const App: React.FC = () => {
           </div>
           <nav className="flex gap-1 bg-white/5 p-1 rounded-xl">
             {['BUILD', 'HISTORY', 'ACCOUNT'].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>{tab}</button>
+              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500'}`}>{tab}</button>
             ))}
           </nav>
         </div>
@@ -276,7 +280,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 2: GUIDED DISCOVERY */}
+        {/* STEP 2: GUIDED DISCOVERY / SHARDS */}
         {activeTab === 'BUILD' && guidedState.category && !isInterviewing && !isReviewing && !output && (
           <div className="h-full flex flex-col p-16 overflow-y-auto custom-scrollbar animate-fade-in bg-[#050608]">
              <div className="max-w-7xl mx-auto w-full space-y-12">
@@ -291,22 +295,22 @@ const App: React.FC = () => {
               {(() => {
                 const q = GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index];
                 const options = (SHARDS as any)[q.key] || [];
-                const isTextArea = q.key === 'high_level_goal';
+                const isTextArea = q.key === 'high_level_goal' || q.key === 'saas_industry' || q.key === 'fin_region';
                 return isTextArea ? (
                   <TextArea label={q.label} value={(form as any)[q.key] || ""} onChange={e => setForm(p => ({ ...p, [q.key]: e.target.value }))} className="max-w-5xl mx-auto text-2xl py-12 px-10 rounded-[4rem] min-h-[350px]" />
                 ) : options.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-10">
                     {options.map((opt: any) => (
                       <button key={opt.label} onClick={() => toggleShard(q.key, opt.label)} className={`p-10 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-3 ${(form as any)[q.key] === opt.label ? 'bg-indigo-600 border-indigo-400 text-white shadow-2xl' : 'bg-[#11141d]/80 border-white/5 text-slate-500'}`}>
-                        <span className="text-[14px] font-black uppercase">{opt.label}</span>
-                        <span className="text-[9px] opacity-50 uppercase text-center">{opt.desc}</span>
+                        <span className="text-[14px] font-black uppercase text-center">{opt.label}</span>
+                        <span className="text-[9px] opacity-50 uppercase text-center leading-tight px-4">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
                 ) : <TextInput value={(form as any)[q.key] || ""} onChange={e => setForm(p => ({ ...p, [q.key]: e.target.value }))} label={q.label} className="max-w-4xl mx-auto" />;
               })()}
               <div className="flex flex-col items-center pt-24">
-                 <button onClick={guidedState.index < GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length - 1 ? () => setGuidedState(p => ({ ...p, index: p.index + 1 })) : enterInterview} className="px-36 py-10 bg-white text-black font-black uppercase rounded-full shadow-2xl tracking-[0.6em] italic text-sm">Next Phase</button>
+                 <button onClick={guidedState.index < GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length - 1 ? () => setGuidedState(p => ({ ...p, index: p.index + 1 })) : enterInterview} className="px-36 py-10 bg-white text-black font-black uppercase rounded-full shadow-2xl tracking-[0.6em] italic text-sm transition-transform hover:scale-105">Next Phase</button>
               </div>
              </div>
           </div>
@@ -317,17 +321,17 @@ const App: React.FC = () => {
           <div className="h-full flex flex-col p-16 overflow-y-auto custom-scrollbar animate-fade-in bg-[#050608]">
              <div className="max-w-4xl mx-auto w-full space-y-16">
                 <div className="text-center">
-                  <h2 className="text-7xl font-black italic uppercase text-white tracking-tighter">Architecture Review</h2>
+                  <h2 className="text-7xl font-black italic uppercase text-white tracking-tighter">Architecture Discovery</h2>
                   <p className="text-indigo-500 font-black uppercase tracking-widest mt-4">Clarify missing details</p>
                 </div>
                 {interviewQuestions.map(q => (
                   <div key={q.id} className="glass p-10 rounded-[3rem] space-y-6">
                     <h4 className="text-xl font-bold text-white italic">{q.question}</h4>
-                    <p className="text-xs text-slate-500 uppercase tracking-widest">{q.context}</p>
-                    <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} placeholder="Provide architectural detail..." />
+                    <p className="text-xs text-slate-500 uppercase tracking-widest leading-relaxed">{q.context}</p>
+                    <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} placeholder="Provide technical or business detail..." />
                   </div>
                 ))}
-                <button onClick={handleAnalyzeMatrix} className="w-full py-10 bg-indigo-600 text-white font-black uppercase rounded-full shadow-2xl tracking-[0.5em] italic">Analyze Final Matrix</button>
+                <button onClick={handleAnalyzeMatrix} className="w-full py-10 bg-indigo-600 text-white font-black uppercase rounded-full shadow-2xl tracking-[0.5em] italic transition-transform hover:scale-105">Analyze Final Matrix</button>
              </div>
           </div>
         )}
@@ -338,7 +342,7 @@ const App: React.FC = () => {
             <div className="max-w-7xl mx-auto w-full space-y-16">
                <div className="text-center">
                   <h2 className="text-7xl font-black italic uppercase text-white tracking-tighter">Strategy Room</h2>
-                  <p className="text-indigo-500 font-black uppercase tracking-widest mt-4">Final refined shards</p>
+                  <p className="text-indigo-500 font-black uppercase tracking-widest mt-4">Refine architectural DNA</p>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   {mastermindSuggestions.map((cat, i) => (
@@ -355,19 +359,19 @@ const App: React.FC = () => {
                     </div>
                   ))}
                </div>
-               <button onClick={handleExecute} className="w-full max-w-4xl mx-auto py-10 bg-white text-black font-black uppercase rounded-full block shadow-2xl tracking-[0.5em] italic">Synthesize Final Blueprint</button>
+               <button onClick={handleExecute} className="w-full max-w-4xl mx-auto py-10 bg-white text-black font-black uppercase rounded-full block shadow-2xl tracking-[0.5em] italic transition-transform hover:scale-105">Synthesize Final Blueprint</button>
             </div>
           </div>
         )}
 
-        {/* FINAL OUTPUT */}
+        {/* STEP 5: FINAL OUTPUT */}
         {activeTab === 'BUILD' && output && (
            <main className="absolute inset-0 z-[200] p-16 overflow-y-auto custom-scrollbar bg-[#050608] animate-fade-in">
                <div className="max-w-7xl mx-auto pb-48 space-y-32">
                    <div className="flex justify-between items-center border-b border-white/10 pb-12">
                       <div className="flex items-center gap-6">
-                         <button onClick={() => setOutput(null)} className="p-4 bg-white/5 rounded-full hover:bg-white/10 transition-colors"><Icons.ArrowLeft className="w-6 h-6 text-slate-400" /></button>
-                         <h3 className="text-7xl font-black italic uppercase text-white tracking-tighter">Blueprint Synthesis</h3>
+                         <button onClick={() => {setOutput(null); setIsInterviewing(false); setIsReviewing(false);}} className="p-4 bg-white/5 rounded-full hover:bg-white/10 transition-colors"><Icons.ArrowLeft className="w-6 h-6 text-slate-400" /></button>
+                         <h3 className="text-7xl font-black italic uppercase text-white tracking-tighter">Synthesis</h3>
                       </div>
                       <div className="flex gap-4">
                         <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="flex items-center gap-3 px-10 py-5 bg-white text-black font-black uppercase text-[11px] rounded-full hover:bg-slate-200 transition-all shadow-xl tracking-[0.2em] italic"><Icons.Copy className="w-5 h-5" /> Copy Specs</button>
@@ -376,9 +380,9 @@ const App: React.FC = () => {
                    </div>
                    
                    {output.APP_BLUEPRINT && (
-                     <div className="space-y-10">
+                     <div className="space-y-10 animate-fade-in">
                         <div className="flex justify-between items-end pl-4">
-                           <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none">STRUCTURAL SPECIFICATION</h4>
+                           <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none">APP BLUEPRINT</h4>
                            <div className="flex gap-4">
                               <button onClick={() => handleCopyText(output.APP_BLUEPRINT || '')} className="p-2 text-slate-500 hover:text-white" title="Copy"><Icons.Copy className="w-5 h-5" /></button>
                               <button onClick={() => handleDownload(output.APP_BLUEPRINT || '', 'blueprint.txt')} className="p-2 text-slate-500 hover:text-white" title="Download"><Icons.Download className="w-5 h-5" /></button>
@@ -392,7 +396,7 @@ const App: React.FC = () => {
 
                    <div className="space-y-10">
                       <div className="flex justify-between items-end pl-4">
-                        <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none text-sm">IMPLEMENTATION PROMPT (SENIOR ENGINEER)</h4>
+                        <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none text-sm">IMPLEMENTATION PROMPT</h4>
                         <div className="flex gap-4">
                             <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="p-2 text-slate-500 hover:text-white" title="Copy"><Icons.Copy className="w-5 h-5" /></button>
                             <button onClick={() => handleDownload(output.FINAL_PROMPT, 'prompt.txt')} className="p-2 text-slate-500 hover:text-white" title="Download"><Icons.Download className="w-5 h-5" /></button>
@@ -404,7 +408,10 @@ const App: React.FC = () => {
                    </div>
 
                    {generatedVisual && (
-                     <img src={generatedVisual} className="w-full rounded-[6.5rem] shadow-2xl border border-white/5" alt="Visual Synthesis" />
+                     <div className="space-y-10">
+                        <h4 className="text-indigo-400 font-black uppercase tracking-[1em] pl-4 italic leading-none text-sm">VISUAL DNA RENDER</h4>
+                        <img src={generatedVisual} className="w-full rounded-[6.5rem] shadow-2xl border border-white/5 hover:scale-[1.01] transition-transform duration-700" alt="Visual Synthesis" />
+                     </div>
                    )}
                    
                    <button onClick={() => {setOutput(null); setIsReviewing(false); setIsInterviewing(false); setGuidedState(p => ({...p, category: null, index: 0}));}} className="text-slate-500 font-black uppercase tracking-[1.5em] italic mx-auto block hover:text-white transition-all py-10">Start New Vector</button>
@@ -418,7 +425,7 @@ const App: React.FC = () => {
              {history.length === 0 ? <p className="text-slate-800 uppercase tracking-[1em] text-center py-56 italic">Archives Standby...</p> : (
                <div className="grid grid-cols-1 gap-10 max-w-6xl mx-auto">
                  {history.map(item => (
-                   <div key={item.id} className="glass p-16 rounded-[5rem] flex justify-between items-center group cursor-pointer hover:border-indigo-500/30 transition-all" onClick={() => {setOutput(item.output); setActiveTab('BUILD');}}>
+                   <div key={item.id} className="glass p-16 rounded-[5rem] flex justify-between items-center group cursor-pointer hover:border-indigo-500/30 transition-all shadow-2xl" onClick={() => {setOutput(item.output); setActiveTab('BUILD');}}>
                      <h4 className="text-4xl font-black text-white italic group-hover:text-indigo-400 transition-colors uppercase">{item.input.high_level_goal?.substring(0, 50) || "Synthesis Vector"}...</h4>
                      <span className="text-indigo-500 font-black uppercase">{new Date(item.timestamp).toLocaleDateString()}</span>
                    </div>

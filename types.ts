@@ -1,4 +1,3 @@
-
 export type TargetAI = 
   | "Gemini 3 Flash"
   | "Gemini 3 Pro"
@@ -54,6 +53,10 @@ export interface PromptInput {
   base64Image?: string; 
   media_ref_base64?: string;
   media_type?: 'image' | 'video' | 'audio';
+  // Universal SaaS Shards
+  saas_category?: string;
+  saas_industry?: string;
+  saas_monetization?: string;
   // Website Shards
   web_type?: string;
   web_layout_blocks?: string;
@@ -83,6 +86,7 @@ export interface PromptInput {
   fin_users?: string;
   fin_region?: string;
   fin_compliance?: string;
+  fin_workflows?: string;
 }
 
 export interface MarketingKit {
