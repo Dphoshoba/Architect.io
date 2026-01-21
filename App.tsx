@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptInput, PromptOutput, MarketingKit, TargetAI, UserStatus, HistoryItem, MastermindSuggestionCategory } from './types';
 import { TextArea, Select, TextInput } from './components/InputGroup';
@@ -22,8 +21,9 @@ const Icons = {
   Download: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
   Volume2: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>,
   VolumeX: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" d="M17 9l4 4m0-4l-4 4" /></svg>,
-  Cpu: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
-  AppWindow: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
+  Cpu: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2-2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
+  AppWindow: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>,
+  Keyboard: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
 };
 
 const MASTERMIND_COACH_INSIGHTS = {
@@ -31,11 +31,7 @@ const MASTERMIND_COACH_INSIGHTS = {
     "Identify your Platform DNA carefully. It dictates the underlying logic for all subsequent UX decisions.",
     "Layout Shards determine the conversion flow. For luxury, prioritize negative space; for SaaS, prioritize clarity.",
     "The Aesthetic layer is your brand's visceral signature. Glassmorphism signals modern transparency.",
-    "Typography is the voice of your text. Choose Modern Sans for tech-forward credibility.",
-    "Color Matrix triggers psychological responses. Midnight and Blue signal security and professional depth.",
-    "System Tone must align with your audience's expectations. Professionalism is the default for high-trust environments.",
-    "Your Core Directive is the functional anchor. Keep it focused on a single primary conversion goal.",
-    "Presentation Style is about accessibility. Markdown is excellent for collaborative documentation."
+    "Typography is the voice of your text. Choose Modern Sans for tech-forward credibility."
   ],
   'App': [
     "Clarifying the App Purpose is our first move. One or two sentences to anchor the entire engineering blueprint.",
@@ -44,80 +40,57 @@ const MASTERMIND_COACH_INSIGHTS = {
     "Defining the V1 Scope keeps us lean. Start with a Minimum Viable Product for faster iteration.",
     "Authentication shards determine security logic. Do users need persistent accounts or anonymous access?",
     "Feature prioritization is the functional heart. Which of these are absolute MUST-HAVES for launch?",
-    "Interaction flow mapping defines the UX style. How should users navigate through your data logic?",
-    "AI & Automation logic adds the 'Quantum' advantage. How does the model specifically serve the goal?"
+    "Interaction flow mapping defines the UX style. How should users navigate through your data logic?"
   ],
   'Professional': [
     "Your Domain sets the regulatory boundary. Choose Interior Design for spatial logic, or SaaS for structural architecture.",
     "Expertise determines the 'Intelligence Density'. Senior Principal levels unlock advanced reasoning patterns.",
     "Protocol Type defines the legal weight of the output. BoQs require extreme numerical precision.",
-    "Compliance Standards are non-negotiable. ISO 9001 ensures global operational quality.",
-    "Visual DNA maintains professional decorum. Minimize distractions to focus on functional data.",
-    "System Tone should be academic yet actionable. Precision is favored over persuasion.",
-    "Task Logic is the algorithmic engine. Strategic Synthesis is best for complex infrastructure maps.",
-    "Final Format ensures cross-team compatibility. JSON is preferred for automated systems integration."
+    "Compliance Standards are non-negotiable. ISO 9001 ensures global operational quality."
   ],
-  'Image': [
-    "The Neural Subject is the epicenter of the render. Hyper-realism requires high subject-detail contrast.",
-    "Lighting is the soul of photography. Volumetric God-Rays add divine cinematic weight.",
-    "Perspective defines the viewer's power. Bird's Eye View provides total strategic oversight.",
-    "Artistic DNA links the image to history. Brutalism emphasizes raw, uncompromising structure.",
-    "Frame Ratio must serve the medium. 16:9 is the cinematic standard for wide-angle world building.",
-    "Render Detail is a computational choice. Ultra quality ensures pixel-perfect fidelity for 4K displays.",
-    "Emotional Mood sets the psychological stage. Vibe is as important as technical precision.",
-    "Metadata Style summarizes the intent. Ensure the summary serves as a clear blueprint for the GPU."
-  ],
-  'Live': [
-    "Voice Persona determines the persona's empathy level. Zephyr is optimized for helpful architectural consultation."
+  'Simple': [
+    "Enter your core directive. Dr. Architect will synthesize a high-fidelity spec based on your raw input."
   ]
 };
 
 const SHARDS = {
   web_type: [
-    { label: "Luxury Salon", desc: "High-end visual aesthetic for premium services." },
-    { label: "SaaS Analytics", desc: "Data-heavy dashboard for software tools." },
-    { label: "Fashion E-commerce", desc: "Clean, editorial layout for high-end clothing." },
-    { label: "Architect Portfolio", desc: "Minimalist, structural focus on spatial work." },
-    { label: "EdTech LMS", desc: "Learning management system with structured courses." }
+    { label: "Luxury Salon", desc: "Elegant, high-end visual focus for premium services." },
+    { label: "SaaS Analytics", desc: "Data-heavy dashboard for monitoring and software tools." },
+    { label: "Fashion E-commerce", desc: "Editorial-style layouts for high-end retail collections." },
+    { label: "Architect Portfolio", desc: "Minimalist, structural focus on spatial design work." }
   ],
   app_platform: [
-    { label: "Responsive Web App", desc: "Works on all browsers, mobile and desktop." },
-    { label: "iOS / Android Mobile", desc: "Native application for smartphones." },
-    { label: "Cross-Platform", desc: "One codebase for Web, iOS, and Android." },
-    { label: "Desktop Application", desc: "Installed software for Windows/Mac (Electron)." },
-    { label: "AI Agent / CLI", desc: "Command-line or invisible background automation." }
+    { label: "Responsive Web App", desc: "Cross-device compatibility through modern browsers." },
+    { label: "iOS / Android Mobile", desc: "Native application optimized for smartphones." },
+    { label: "Desktop (Electron)", desc: "Installed software for high-performance desktop tools." },
+    { label: "AI Agent / CLI", desc: "Invisible background logic or text-based interface." }
   ],
   app_scope: [
-    { label: "MVP (V1)", desc: "Minimum Viable Product - The essentials to launch fast." },
-    { label: "Full Feature Release", desc: "Complete production-ready suite with all bells." },
-    { label: "Strategic Prototype", desc: "Interactive demo to test core logic shards." },
-    { label: "Enterprise Scale", desc: "Built for massive user counts and high security." }
+    { label: "MVP (Fast Launch)", desc: "The bare essentials needed to prove the concept." },
+    { label: "Full Scale Release", desc: "Complete production-ready suite with all logic shards." },
+    { label: "Strategic Prototype", desc: "High-fidelity demo to test core user interaction." }
   ],
   app_auth: [
-    { label: "Single User / Local", desc: "No login needed. Data stays on the device." },
-    { label: "Social Auth (Google/etc)", desc: "Fast login using existing social accounts." },
-    { label: "Email/Password", desc: "Classic secure member registration." },
-    { label: "Enterprise SSO", desc: "Single Sign-On for corporate security (Azure/OKTA)." }
+    { label: "Single User (Local)", desc: "No login required. Data is stored on-device only." },
+    { label: "Social Login (OAuth)", desc: "Fast signup via Google, GitHub, or Apple." },
+    { label: "Enterprise SSO", desc: "Secure centralized login for corporate teams." }
   ],
   app_ux_style: [
     { label: "SaaS Dashboard", desc: "Sidebar navigation with centralized data cards." },
-    { label: "Bento Grid", desc: "Modular layout inspired by Apple/Modern tech." },
-    { label: "Command Center", desc: "Dark mode focus with technical monitoring feeds." },
-    { label: "Tool-First Utility", desc: "Single screen focused on one specific task." },
-    { label: "Media Rich Feed", desc: "Content-first scrolling experience (Instagram style)." }
+    { label: "Bento-style Grid", desc: "Modular, tile-based layout for diverse tools." },
+    { label: "Utility First", desc: "Single screen focused on a high-frequency task." }
   ],
   app_features: [
-    { label: "AI Chat / Assistance", desc: "Smart logic for user interaction." },
-    { label: "Real-time Sync", desc: "Collaborative editing and live updates." },
-    { label: "Search & Advanced Filters", desc: "Powerful data retrieval shards." },
-    { label: "Payments / Stripe", desc: "E-commerce or subscription billing." },
-    { label: "File Management", desc: "Uploads, storage, and cloud synchronization." },
-    { label: "Workflow Automation", desc: "Trigger-based logic for back-end tasks." }
+    { label: "AI Logic Shards", desc: "Integrated LLM logic for content or reasoning." },
+    { label: "Real-time Sync", desc: "Live collaborative editing and data streaming." },
+    { label: "Marketplace / Payments", desc: "Stripe integration for commerce logic." }
   ],
-  // Traditional shards for compatibility
-  tone_style: ["Professional", "Concise", "Academic", "Creative", "Aggressive", "Empathetic"],
-  output_format: ["Blueprint (Markdown)", "JSON Schema", "Technical Script", "Plain Text"],
-  target_AI: ["Gemini 3 Flash", "Gemini 3 Pro", "GPT-4o", "Claude 3.5 Sonnet", "DeepSeek R1"],
+  tone_style: [
+    { label: "Professional", desc: "Academic, precise, and boardroom-ready tone." },
+    { label: "Creative", desc: "Expressive, evocative, and boundary-pushing." },
+    { label: "Concise", desc: "Short, impactful, and efficiency-focused." }
+  ]
 };
 
 const GUIDED_FLOWS = {
@@ -125,7 +98,6 @@ const GUIDED_FLOWS = {
     { key: 'web_type', label: 'Platform DNA' },
     { key: 'tone_style', label: 'Tone/Vibe' },
     { key: 'high_level_goal', label: 'Core Objective' },
-    { key: 'output_format', label: 'Final Presentation Style' },
   ]},
   'App': { title: 'APP ARCHITECT', icon: Icons.AppWindow, questions: [
     { key: 'high_level_goal', label: 'App Purpose' },
@@ -135,20 +107,15 @@ const GUIDED_FLOWS = {
     { key: 'app_auth', label: 'Security & Accounts' },
     { key: 'app_features', label: 'Core Functionality' },
     { key: 'app_ux_style', label: 'Interaction Style' },
-    { key: 'output_format', label: 'Blueprint Syntax' },
   ]},
   'Professional': { title: 'INDUSTRIAL SUITE', icon: Icons.Wrench, questions: [
     { key: 'prof_domain', label: 'Expert Domain' },
     { key: 'prof_expertise', label: 'Seniority Level' },
     { key: 'tone_style', label: 'System Tone' },
     { key: 'high_level_goal', label: 'Task Objective' },
-    { key: 'output_format', label: 'Output Syntax' },
   ]},
-  'Image': { title: 'IMAGE ARCHITECT', icon: Icons.Photo, questions: [
-    { key: 'img_subject', label: 'Neural Subject' },
-    { key: 'img_lighting', label: 'Lighting Matrix' },
-    { key: 'tone_style', label: 'Emotional Mood' },
-    { key: 'output_format', label: 'Metadata Format' },
+  'Simple': { title: 'SIMPLE PROMPT', icon: Icons.Keyboard, questions: [
+    { key: 'high_level_goal', label: 'Direct Command' }
   ]},
   'Live': { title: 'LIVE VOICE PROTOCOL', icon: Icons.Mic, questions: [
     { key: 'voice_name', label: 'Voice Persona' },
@@ -190,9 +157,6 @@ const App: React.FC = () => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.05;
-    const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.name.includes('Google') || v.lang.startsWith('en-US'));
-    if (voice) utterance.voice = voice;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -206,10 +170,7 @@ const App: React.FC = () => {
   }, [guidedState.index, guidedState.category, activeTab, isReviewing]);
 
   const toggleShard = (key: string, value: string) => {
-    const current = (form as any)[key] || "";
-    const items = current.split(', ').filter(Boolean);
-    const updated = items.includes(value) ? items.filter((i: string) => i !== value) : [...items, value];
-    setForm(prev => ({ ...prev, [key]: updated.join(', ') }));
+    setForm(prev => ({ ...prev, [key]: value }));
   };
 
   const handleCopyText = async (text: string) => {
@@ -232,9 +193,10 @@ const App: React.FC = () => {
   };
 
   const handleAnalyzeMatrix = async () => {
+    if (!form.high_level_goal && (guidedState.category === 'Simple' || guidedState.category === 'App')) return;
     setLoading(true);
     try {
-      const res = await generateMastermindSuggestions({ ...form, high_level_goal: form.high_level_goal || "Awaiting Directive" });
+      const res = await generateMastermindSuggestions({ ...form });
       setMastermindSuggestions(res);
       setIsReviewing(true);
       speak("Matrix analysis complete. Review my Mastermind refinements to finalize your architecture.");
@@ -250,12 +212,12 @@ const App: React.FC = () => {
     setOutput(null);
     try {
       const refinements = Object.entries(selectedSuggestions)
-        .map(([cat, val]) => `[${cat}]: ${val}`)
+        .map(([cat, val]) => `[${cat} Protocol]: ${val}`)
         .join('\n');
 
       const fullContext = `
-        GOAL: ${form.high_level_goal}
-        TYPE: ${guidedState.category}
+        PRIMARY OBJECTIVE: ${form.high_level_goal}
+        VECTOR TYPE: ${guidedState.category}
         STRATEGIC REFINEMENTS:
         ${refinements}
       `;
@@ -278,9 +240,8 @@ const App: React.FC = () => {
   };
 
   const getCoachingInsight = (category: string, step: number) => {
-    const insights = MASTERMIND_COACH_INSIGHTS[category as keyof typeof MASTERMIND_COACH_INSIGHTS];
-    if (!insights) return "Focus on functional logic.";
-    return insights[step] || insights[insights.length - 1];
+    const insights = (MASTERMIND_COACH_INSIGHTS as any)[category] || [];
+    return (insights && insights[step]) || "Define your logic shard.";
   };
 
   return (
@@ -289,7 +250,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-10">
           <div className="flex flex-col cursor-pointer" onClick={() => {setOutput(null); setGuidedState(p => ({...p, category: null, index: 0})); setIsReviewing(false);}}>
             <h1 className="text-2xl font-black italic tracking-tighter uppercase leading-none">ARCHITECT<span className="text-indigo-500">.IO</span></h1>
-            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 italic">Product Engineering Suite</p>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 italic">Quantum Product Engine</p>
           </div>
           <nav className="flex gap-1 bg-white/5 p-1 rounded-xl">
             {['BUILD', 'HISTORY', 'ACCOUNT'].map(tab => (
@@ -316,7 +277,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* GUIDED SELECTION */}
+        {/* VECTOR SELECTION */}
         {activeTab === 'BUILD' && !guidedState.category && (
           <div className="h-full flex flex-col items-center justify-center animate-fade-in relative">
             <div className="text-center mb-20 z-10">
@@ -334,12 +295,12 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* GUIDED FLOW */}
+        {/* GUIDED FLOW / SIMPLE PROMPT */}
         {activeTab === 'BUILD' && guidedState.category && !output && (
           <div className="h-full flex flex-col p-16 overflow-y-auto custom-scrollbar animate-fade-in bg-[#050608]">
             <div className="max-w-7xl mx-auto w-full space-y-12">
               <button onClick={() => setGuidedState(p => ({ ...p, category: null, index: 0 }))} className="flex items-center gap-3 text-[11px] font-black text-slate-600 hover:text-white uppercase tracking-widest italic group">
-                <Icons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Exit Matrix
+                <Icons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Exit Vector
               </button>
 
               {isReviewing ? (
@@ -364,7 +325,7 @@ const App: React.FC = () => {
                       ))}
                    </div>
                    <div className="max-w-4xl mx-auto space-y-8 pt-10">
-                      <TextArea label="Synthesis Objective" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="The core directive of your masterpiece..." className="bg-white/5 text-xl py-12 px-10 rounded-[4rem] min-h-[220px]" />
+                      <TextArea label="Synthesis Objective" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} placeholder="Finalize your core directive..." className="bg-white/5 text-xl py-12 px-10 rounded-[4rem] min-h-[220px]" />
                       <button onClick={handleExecute} className="w-full py-12 bg-indigo-600 text-white font-black uppercase rounded-full shadow-[0_0_80px_rgba(79,70,229,0.4)] hover:bg-indigo-500 tracking-[0.8em] italic transition-all">Synthesize Masterwork</button>
                    </div>
                 </div>
@@ -404,7 +365,7 @@ const App: React.FC = () => {
                             {options.map((opt: any) => {
                               const label = typeof opt === 'string' ? opt : opt.label;
                               const desc = typeof opt === 'string' ? null : opt.desc;
-                              const isSelected = ((form as any)[q.key] || "").split(', ').includes(label);
+                              const isSelected = (form as any)[q.key] === label;
                               return (
                                 <button key={label} onClick={() => toggleShard(q.key, label)} className={`p-10 rounded-[3rem] text-center border transition-all flex flex-col items-center justify-center gap-3 shadow-xl hover:scale-[1.03] ${isSelected ? 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_40px_rgba(79,70,229,0.3)]' : 'bg-[#11141d]/80 border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/20'}`}>
                                   <span className="text-[14px] font-black uppercase tracking-wider">{label}</span>
@@ -450,24 +411,28 @@ const App: React.FC = () => {
                    
                    {output.APP_BLUEPRINT && (
                      <div className="space-y-10 animate-fade-in">
-                        <h4 className="text-indigo-400 font-black uppercase tracking-[1em] pl-4 italic leading-none">STRUCTURAL SPECIFICATION</h4>
-                        <div className="bg-[#0e0f14] border border-white/5 p-20 rounded-[5rem] text-slate-300 font-sans text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative">
-                           <div className="absolute top-10 right-10 flex gap-4">
-                              <button onClick={() => handleCopyText(output.APP_BLUEPRINT || '')} className="p-4 bg-white/5 rounded-full hover:text-indigo-400" title="Copy Blueprint"><Icons.Copy className="w-5 h-5" /></button>
-                              <button onClick={() => handleDownload(output.APP_BLUEPRINT || '', 'blueprint.txt')} className="p-4 bg-white/5 rounded-full hover:text-indigo-400" title="Download Blueprint"><Icons.Download className="w-5 h-5" /></button>
+                        <div className="flex justify-between items-end pl-4">
+                           <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none">STRUCTURAL SPECIFICATION</h4>
+                           <div className="flex gap-2">
+                             <button onClick={() => handleCopyText(output.APP_BLUEPRINT || '')} className="p-2 text-slate-500 hover:text-white transition-colors" title="Copy Blueprint"><Icons.Copy className="w-5 h-5" /></button>
+                             <button onClick={() => handleDownload(output.APP_BLUEPRINT || '', 'blueprint.txt')} className="p-2 text-slate-500 hover:text-white transition-colors" title="Download Blueprint"><Icons.Download className="w-5 h-5" /></button>
                            </div>
+                        </div>
+                        <div className="bg-[#0e0f14] border border-white/5 p-20 rounded-[5rem] text-slate-300 font-sans text-xl leading-relaxed whitespace-pre-wrap shadow-2xl relative">
                            {output.APP_BLUEPRINT}
                         </div>
                      </div>
                    )}
 
                    <div className="space-y-10">
-                      <h4 className="text-indigo-400 font-black uppercase tracking-[1em] pl-4 italic leading-none text-sm">IMPLEMENTATION PROMPT (SENIOR ENGINEER)</h4>
-                      <div className="bg-[#0e0f14]/50 border border-white/5 p-20 rounded-[5rem] text-slate-400 font-mono text-lg leading-relaxed whitespace-pre-wrap shadow-inner relative">
-                        <div className="absolute top-10 right-10 flex gap-4">
-                            <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="p-4 bg-white/5 rounded-full hover:text-indigo-400" title="Copy Prompt"><Icons.Copy className="w-5 h-5" /></button>
-                            <button onClick={() => handleDownload(output.FINAL_PROMPT, 'implementation-prompt.txt')} className="p-4 bg-white/5 rounded-full hover:text-indigo-400" title="Download Prompt"><Icons.Download className="w-5 h-5" /></button>
+                      <div className="flex justify-between items-end pl-4">
+                        <h4 className="text-indigo-400 font-black uppercase tracking-[1em] italic leading-none text-sm">IMPLEMENTATION PROMPT (SENIOR ENGINEER)</h4>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleCopyText(output.FINAL_PROMPT)} className="p-2 text-slate-500 hover:text-white transition-colors" title="Copy Prompt"><Icons.Copy className="w-5 h-5" /></button>
+                            <button onClick={() => handleDownload(output.FINAL_PROMPT, 'implementation-prompt.txt')} className="p-2 text-slate-500 hover:text-white transition-colors" title="Download Prompt"><Icons.Download className="w-5 h-5" /></button>
                         </div>
+                      </div>
+                      <div className="bg-[#0e0f14]/50 border border-white/5 p-20 rounded-[5rem] text-slate-400 font-mono text-lg leading-relaxed whitespace-pre-wrap shadow-inner relative">
                         {output.FINAL_PROMPT}
                       </div>
                    </div>

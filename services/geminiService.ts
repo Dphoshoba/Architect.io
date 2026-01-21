@@ -1,17 +1,16 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World-Class Product Architect, PhD Strategist, and Senior Software Engineer.
-MISSION: Synthesize a "Hyper-Fidelity" product specification and implementation prompt.
+ROLE: Elite Product Architect, UX Interviewer, and Senior Full-Stack Engineer.
+MISSION: Transform vague user ideas into high-fidelity, build-ready specifications and implementation prompts.
 
-CORE PROTOCOLS:
-1. APP BLUEPRINT: If the input targets an application, you MUST generate a detailed "APP_BLUEPRINT". 
-   - Sections: Summary, Platform/Tech Stack, Core User Personas, User Stories, Feature Prioritization (MUST/NICE), Screen Architecture, Data Model, and AI/Automation Logic.
-2. IMPLEMENTATION PROMPT: Generate a "FINAL_PROMPT" directed at a Senior Full-Stack Engineer. 
-   - It should include all functional requirements, UI/UX guidelines, and technical constraints.
-3. STRATEGIC ANCHORING: Apply an elite framework (Google 5-Step, TTCRFEI, etc.) based on the project's DNA.
+STRATEGIC PROTOCOLS:
+1. GUIDED BLUEPRINT: You are designing an app or system. You must output an "APP_BLUEPRINT" that acts as a structured source of truth.
+   - Include: App Summary, Platform & Tech Stack (e.g. React/Next.js), Core User Personas, User Stories (As a [persona]...), Prioritized Features (MUST/NICE), Screen Architecture, and AI/Automation Logic.
+2. SENIOR-ENGINEER PROMPT: The "FINAL_PROMPT" is a technical directive for a coding LLM. 
+   - It should be exhaustive, covering architecture, UI patterns (e.g. Bento Grid, SaaS Dashboard), and state management.
+3. PHILLIP-LEVEL STRATEGY: Anchor the synthesis in elite frameworks (Google 5-Step, TTCRFEI, ECIF).
 
 Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
@@ -35,22 +34,25 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
   const promptText = `
     CURRENT PROJECT DATA:
     Type: ${input.task_type}
-    Goal: ${input.high_level_goal}
-    Domain: ${input.prof_domain || input.web_type || input.app_platform || 'General'}
+    Objective: ${input.high_level_goal}
+    Current Matrix: ${JSON.stringify(input)}
     
-    As Dr. Architect PhD, analyze this matrix for gaps. Provide 3 categories of refinements:
-    1. Visual Brand DNA (Font Hierarchies, Color Chromatics).
-    2. Strategic Framework (Google 5-Step, TTCRFEI, Get/To/By, ECIF).
-    3. Operational Nuance (Engineering stack, UX flows, or Business logic).
+    As Dr. Architect PhD, identify 3 critical refinement categories to elevate this concept to production-grade logic.
+    For each category, provide 3 strategic options with non-technical descriptions for the user.
+    
+    Refinement Categories should focus on:
+    1. Visual Identity & UX Patterns (e.g., Apple-style Minimal vs. Industrial Dark).
+    2. Operational Strategy (e.g., Lean MVP vs. Enterprise Robustness).
+    3. Technical Framework (e.g., Next.js Performance vs. Real-time Firebase Sync).
 
-    Return 3 categories, each with 3 distinct options.
+    Return exactly 3 categories.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: promptText,
     config: {
-      systemInstruction: "You are a PhD strategist. Identify gaps in a product design and provide choice-based refinements.",
+      systemInstruction: "You are a PhD strategist. Analyze a product concept and provide choice-based refinements.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -86,13 +88,14 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   
   const promptText = `
-    INITIATE FULL SYNTHESIS:
-    Goal: ${input.high_level_goal}
-    Context: ${input.domain_context}
-    Features: ${input.app_features || 'N/A'}
-    Platform: ${input.app_platform || 'N/A'}
-    UX Style: ${input.app_ux_style || 'N/A'}
-    Release Scope: ${input.app_scope || 'N/A'}
+    INITIATE HYPER-FIDELITY SYNTHESIS:
+    Objective: ${input.high_level_goal}
+    Platform: ${input.app_platform || 'Cross-Platform Web'}
+    Scope: ${input.app_scope || 'MVP'}
+    UX Style: ${input.app_ux_style || 'Clean & Modern'}
+    Authentication: ${input.app_auth || 'Email/Password'}
+    Core Features: ${input.app_features || 'N/A'}
+    Tone/Vibe: ${input.tone_style || 'Professional'}
   `;
 
   const response = await ai.models.generateContent({
@@ -133,7 +136,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `High-fidelity app/web blueprint aesthetic: ${prompt}. Editorial tech style, glassmorphism UI elements, dark mode, clean typography.` }] },
+    contents: { parts: [{ text: `Hyper-fidelity app/web blueprint aesthetic: ${prompt}. Editorial tech style, glassmorphism UI elements, dark mode, clean typography.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",
