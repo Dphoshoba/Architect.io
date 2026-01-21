@@ -1,16 +1,20 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory } from "../types";
+import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory, InterviewQuestion } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: Elite Product Architect, UX Interviewer, and Senior Full-Stack Engineer.
-MISSION: Transform vague user ideas into high-fidelity, build-ready specifications and implementation prompts.
+ROLE: World-Class Product Architect, FinOps Strategist, and Senior Full-Stack Engineer.
+MISSION: Help users transform vague ideas into precise, build-ready app concepts and implementation prompts.
 
-STRATEGIC PROTOCOLS:
-1. GUIDED BLUEPRINT: You are designing an app or system. You must output an "APP_BLUEPRINT" that acts as a structured source of truth.
-   - Include: App Summary, Platform & Tech Stack (e.g. React/Next.js), Core User Personas, User Stories (As a [persona]...), Prioritized Features (MUST/NICE), Screen Architecture, and AI/Automation Logic.
-2. SENIOR-ENGINEER PROMPT: The "FINAL_PROMPT" is a technical directive for a coding LLM. 
-   - It should be exhaustive, covering architecture, UI patterns (e.g. Bento Grid, SaaS Dashboard), and state management.
-3. PHILLIP-LEVEL STRATEGY: Anchor the synthesis in elite frameworks (Google 5-Step, TTCRFEI, ECIF).
+CORE BEHAVIOR:
+1. GUIDED DISCOVERY: You act as a high-leverage interviewer.
+2. HYPER-FIDELITY BLUEPRINT: You must output an "APP_BLUEPRINT" covering:
+   - Summary, Target Users/Regions, Core Workflows, Screens & UX, Data Model (entities/relationships), Integrations, Roles & Permissions, Compliance/Audit, and MVP vs Future.
+3. SENIOR-ENGINEER PROMPT: The "FINAL_PROMPT" must be an exhaustive technical directive for a dev agent.
+
+FINANCE DOMAIN SPECIALIZATION:
+- If finance-related, prioritize accuracy, auditability, immutable ledger entries, and tax compliance.
+- Explicitly state tech stack defaults (e.g. Next.js, PostgreSQL, Stripe) if unspecified.
 
 Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
@@ -29,6 +33,41 @@ const cleanJsonResponse = (text: string | undefined) => {
   }
 };
 
+export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const promptText = `
+    CURRENT STATE: ${input.task_type} | ${input.fin_domain || input.app_platform || 'General'}
+    GOAL: ${input.high_level_goal}
+    CONTEXT: ${JSON.stringify(input)}
+
+    Act as a Product Architect. Identify 3 critical missing or ambiguous details (Technical, UX, or Business logic) that would change the architecture.
+    Ask targeted, high-leverage questions. 
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: promptText,
+    config: {
+      systemInstruction: "You are a senior product architect. Proactively probe for missing details using high-leverage questions.",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            id: { type: Type.STRING },
+            question: { type: Type.STRING },
+            context: { type: Type.STRING, description: "Why this detail matters for the build." }
+          },
+          required: ["id", "question", "context"]
+        }
+      }
+    }
+  });
+
+  return cleanJsonResponse(response.text);
+};
+
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const promptText = `
@@ -37,15 +76,7 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
     Objective: ${input.high_level_goal}
     Current Matrix: ${JSON.stringify(input)}
     
-    As Dr. Architect PhD, identify 3 critical refinement categories to elevate this concept to production-grade logic.
-    For each category, provide 3 strategic options with non-technical descriptions for the user.
-    
-    Refinement Categories should focus on:
-    1. Visual Identity & UX Patterns (e.g., Apple-style Minimal vs. Industrial Dark).
-    2. Operational Strategy (e.g., Lean MVP vs. Enterprise Robustness).
-    3. Technical Framework (e.g., Next.js Performance vs. Real-time Firebase Sync).
-
-    Return exactly 3 categories.
+    Identify 3 critical refinement categories. Provide 3 strategic options each.
   `;
 
   const response = await ai.models.generateContent({
@@ -88,14 +119,8 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const modelName = input.reasoning_visibility === 'detailed' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   
   const promptText = `
-    INITIATE HYPER-FIDELITY SYNTHESIS:
-    Objective: ${input.high_level_goal}
-    Platform: ${input.app_platform || 'Cross-Platform Web'}
-    Scope: ${input.app_scope || 'MVP'}
-    UX Style: ${input.app_ux_style || 'Clean & Modern'}
-    Authentication: ${input.app_auth || 'Email/Password'}
-    Core Features: ${input.app_features || 'N/A'}
-    Tone/Vibe: ${input.tone_style || 'Professional'}
+    FINAL SYNTHESIS:
+    ${JSON.stringify(input)}
   `;
 
   const response = await ai.models.generateContent({
@@ -136,7 +161,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `Hyper-fidelity app/web blueprint aesthetic: ${prompt}. Editorial tech style, glassmorphism UI elements, dark mode, clean typography.` }] },
+    contents: { parts: [{ text: `High-fidelity product blueprint render: ${prompt}. Dark editorial style, technical overlays.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",
@@ -148,27 +173,4 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
     if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
   }
   return "";
-};
-
-export const generateMarketingKit = async (prompt: string, goal: string, language: string): Promise<MarketingKit> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Synthesis marketing kit for: "${goal}". Language: ${language}.`,
-    config: {
-      systemInstruction: "Generate strategic marketing assets including ads, email sequences, and a visual style guide.",
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          social_ads: { type: Type.STRING },
-          landing_page: { type: Type.STRING },
-          email_sequence: { type: Type.STRING },
-          visual_style_guide: { type: Type.STRING }
-        },
-        required: ["social_ads", "landing_page", "email_sequence", "visual_style_guide"]
-      }
-    }
-  });
-  return cleanJsonResponse(response.text);
 };

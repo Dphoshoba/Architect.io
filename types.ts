@@ -31,6 +31,12 @@ export interface MastermindSuggestionCategory {
   options: MastermindSuggestionOption[];
 }
 
+export interface InterviewQuestion {
+  id: string;
+  question: string;
+  context: string;
+}
+
 export interface PromptInput {
   target_AI: TargetAI;
   high_level_goal: string;
@@ -72,6 +78,11 @@ export interface PromptInput {
   app_features?: string;
   app_ai_logic?: string;
   app_integrations?: string;
+  // Finance Shards
+  fin_domain?: string;
+  fin_users?: string;
+  fin_region?: string;
+  fin_compliance?: string;
 }
 
 export interface MarketingKit {
