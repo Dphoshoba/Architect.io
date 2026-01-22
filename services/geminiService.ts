@@ -1,24 +1,37 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MarketingKit, MastermindSuggestionCategory, InterviewQuestion } from "../types";
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: World-Class Product Architect, FinOps Strategist, and Universal SaaS Expert.
+ROLE: World-Class Multi-Disciplinary Architect and Strategist.
 
 MISSION: Transform vague user ideas into crisp, build-ready specifications and implementation prompts.
 
 DOMAIN SPECIALIZATIONS:
-1. UNIVERSAL SAAS ARCHITECT:
-   - Covers: Sales/CRM, Marketing, Support, Operations, HR, Finance, Collaboration, Analytics, DevTools, Security.
-   - Output must include SaaS App Blueprint structure: Summary, Target Users/Pricing, Data Model, Workflows, Screens & UX, Roles, Integrations, MVP vs Future.
+1. WEBSITE & SAAS ARCHITECT:
+   - High-fidelity landing pages, luxury brand sites, and complex business logic.
+   - Focus on visual hierarchy, typography, data models, and conversion.
 
-2. FINANCE APP ARCHITECT:
-   - Focused on Accounting, Invoicing, Expenses, and Tax workflows.
-   - Priorities: Accuracy, auditability, immutable ledger entries, and clear UX for non-tech users.
+2. ENGINEERING ARCHITECT:
+   - Systems design, software architecture, mechanical engineering, and technical optimization.
+   - Focus on scalability, safety, trade-offs, and rigorous logic.
+
+3. REAL ESTATE & SPATIAL ARCHITECT:
+   - House planning, interior design, decorations, and urban planning.
+   - Focus on materials, spatial flow, lighting, aesthetics, and structural feasibility.
+
+4. ARTIST & VISUAL ARCHITECT:
+   - Fine arts, digital illustration, sculpture, and abstract concepts.
+   - Focus on medium, technique, emotional resonance, and stylistic DNA.
+
+5. VISUAL & MOTION ARCHITECT (IMAGE/VIDEO):
+   - Experts in prompting models like Gemini Flash Image, Imagen, and Veo.
+   - Focus on cinematography, lighting, composition, and temporal consistency.
 
 CORE BEHAVIOR:
-- Guided Discovery: If technical details are missing (stack, auth, persistence), select sensible defaults and state them.
-- Hyper-Fidelity Blueprint: Generate an "APP_BLUEPRINT" as the source of truth.
-- Senior-Engineer Prompt: Generate a "FINAL_PROMPT" directed at a Senior Full-Stack Engineer.
+- Guided Discovery: If technical details are missing, select sensible defaults and state them.
+- Hyper-Fidelity Blueprint: Generate an "APP_BLUEPRINT" or "PROJECT_BLUEPRINT" as the source of truth.
+- Senior-Level Prompt: Generate a "FINAL_PROMPT" directed at an expert practitioner (e.g., Senior Dev, Interior Designer, Concept Artist).
 
 Return ONLY a valid JSON object matching the PromptOutput schema.
 `;
@@ -39,8 +52,9 @@ const cleanJsonResponse = (text: string | undefined) => {
 
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const vector = input.web_type || input.saas_category || input.prof_domain || input.img_subject || "General";
   const promptText = `
-    CURRENT STATE: ${input.task_type} | Vector: ${input.saas_category || input.fin_domain || 'General'}
+    CURRENT STATE: ${input.task_type} | Vector: ${vector}
     GOAL: ${input.high_level_goal}
     CONTEXT: ${JSON.stringify(input)}
 
@@ -48,10 +62,10 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
     GOAL: Use the "AskUserQuestion" strategy aggressively to probe for missing details.
     
     PROBE FOR:
-    - Technical Implementation (stack, auth, persistence, security).
-    - UI/UX (hierarchy, flows, design system).
-    - Product Domain (users, use cases, edge cases).
-    - Constraints (compliance, MVP scope, budget).
+    - Engineering: Constraints, stack, materials, safety factors.
+    - Real Estate: Dimensions, lighting, materials, lifestyle goals.
+    - Art: Medium, emotional tone, references, textures.
+    - Website/SaaS: UX, auth, data model, user persona.
 
     Identify 3-4 critical missing details. Return them as a JSON array of InterviewQuestion objects.
   `;
@@ -88,7 +102,7 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
     Objective: ${input.high_level_goal}
     Current State: ${JSON.stringify(input)}
     
-    Identify 3 strategic refinement categories (e.g., Visual Brand DNA, Strategic Framework, Operational Nuance).
+    Identify 3 strategic refinement categories appropriate for this specific domain (Engineering, Design, or Art).
     Provide 3 distinct options each.
   `;
 
@@ -174,7 +188,7 @@ export const generateVisualImage = async (prompt: string, model: 'flash' | 'pro'
   const modelName = model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
   const response = await ai.models.generateContent({
     model: modelName,
-    contents: { parts: [{ text: `High-fidelity architectural product blueprint aesthetic: ${prompt}. Editorial tech style, technical overlays, dark mode.` }] },
+    contents: { parts: [{ text: `High-fidelity architectural project visualization: ${prompt}. Cinematic technical presentation, high detail.` }] },
     config: { 
       imageConfig: { 
         aspectRatio: "16:9",
