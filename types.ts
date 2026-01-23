@@ -1,3 +1,4 @@
+
 export type TargetAI = 
   | "Gemini 3 Flash"
   | "Gemini 3 Pro"
@@ -72,6 +73,21 @@ export interface PromptInput {
   img_subject?: string;
   img_lighting?: string;
   img_composition?: string;
+  // Video Shards
+  vid_style?: string;
+  vid_motion?: string;
+  vid_frame_rate?: string;
+  // Engineering Shards
+  eng_field?: string;
+  eng_constraints?: string;
+  eng_standards?: string;
+  // Real Estate / Interior Shards
+  estate_style?: string;
+  estate_spatial_goal?: string;
+  estate_lighting_plan?: string;
+  // Artist Shards
+  artist_medium?: string;
+  artist_style_dna?: string;
   // App Shards
   app_type?: string;
   app_platform?: string;
