@@ -23,7 +23,8 @@ const Icons = {
   ArrowLeft: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
   Copy: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>,
   Stop: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>,
-  Upload: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
+  Upload: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>,
+  Download: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 };
 
 // --- Helpers ---
@@ -71,7 +72,7 @@ const GUIDED_FLOWS = {
   'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Art Concept' }] },
   'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, questions: [{ key: 'img_lighting', label: 'Vibe & Light' }, { key: 'high_level_goal', label: 'Visual Scene' }] },
   'Video': { title: 'MOTION / VIDEO', icon: Icons.Video, questions: [{ key: 'vid_style', label: 'Style' }, { key: 'high_level_goal', label: 'Story/Action' }] },
-  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'high_level_goal', label: 'Core Concept' }] },
+  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'web_aesthetic', label: 'Design Vibe' }, { key: 'high_level_goal', label: 'Core Concept' }] },
   'Live': { title: 'VOICE CHAT', icon: Icons.Mic, questions: [] }
 };
 
@@ -81,7 +82,11 @@ const SHARDS = {
   artist_medium: [{ label: "Digital Art", desc: "Screen-based" }, { label: "Painting", desc: "Physical Canvas" }, { label: "3D Art", desc: "Sculpted/Modeled" }],
   img_lighting: [{ label: "Cinematic", desc: "Mood & Drama" }, { label: "Natural", desc: "Bright & Open" }, { label: "Neon", desc: "Cyberpunk Vibe" }],
   vid_style: [{ label: "Realistic", desc: "Life-like" }, { label: "Anime", desc: "Stylized Motion" }, { label: "Fast Action", desc: "High Energy" }],
-  web_type: [{ label: "SaaS App", desc: "Business Tool" }, { label: "Portfolio", desc: "Creative Showcase" }, { label: "Commerce", desc: "Online Store" }]
+  web_type: [{ label: "Non-Profit", desc: "Community & Charity" }, { label: "SaaS App", desc: "Business Tool" }, { label: "Portfolio", desc: "Showcase" }, { label: "Commerce", desc: "Online Store" }],
+  web_aesthetic: [
+    { label: "Welcoming", desc: "Modern & Clean Layout" },
+    { label: "Impactful", desc: "Bold & Cinematic Presence" }
+  ]
 };
 
 const App: React.FC = () => {
@@ -121,6 +126,30 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('architect_mobbin_v3');
     if (saved) setHistory(JSON.parse(saved));
   }, []);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
+  };
+
+  const downloadText = (content: string, filename: string) => {
+    const element = document.createElement("a");
+    const file = new Blob([content], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = filename;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const downloadImage = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -420,12 +449,12 @@ const App: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 max-w-7xl mx-auto px-4">
                     {options.map((opt: any) => (
                       <button 
                         key={opt.label} 
                         onClick={() => setForm(p => ({ ...p, [q.key]: opt.label }))} 
-                        className={`p-14 mobbin-card transition-all flex flex-col items-center gap-4 border-2 shadow-sm ${(form as any)[q.key] === opt.label ? 'bg-[#141414] text-white border-[#141414] scale-105 shadow-3xl' : 'text-slate-600 hover:border-[#0055FF]/40 border-slate-100'}`}
+                        className={`p-10 mobbin-card transition-all flex flex-col items-center gap-4 border-2 shadow-sm ${(form as any)[q.key] === opt.label ? 'bg-[#141414] text-white border-[#141414] scale-105 shadow-3xl' : 'text-slate-600 hover:border-[#0055FF]/40 border-slate-100'}`}
                       >
                         <span className="text-lg font-black uppercase tracking-wider">{opt.label}</span>
                         <span className={`text-[11px] uppercase font-bold tracking-tight ${ (form as any)[q.key] === opt.label ? 'text-[#0055FF]' : 'text-slate-400' }`}>{opt.desc}</span>
@@ -521,23 +550,55 @@ const App: React.FC = () => {
                         <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-10 italic">{isSimpleMode ? 'The building plan is ready.' : 'High-Fidelity Architecture Synthesized'}</p>
                       </div>
                       <div className="flex gap-6">
-                        <button onClick={() => { navigator.clipboard.writeText(output.FINAL_PROMPT); alert("Prompt Copied!"); }} className="mobbin-btn-primary flex items-center gap-4 uppercase text-xs tracking-widest italic font-black px-12 py-5 shadow-2xl transition-all"><Icons.Copy className="w-6 h-6" /> COPY PROMPT</button>
                         <button onClick={() => { setOutput(null); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); }} className="mobbin-btn-secondary uppercase text-xs tracking-widest italic font-black px-10 py-5 border-2 border-slate-200">NEW PROJECT</button>
                       </div>
                    </div>
+                   
+                   {/* SECTION 01: BLUEPRINT */}
                    {output.APP_BLUEPRINT && (
                      <div className="space-y-10">
-                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. {isSimpleMode ? 'BUILDING PLAN' : 'STRUCTURE'}</h4>
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. {isSimpleMode ? 'BUILDING PLAN' : 'STRUCTURE'}</h4>
+                          <div className="flex gap-3">
+                            <button onClick={() => handleCopy(output.APP_BLUEPRINT!)} className="mobbin-btn-secondary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest border-slate-200 hover:bg-slate-50">
+                              <Icons.Copy className="w-4 h-4" /> COPY
+                            </button>
+                            <button onClick={() => downloadText(output.APP_BLUEPRINT!, "blueprint.txt")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
+                              <Icons.Download className="w-4 h-4" /> DOWNLOAD
+                            </button>
+                          </div>
+                        </div>
                         <div className="mobbin-card p-24 text-[#141414] text-4xl font-medium leading-relaxed whitespace-pre-wrap shadow-3xl border-2 border-slate-100 bg-[#fdfdfd]">{output.APP_BLUEPRINT}</div>
                      </div>
                    )}
+
+                   {/* SECTION 02: AI IMPLEMENTATION / PROMPT */}
                    <div className="space-y-10">
-                      <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. {isSimpleMode ? 'INSTRUCTIONS' : 'AI IMPLEMENTATION'}</h4>
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. {isSimpleMode ? 'INSTRUCTIONS' : 'AI IMPLEMENTATION'}</h4>
+                        <div className="flex gap-3">
+                            <button onClick={() => handleCopy(output.FINAL_PROMPT)} className="mobbin-btn-secondary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest border-slate-200 hover:bg-slate-50">
+                              <Icons.Copy className="w-4 h-4" /> COPY
+                            </button>
+                            <button onClick={() => downloadText(output.FINAL_PROMPT, "prompt_specification.txt")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
+                              <Icons.Download className="w-4 h-4" /> DOWNLOAD
+                            </button>
+                          </div>
+                      </div>
                       <div className="bg-slate-50 border-2 border-slate-100 p-24 rounded-[5rem] text-slate-600 font-mono text-xl leading-relaxed whitespace-pre-wrap shadow-inner overflow-x-auto">{output.FINAL_PROMPT}</div>
                    </div>
+
+                   {/* SECTION 03: VISUAL PREVIEW */}
                    {generatedVisual && (
                      <div className="space-y-10">
-                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. {isSimpleMode ? 'VISUAL PREVIEW' : 'SYNTHESIS RENDER'}</h4>
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. {isSimpleMode ? 'VISUAL PREVIEW' : 'SYNTHESIS RENDER'}</h4>
+                          <div className="flex gap-3">
+                            <button onClick={() => downloadImage(generatedVisual, "architect_render.png")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
+                              <Icons.Download className="w-4 h-4" /> DOWNLOAD RENDER
+                            </button>
+                          </div>
+                        </div>
                         <div className="p-8 bg-slate-50 rounded-[7rem] border-2 border-slate-100 shadow-sm">
                             <img src={generatedVisual} className="w-full rounded-[6rem] shadow-4xl" alt="Render" />
                         </div>
