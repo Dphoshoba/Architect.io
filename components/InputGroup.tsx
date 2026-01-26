@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface BaseProps {
-  label: string;
+  label?: string;
   description?: string;
 }
 
@@ -11,7 +11,8 @@ export const TextInput: React.FC<BaseProps & React.InputHTMLAttributes<HTMLInput
     {label && <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1 italic">{label}</label>}
     <input
       {...props}
-      className={`w-full px-5 py-4 bg-[#11141d] border border-white/5 text-white placeholder:text-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all text-sm shadow-inner ${className || ''}`}
+      style={{ color: '#141414', backgroundColor: '#FFFFFF' }}
+      className={`w-full px-5 py-4 border border-black/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all text-sm shadow-sm placeholder:text-slate-300 ${className || ''}`}
     />
   </div>
 );
@@ -21,7 +22,8 @@ export const TextArea: React.FC<BaseProps & React.TextareaHTMLAttributes<HTMLTex
     {label && <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1 italic">{label}</label>}
     <textarea
       {...props}
-      className={`w-full px-5 py-4 bg-[#11141d] border border-white/5 text-white placeholder:text-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all text-sm resize-none shadow-inner min-h-[100px] ${className || ''}`}
+      style={{ color: '#141414', backgroundColor: '#FFFFFF' }}
+      className={`w-full px-5 py-4 border border-black/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all text-sm resize-none shadow-sm min-h-[100px] placeholder:text-slate-300 ${className || ''}`}
     />
   </div>
 );
@@ -32,7 +34,8 @@ export const Select: React.FC<BaseProps & React.SelectHTMLAttributes<HTMLSelectE
     <div className="relative">
       <select
         {...props}
-        className={`w-full px-5 py-4 bg-[#11141d] border border-white/5 text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all text-sm appearance-none cursor-pointer shadow-inner ${className || ''}`}
+        style={{ color: '#141414', backgroundColor: '#FFFFFF' }}
+        className={`w-full px-5 py-4 border border-black/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all text-sm appearance-none cursor-pointer shadow-sm ${className || ''}`}
       >
         {children}
       </select>

@@ -51,6 +51,7 @@ export interface PromptInput {
   reasoning_visibility: ReasoningVisibility;
   language: string;
   visual_inspiration_mode: boolean;
+  isSimpleMode?: boolean; // Added for jargon reduction
   base64Image?: string; 
   media_ref_base64?: string;
   media_type?: 'image' | 'video' | 'audio';

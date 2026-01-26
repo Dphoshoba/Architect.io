@@ -19,13 +19,34 @@ CORE OUTPUTS:
 - FINAL_PROMPT: A hyper-detailed instruction for an expert practitioner or specialized AI.
 `;
 
+const SIMPLE_MODE_SYSTEM_INSTRUCTION = `
+IMPORTANT: THE USER IS NOT TECHNICAL. 
+- DO NOT use words like: 'Synthesis', 'Architecture', 'Blueprint', 'Logic', 'Vector', 'Prompt', 'Shards', 'Parameters', 'Optimization', 'Model', 'Refinement'.
+- DO use words like: 'Building Plan', 'Style', 'Goal', 'Checklist', 'Instructions', 'Look & Feel', 'Steps'.
+- Explain everything like a friendly assistant helping a small business owner or a hobbyist.
+- Keep all explanations extremely simple and grounded in the physical world.
+- If they want an app, talk about "screens" and "buttons".
+- If they want a house, talk about "layout" and "decor".
+`;
+
+/** 
+ * Cleans the input to prevent sending massive base64 strings inside the text prompt 
+ * which causes 400 errors.
+ */
+const sanitizeInput = (input: PromptInput) => {
+  const { media_ref_base64, base64Image, ...cleanInput } = input;
+  return cleanInput;
+};
+
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+  
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Probe for 3-4 critical details missing in this ${input.task_type} vision: ${input.high_level_goal}`,
+    contents: `Help clarify this project: ${JSON.stringify(sanitizeInput(input))}. Ask 3 very simple questions to help me build a better plan.`,
     config: {
-      systemInstruction: "You are a specialized architect. Use the 'AskUserQuestion' strategy to find technical or artistic gaps.",
+      systemInstruction: `You are a helpful project helper. Find out what details are needed to start. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -34,7 +55,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING }
+            context: { type: Type.STRING, description: "A simple reason why this question matters." }
           },
           required: ["id", "question", "context"]
         }
@@ -46,11 +67,13 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
 
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analyze this ${input.task_type} goal: ${input.high_level_goal}. Provide strategic choices.`,
+    contents: `Based on the goal and context: ${JSON.stringify(sanitizeInput(input))}, give me 3 categories of styles or choices the user needs to make.`,
     config: {
-      systemInstruction: "You are a PhD strategist. Provide choice-based refinements.",
+      systemInstruction: `You are a style and planning advisor. Provide clear categories of choices. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -82,17 +105,32 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+
+  const parts: any[] = [{ text: `FINALIZE PLAN FOR: ${JSON.stringify(sanitizeInput(input))}` }];
+  
+  // Multimodal part - Binary data goes here, NOT in the JSON above
+  if (input.media_ref_base64 && input.media_type) {
+    parts.push({
+      inlineData: {
+        data: input.media_ref_base64,
+        mimeType: input.media_type === 'image' ? 'image/png' : 
+                  input.media_type === 'video' ? 'video/mp4' : 'audio/mpeg'
+      }
+    });
+  }
+
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `FINAL SYNTHESIS: ${JSON.stringify(input)}`,
+    contents: { parts },
     config: {
-      systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
+      systemInstruction: `${MASTER_ARCHITECT_SYSTEM_PROMPT} ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          FINAL_PROMPT: { type: Type.STRING },
-          APP_BLUEPRINT: { type: Type.STRING },
+          FINAL_PROMPT: { type: Type.STRING, description: "Detailed instructions for another AI or expert." },
+          APP_BLUEPRINT: { type: Type.STRING, description: "The structured plan for the user." },
           VISUAL_INSPIRATION_PROMPT: { type: Type.STRING },
           SUGGESTED_MODELS: {
             type: Type.ARRAY,
@@ -116,7 +154,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `Professional architectural visualization: ${prompt}. Cinematic studio lighting, editorial style, 8k.` }] },
+    contents: { parts: [{ text: `A clean, professional 3D render or photograph of: ${prompt}. High quality, cinematic lighting.` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
