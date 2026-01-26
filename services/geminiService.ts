@@ -44,7 +44,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Help clarify this project: ${JSON.stringify(sanitizeInput(input))}. Ask 3 very simple questions to help me build a better plan.`,
+    contents: `Help clarify this project: ${JSON.stringify(sanitizeInput(input))}. Ask 3 very simple questions. For EACH question, provide 3 suggested short answers (options) that a non-technical user might choose from.`,
     config: {
       systemInstruction: `You are a helpful project helper. Find out what details are needed to start. ${simpleInstruction}`,
       responseMimeType: "application/json",
@@ -55,9 +55,14 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING, description: "A simple reason why this question matters." }
+            context: { type: Type.STRING, description: "A simple reason why this question matters." },
+            options: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              description: "Suggested quick answers for a non-technical user."
+            }
           },
-          required: ["id", "question", "context"]
+          required: ["id", "question", "context", "options"]
         }
       }
     }

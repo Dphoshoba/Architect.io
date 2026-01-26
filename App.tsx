@@ -417,7 +417,7 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* CATEGORY SELECTION - FIXED justify-start to prevent top clipping */}
+        {/* CATEGORY SELECTION */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
           <div className="h-full flex flex-col items-center justify-start p-12 pt-24 animate-fade-in overflow-y-auto custom-scrollbar">
             <div className="text-center mb-16 max-w-4xl">
@@ -514,27 +514,46 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* QUESTIONS PHASE */}
+        {/* QUESTIONS PHASE - ENHANCED with Multiple Choice */}
         {activeTab === 'BUILD' && isInterviewing && !isLiveActive && (
            <div className="h-full p-16 overflow-y-auto bg-white custom-scrollbar">
-              <div className="max-w-4xl mx-auto space-y-20 py-16">
+              <div className="max-w-5xl mx-auto space-y-20 py-16">
                  <div className="text-center">
                    <h2 className="text-9xl font-black italic uppercase leading-none tracking-tighter">{isSimpleMode ? 'Details.' : 'Probe.'}</h2>
                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] mt-6 italic">{isSimpleMode ? 'Answer these simple questions to refine the plan.' : 'Resolving logical dependencies and clarifying constraints.'}</p>
                  </div>
-                 <div className="space-y-10">
+                 <div className="space-y-16">
                   {interviewQuestions.map(q => (
-                      <div key={q.id} className="mobbin-card p-14 space-y-10 border-2 border-slate-100 shadow-lg">
-                        <div>
-                          <h4 className="text-3xl font-black italic text-[#141414] mb-3 leading-tight">{q.question}</h4>
+                      <div key={q.id} className="mobbin-card p-14 space-y-12 border-2 border-slate-100 shadow-lg">
+                        <div className="space-y-2">
+                          <h4 className="text-4xl font-black italic text-[#141414] leading-tight">{q.question}</h4>
                           <p className="text-[11px] text-[#0055FF] uppercase tracking-widest font-black italic">{q.context}</p>
                         </div>
+                        
+                        {/* Quick Choices Grid */}
+                        {q.options && q.options.length > 0 && (
+                          <div className="space-y-4">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Quick Choices:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              {q.options.map(opt => (
+                                <button 
+                                  key={opt}
+                                  onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))}
+                                  className={`p-6 rounded-2xl border-2 text-left transition-all font-bold uppercase text-[12px] tracking-widest ${interviewAnswers[q.id] === opt ? 'bg-[#141414] border-[#141414] text-white shadow-xl scale-105' : 'bg-slate-50 border-transparent text-slate-500 hover:border-[#0055FF]/30'}`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <TextArea 
                           value={interviewAnswers[q.id] || ""} 
                           onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} 
                           style={{ color: '#141414', backgroundColor: '#F9FAFB' }}
                           className="min-h-[160px] text-2xl border-none shadow-inner rounded-[3rem] placeholder:text-slate-300 px-10 py-8" 
-                          placeholder="Type response..." 
+                          placeholder="Or type custom answer..." 
                         />
                       </div>
                   ))}

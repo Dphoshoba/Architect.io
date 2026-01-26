@@ -35,6 +35,7 @@ export interface InterviewQuestion {
   id: string;
   question: string;
   context: string;
+  options?: string[]; // Added for non-technical quick selections
 }
 
 export interface PromptInput {
