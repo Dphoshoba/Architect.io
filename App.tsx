@@ -70,43 +70,43 @@ const GUIDED_FLOWS = {
   'Engineering': { 
     title: 'ENGINEERING', 
     icon: Icons.Cpu, 
-    desc: "Best for building gadgets, custom tools, or clever software systems.",
+    desc: "Craft gadgets, custom tools, or clever software systems from the ground up.",
     questions: [{ key: 'eng_field', label: 'Tech Domain' }, { key: 'high_level_goal', label: 'Project Goal' }] 
   },
   'Real Estate': { 
     title: 'REAL ESTATE', 
     icon: Icons.Home, 
-    desc: "Plan your dream home, a cozy room, or an entire property layout.",
+    desc: "Plan a dream home, a cozy room, or an entire community living space.",
     questions: [{ key: 'estate_style', label: 'Property Style' }, { key: 'high_level_goal', label: 'Spatial Goal' }] 
   },
   'Artist': { 
     title: 'ART & CREATIVE', 
     icon: Icons.Palette, 
-    desc: "Perfect for paintings, digital drawings, sculptures, and creative concepts.",
+    desc: "Express your soul through paintings, digital art, or sculptural concepts.",
     questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Art Concept' }] 
   },
   'Image': { 
     title: 'VISUAL ASSET', 
     icon: Icons.Photo, 
-    desc: "Generate professional photos, cinematic scenes, or graphic design assets.",
+    desc: "Create professional photos, cinematic scenes, or graphic styles for any use.",
     questions: [{ key: 'img_lighting', label: 'Vibe & Light' }, { key: 'high_level_goal', label: 'Visual Scene' }] 
   },
   'Video': { 
     title: 'MOTION / VIDEO', 
     icon: Icons.Video, 
-    desc: "Direct moving stories, animations, or cinematic video clips.",
+    desc: "Direct moving stories, short animations, or cinematic film sequences.",
     questions: [{ key: 'vid_style', label: 'Style' }, { key: 'high_level_goal', label: 'Story/Action' }] 
   },
   'Website': { 
     title: 'WEB & SAAS', 
     icon: Icons.Globe, 
-    desc: "Build a beautiful online home for charities, community groups, or startups.",
+    desc: "Build a digital home for community groups, charities, or your own business.",
     questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'web_aesthetic', label: 'Design Vibe' }, { key: 'high_level_goal', label: 'Core Concept' }] 
   },
   'Live': { 
     title: 'VOICE CHAT', 
     icon: Icons.Mic, 
-    desc: "Simply talk to me. We'll find your vision through conversation.",
+    desc: "Simply speak your heart. I will help you discover your vision out loud.",
     questions: [] 
   }
 };
@@ -158,7 +158,7 @@ const App: React.FC = () => {
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('architect_mobbin_v3');
+    const saved = localStorage.getItem('architect_mobbin_v4');
     if (saved) setHistory(JSON.parse(saved));
   }, []);
 
@@ -240,7 +240,7 @@ const App: React.FC = () => {
       const newItem = { id: Date.now().toString(), timestamp: Date.now(), input: { ...form, isSimpleMode }, output: { ...res } };
       const newHist = [newItem, ...history];
       setHistory(newHist);
-      localStorage.setItem('architect_mobbin_v3', JSON.stringify(newHist));
+      localStorage.setItem('architect_mobbin_v4', JSON.stringify(newHist));
     } catch (e) { 
       console.error("Final Synthesis Error:", e);
       alert("Final architectural blueprint could not be finalized. Payload size may be the issue.");
@@ -417,7 +417,7 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* CATEGORY SELECTION */}
+        {/* CATEGORY SELECTION - POETIC WISE DESCRIPTIONS */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
           <div className="h-full flex flex-col items-center justify-start p-12 pt-24 animate-fade-in overflow-y-auto custom-scrollbar">
             <div className="text-center mb-16 max-w-4xl">
@@ -429,7 +429,7 @@ const App: React.FC = () => {
                 <button 
                   key={key} 
                   onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} 
-                  className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm min-h-[320px] justify-center"
+                  className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm min-h-[340px] justify-center"
                 >
                   <flow.icon className="w-16 h-16 text-[#0055FF] mb-8 group-hover:scale-110 transition-transform" />
                   <h3 className="text-[14px] font-black uppercase tracking-widest leading-none mb-4">{flow.title}</h3>
@@ -514,7 +514,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* INTERVIEW PHASE - ENHANCED with Multiple Choice Buttons */}
+        {/* INTERVIEW PHASE - QUICK CHOICE SYSTEM */}
         {activeTab === 'BUILD' && isInterviewing && !isLiveActive && (
            <div className="h-full p-16 overflow-y-auto bg-white custom-scrollbar">
               <div className="max-w-5xl mx-auto space-y-20 py-16">
