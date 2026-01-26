@@ -67,13 +67,48 @@ async function decodeAudioData(
 }
 
 const GUIDED_FLOWS = {
-  'Engineering': { title: 'ENGINEERING', icon: Icons.Cpu, questions: [{ key: 'eng_field', label: 'Tech Domain' }, { key: 'high_level_goal', label: 'Project Goal' }] },
-  'Real Estate': { title: 'REAL ESTATE', icon: Icons.Home, questions: [{ key: 'estate_style', label: 'Property Style' }, { key: 'high_level_goal', label: 'Spatial Goal' }] },
-  'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Art Concept' }] },
-  'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, questions: [{ key: 'img_lighting', label: 'Vibe & Light' }, { key: 'high_level_goal', label: 'Visual Scene' }] },
-  'Video': { title: 'MOTION / VIDEO', icon: Icons.Video, questions: [{ key: 'vid_style', label: 'Style' }, { key: 'high_level_goal', label: 'Story/Action' }] },
-  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'web_aesthetic', label: 'Design Vibe' }, { key: 'high_level_goal', label: 'Core Concept' }] },
-  'Live': { title: 'VOICE CHAT', icon: Icons.Mic, questions: [] }
+  'Engineering': { 
+    title: 'ENGINEERING', 
+    icon: Icons.Cpu, 
+    desc: "Best for building gadgets, custom tools, or clever software systems.",
+    questions: [{ key: 'eng_field', label: 'Tech Domain' }, { key: 'high_level_goal', label: 'Project Goal' }] 
+  },
+  'Real Estate': { 
+    title: 'REAL ESTATE', 
+    icon: Icons.Home, 
+    desc: "Plan your dream home, a cozy room, or an entire property layout.",
+    questions: [{ key: 'estate_style', label: 'Property Style' }, { key: 'high_level_goal', label: 'Spatial Goal' }] 
+  },
+  'Artist': { 
+    title: 'ART & CREATIVE', 
+    icon: Icons.Palette, 
+    desc: "Perfect for paintings, digital drawings, sculptures, and creative concepts.",
+    questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Art Concept' }] 
+  },
+  'Image': { 
+    title: 'VISUAL ASSET', 
+    icon: Icons.Photo, 
+    desc: "Generate professional photos, cinematic scenes, or graphic design assets.",
+    questions: [{ key: 'img_lighting', label: 'Vibe & Light' }, { key: 'high_level_goal', label: 'Visual Scene' }] 
+  },
+  'Video': { 
+    title: 'MOTION / VIDEO', 
+    icon: Icons.Video, 
+    desc: "Direct moving stories, animations, or cinematic video clips.",
+    questions: [{ key: 'vid_style', label: 'Style' }, { key: 'high_level_goal', label: 'Story/Action' }] 
+  },
+  'Website': { 
+    title: 'WEB & SAAS', 
+    icon: Icons.Globe, 
+    desc: "Build a beautiful online home for charities, community groups, or startups.",
+    questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'web_aesthetic', label: 'Design Vibe' }, { key: 'high_level_goal', label: 'Core Concept' }] 
+  },
+  'Live': { 
+    title: 'VOICE CHAT', 
+    icon: Icons.Mic, 
+    desc: "Simply talk to me. We'll find your vision through conversation.",
+    questions: [] 
+  }
 };
 
 const SHARDS = {
@@ -382,22 +417,23 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* CATEGORY SELECTION */}
+        {/* CATEGORY SELECTION - FIXED justify-start to prevent top clipping */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
-          <div className="h-full flex flex-col items-center justify-center p-6 animate-fade-in overflow-y-auto custom-scrollbar">
-            <div className="text-center mb-20 max-w-4xl">
-              <h2 className="text-[8vw] mb-6 uppercase italic leading-[0.8] font-black tracking-tighter">{isSimpleMode ? 'What are we making?' : 'Product Synthesis.'}</h2>
-              <p className="text-slate-400 font-medium text-xl leading-relaxed">{isSimpleMode ? 'Select a category below to start your building plan.' : 'Select a specialized discovery engine to begin high-fidelity architecture.'}</p>
+          <div className="h-full flex flex-col items-center justify-start p-12 pt-24 animate-fade-in overflow-y-auto custom-scrollbar">
+            <div className="text-center mb-16 max-w-4xl">
+              <h2 className="text-[7vw] mb-4 uppercase italic leading-[0.8] font-black tracking-tighter">{isSimpleMode ? 'What are we making?' : 'Product Synthesis.'}</h2>
+              <p className="text-slate-400 font-medium text-xl leading-relaxed">{isSimpleMode ? 'Select a path below to start your building plan.' : 'Select a specialized discovery engine to begin high-fidelity architecture.'}</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-5 w-full max-w-7xl mb-24 px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full max-w-7xl mb-24 px-6">
               {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
                 <button 
                   key={key} 
                   onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} 
-                  className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm"
+                  className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm min-h-[320px] justify-center"
                 >
-                  <flow.icon className="w-12 h-12 text-[#0055FF] mb-8 group-hover:scale-125 transition-transform" />
-                  <h3 className="text-[11px] font-black uppercase tracking-widest leading-none">{flow.title}</h3>
+                  <flow.icon className="w-16 h-16 text-[#0055FF] mb-8 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-[14px] font-black uppercase tracking-widest leading-none mb-4">{flow.title}</h3>
+                  <p className="text-[12px] text-slate-500 font-medium leading-relaxed max-w-[240px] group-hover:text-[#141414] transition-colors italic">{flow.desc}</p>
                 </button>
               ))}
             </div>
