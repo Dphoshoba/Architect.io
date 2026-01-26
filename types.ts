@@ -1,4 +1,5 @@
 
+
 export type TargetAI = 
   | "Gemini 3 Flash"
   | "Gemini 3 Pro"
@@ -13,6 +14,34 @@ export type TargetAI =
   | "Generic";
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
+
+// Added missing PlanType for backend service
+export type PlanType = "Starter" | "Professional" | "Enterprise";
+
+// Added missing UserStatus for backend service
+export interface UserStatus {
+  userId: string;
+  plan: string;
+  creditsRemaining: number;
+  totalCredits: number;
+}
+
+// Added missing WebhookEvent for backend service logs
+export interface WebhookEvent {
+  id: string;
+  type: string;
+  timestamp: number;
+  status: string;
+  payload: any;
+}
+
+// Added missing ApiKey for backend service management
+export interface ApiKey {
+  id: string;
+  key: string;
+  label: string;
+  created: number;
+}
 
 export interface SuggestedModel {
   model_name: string;
@@ -52,59 +81,9 @@ export interface PromptInput {
   reasoning_visibility: ReasoningVisibility;
   language: string;
   visual_inspiration_mode: boolean;
-  isSimpleMode?: boolean; // Added for jargon reduction
-  base64Image?: string; 
+  isSimpleMode?: boolean; 
   media_ref_base64?: string;
   media_type?: 'image' | 'video' | 'audio';
-  // Universal SaaS Shards
-  saas_category?: string;
-  saas_industry?: string;
-  saas_monetization?: string;
-  // Website Shards
-  web_type?: string;
-  web_layout_blocks?: string;
-  web_aesthetic?: string;
-  web_typography?: string;
-  web_colors?: string;
-  // Professional Shards
-  prof_domain?: string;
-  prof_expertise?: string;
-  prof_output_type?: string;
-  prof_standards?: string;
-  // Image Shards
-  img_subject?: string;
-  img_lighting?: string;
-  img_composition?: string;
-  // Video Shards
-  vid_style?: string;
-  vid_motion?: string;
-  vid_frame_rate?: string;
-  // Engineering Shards
-  eng_field?: string;
-  eng_constraints?: string;
-  eng_standards?: string;
-  // Real Estate / Interior Shards
-  estate_style?: string;
-  estate_spatial_goal?: string;
-  estate_lighting_plan?: string;
-  // Artist Shards
-  artist_medium?: string;
-  artist_style_dna?: string;
-  // App Shards
-  app_type?: string;
-  app_platform?: string;
-  app_scope?: string;
-  app_ux_style?: string;
-  app_auth?: string;
-  app_features?: string;
-  app_ai_logic?: string;
-  app_integrations?: string;
-  // Finance Shards
-  fin_domain?: string;
-  fin_users?: string;
-  fin_region?: string;
-  fin_compliance?: string;
-  fin_workflows?: string;
 }
 
 export interface MarketingKit {
@@ -130,28 +109,4 @@ export interface HistoryItem {
   timestamp: number;
   input: PromptInput;
   output: PromptOutput;
-}
-
-export type PlanType = "Starter" | "Pro" | "Enterprise";
-
-export interface UserStatus {
-  userId: string;
-  plan: string;
-  creditsRemaining: number;
-  totalCredits: number;
-}
-
-export interface WebhookEvent {
-  id: string;
-  type: string;
-  timestamp: number;
-  status: string;
-  payload: any;
-}
-
-export interface ApiKey {
-  id: string;
-  key: string;
-  label: string;
-  created: number;
 }

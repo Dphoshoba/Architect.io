@@ -7,34 +7,29 @@ ROLE: Universal Product Architect & Multi-Disciplinary Strategist.
 
 MISSION: Convert vague intent into industrial-grade blueprints and specialized implementation prompts.
 
-DOMAINS:
-1. ENGINEERING: Systems architecture, mechanical design, software infrastructure, and technical constraints.
-2. REAL ESTATE & DESIGN: House planning, interior design, structural flow, and aesthetic decorations.
-3. ARTIST: Fine arts, digital illustration, conceptual DNA, and technique-driven specifications.
-4. VISUAL & MOTION (IMAGE/VIDEO): High-fidelity prompting for cinematic and editorial visual synthesis.
-5. WEBSITE & SAAS: UI/UX patterns, logic flows, and conversion psychology.
+PROMPT ENGINEERING PRINCIPLES (Apply these to FINAL_PROMPT):
+1. RODES Framework: Include Role, Objective, Details, Examples, and Sense check.
+2. Persona Design: Assign specific expert roles (e.g., "Act as a Senior Architect").
+3. Chain of Thought: Explicitly use "Let's think step-by-step" to guide the target AI.
+4. Specific Constraints: Use both positive instructions and a negative constraint checklist.
+5. Structured Format: Demand responses in Markdown, JSON, or XML as appropriate.
+6. Audience Adaption: Tailor the tone for the intended end-user.
 
 CORE OUTPUTS:
-- APP_BLUEPRINT: The structural "source of truth."
-- FINAL_PROMPT: A hyper-detailed instruction for an expert practitioner or specialized AI.
+- APP_BLUEPRINT: A structural "source of truth" including screens, logic, and flow.
+- FINAL_PROMPT: A hyper-detailed instruction set designed for an expert AI (Gemini/GPT/Claude).
 `;
 
 const SIMPLE_MODE_SYSTEM_INSTRUCTION = `
 IMPORTANT: THE USER IS NOT TECHNICAL. 
-- DO NOT use words like: 'Synthesis', 'Architecture', 'Blueprint', 'Logic', 'Vector', 'Prompt', 'Shards', 'Parameters', 'Optimization', 'Model', 'Refinement'.
-- DO use words like: 'Building Plan', 'Style', 'Goal', 'Checklist', 'Instructions', 'Look & Feel', 'Steps'.
-- Explain everything like a friendly assistant helping a small business owner or a hobbyist.
-- Keep all explanations extremely simple and grounded in the physical world.
-- If they want an app, talk about "screens" and "buttons".
-- If they want a house, talk about "layout" and "decor".
+- Use simple words: 'Building Plan', 'Goal', 'Checklist', 'Instructions', 'Steps'.
+- Avoid jargon: 'Synthesis', 'Logic Shards', 'Vector', 'Prompt Engineering'.
+- Explain everything like a friendly helper for a community group or small business.
+- When generating 'options' for questions, make them grounded, human-friendly, and very easy to understand.
 `;
 
-/** 
- * Cleans the input to prevent sending massive base64 strings inside the text prompt 
- * which causes 400 errors.
- */
 const sanitizeInput = (input: PromptInput) => {
-  const { media_ref_base64, base64Image, ...cleanInput } = input;
+  const { media_ref_base64, ...cleanInput } = input;
   return cleanInput;
 };
 
@@ -44,9 +39,9 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Help clarify this project: ${JSON.stringify(sanitizeInput(input))}. Ask 3 very simple questions. For EACH question, provide 3 suggested short answers (options) that a non-technical user might choose from.`,
+    contents: `Clarify this project: ${JSON.stringify(sanitizeInput(input))}. Ask 3 simple questions. For each question, provide 3-4 suggested answers (options) that the user can just click on.`,
     config: {
-      systemInstruction: `You are a helpful project helper. Find out what details are needed to start. ${simpleInstruction}`,
+      systemInstruction: `You are a project helper. Find missing details. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -55,11 +50,11 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING, description: "A simple reason why this question matters." },
+            context: { type: Type.STRING },
             options: { 
               type: Type.ARRAY, 
               items: { type: Type.STRING },
-              description: "Suggested quick answers for a non-technical user."
+              description: "A list of 3-4 simple buttons for the user."
             }
           },
           required: ["id", "question", "context", "options"]
@@ -76,9 +71,9 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Based on the goal and context: ${JSON.stringify(sanitizeInput(input))}, give me 3 categories of styles or choices the user needs to make.`,
+    contents: `Based on: ${JSON.stringify(sanitizeInput(input))}, suggest 3 strategic choice categories.`,
     config: {
-      systemInstruction: `You are a style and planning advisor. Provide clear categories of choices. ${simpleInstruction}`,
+      systemInstruction: `Strategic planner persona. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -112,9 +107,8 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
 
-  const parts: any[] = [{ text: `FINALIZE PLAN FOR: ${JSON.stringify(sanitizeInput(input))}` }];
+  const parts: any[] = [{ text: `SYNTHESIZE FINAL BLUEPRINT AND AI PROMPT FOR: ${JSON.stringify(sanitizeInput(input))}` }];
   
-  // Multimodal part - Binary data goes here, NOT in the JSON above
   if (input.media_ref_base64 && input.media_type) {
     parts.push({
       inlineData: {
@@ -134,8 +128,8 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          FINAL_PROMPT: { type: Type.STRING, description: "Detailed instructions for another AI or expert." },
-          APP_BLUEPRINT: { type: Type.STRING, description: "The structured plan for the user." },
+          FINAL_PROMPT: { type: Type.STRING },
+          APP_BLUEPRINT: { type: Type.STRING },
           VISUAL_INSPIRATION_PROMPT: { type: Type.STRING },
           SUGGESTED_MODELS: {
             type: Type.ARRAY,
@@ -159,7 +153,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `A clean, professional 3D render or photograph of: ${prompt}. High quality, cinematic lighting.` }] },
+    contents: { parts: [{ text: `A clean, professional 3D render or photograph of: ${prompt}. High quality, cinematic lighting, modern aesthetic.` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {

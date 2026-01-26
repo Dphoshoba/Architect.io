@@ -514,7 +514,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* QUESTIONS PHASE - ENHANCED with Multiple Choice */}
+        {/* INTERVIEW PHASE - ENHANCED with Multiple Choice Buttons */}
         {activeTab === 'BUILD' && isInterviewing && !isLiveActive && (
            <div className="h-full p-16 overflow-y-auto bg-white custom-scrollbar">
               <div className="max-w-5xl mx-auto space-y-20 py-16">
@@ -533,13 +533,13 @@ const App: React.FC = () => {
                         {/* Quick Choices Grid */}
                         {q.options && q.options.length > 0 && (
                           <div className="space-y-4">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Quick Choices:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest italic ml-2">Quick Choices:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                               {q.options.map(opt => (
                                 <button 
                                   key={opt}
                                   onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))}
-                                  className={`p-6 rounded-2xl border-2 text-left transition-all font-bold uppercase text-[12px] tracking-widest ${interviewAnswers[q.id] === opt ? 'bg-[#141414] border-[#141414] text-white shadow-xl scale-105' : 'bg-slate-50 border-transparent text-slate-500 hover:border-[#0055FF]/30'}`}
+                                  className={`p-6 rounded-2xl border-2 text-left transition-all font-black uppercase text-[11px] tracking-[0.1em] ${interviewAnswers[q.id] === opt ? 'bg-[#141414] border-[#141414] text-white shadow-xl scale-105' : 'bg-slate-50 border-transparent text-slate-500 hover:border-[#0055FF]/30'}`}
                                 >
                                   {opt}
                                 </button>
@@ -553,7 +553,7 @@ const App: React.FC = () => {
                           onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} 
                           style={{ color: '#141414', backgroundColor: '#F9FAFB' }}
                           className="min-h-[160px] text-2xl border-none shadow-inner rounded-[3rem] placeholder:text-slate-300 px-10 py-8" 
-                          placeholder="Or type custom answer..." 
+                          placeholder="Or type a custom answer here..." 
                         />
                       </div>
                   ))}
