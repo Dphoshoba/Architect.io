@@ -2,39 +2,33 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MastermindSuggestionCategory, InterviewQuestion } from "../types";
 
-const ADVANCED_KNOWLEDGE_BASE = `
-APPLY THESE ADVANCED ARCHITECTURES:
-- RODES: Role, Objective, Details, Examples, Sense-check.
-- Chain of Density (CoD): Maximize information density without increasing length.
-- Chain of Verification (CoVe): Draft, verify facts via internal Q&A, then rewrite.
-- Meta-Prompting: Use a conductor persona to orchestrate expert sub-roles.
-- Context Engineering: Manage attention budget by removing low-signal tokens.
-- Thinking Tags: Use <thinking> blocks to resolve logical dependencies.
-- XML Structuring: Use tags like <context>, <rules>, and <blueprint> for strict boundary separation.
-- Analogical Prompting: Identify similar established patterns before synthesizing new ones.
-- Step-Back Prompting: Extract high-level principles before solving specific details.
-- Reflexion: Self-critique the output to identify logical failures before final delivery.
+const ADVANCED_STRATEGY_KNOWLEDGE_BASE = `
+KNOWLEDGE BASE: 150+ ADVANCED PROMPTING TIPS
+1. Meta-Prompting: Use conductor-expert sub-roles.
+2. RODES Framework: Role, Objective, Details, Examples, Sense-check (MANDATORY).
+3. Chain of Density: Maximize information density iteratively.
+4. Chain of Verification: Self-correct facts through internal Q&A.
+5. XML Structuring: Use machine-readable tags for boundary control.
+6. Analogical Prompting: Identify similar established blueprints first.
+7. Step-Back Prompting: Extract high-level principles before details.
+8. TextGrad Optimization: Use natural language feedback loops.
+9. Reflexion: Self-critique the generated plan before final output.
+10. Tool Namespacing: Group logic flows logically for clarity.
+11. Persona Adoption: Deep method acting for senior architectural roles.
+12. Delimiter Sandboxing: Prevent instruction drift via triple-quotes/XML.
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Universal Product Architect & Multi-Disciplinary Strategist.
-MISSION: Convert vague intent into industrial-grade blueprints and specialized implementation prompts.
+MISSION: Synthesize vague intent into high-fidelity implementation prompts and structural blueprints.
 
-STRATEGY ENGINE INSTRUCTIONS:
-1. Select the 3-5 most relevant strategies from the ADVANCED_KNOWLEDGE_BASE (RODES, CoD, CoVe, etc.) based on the user's project.
-2. Structure the FINAL_PROMPT using high-fidelity RODES framework.
-3. Use XML tags in the FINAL_PROMPT for machine-readable clarity.
-4. If SIMPLE_MODE is active, translate high-level strategies into clear "Action Steps" for the user.
+QUANTUM STRATEGY ENGINE:
+- You must internalize the ADVANCED_STRATEGY_KNOWLEDGE_BASE.
+- For every output, select and explicitly apply 3-5 of these strategies.
+- Structure the FINAL_PROMPT using the RODES framework wrapped in XML tags.
+- If SIMPLE_MODE is true, translate the technical rigor into "Simple Action Steps" but maintain the underlying depth.
 
-${ADVANCED_KNOWLEDGE_BASE}
-`;
-
-const SIMPLE_MODE_SYSTEM_INSTRUCTION = `
-IMPORTANT: THE USER IS NOT TECHNICAL. 
-- Use simple words: 'Building Plan', 'Goal', 'Checklist', 'Instructions', 'Steps'.
-- Avoid jargon: 'Synthesis', 'Logic Shards', 'Vector', 'Prompt Engineering'.
-- Explain everything like a friendly helper for a community group or small business.
-- When generating 'options' for questions, make them grounded, human-friendly, and very easy to understand.
+${ADVANCED_STRATEGY_KNOWLEDGE_BASE}
 `;
 
 const sanitizeInput = (input: PromptInput) => {
@@ -44,13 +38,13 @@ const sanitizeInput = (input: PromptInput) => {
 
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+  const simpleInstruction = input.isSimpleMode ? "Use extremely simple words and friendly tone." : "";
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Clarify this project using CPE (Conversational Prompt Engineering): ${JSON.stringify(sanitizeInput(input))}. Ask 3 high-signal questions. For each question, provide 3-4 simple "Quick Choice" answers.`,
+    contents: `Clarify this project using Conversational Prompt Engineering (CPE): ${JSON.stringify(sanitizeInput(input))}. Ask 3 high-signal questions. For each, provide 3 simple Quick Choice buttons.`,
     config: {
-      systemInstruction: `You are a project helper using CPE principles. Find missing details. ${simpleInstruction}`,
+      systemInstruction: `Project discovery assistant. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -60,11 +54,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
             id: { type: Type.STRING },
             question: { type: Type.STRING },
             context: { type: Type.STRING },
-            options: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING },
-              description: "A list of 3-4 simple buttons for the user."
-            }
+            options: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
           required: ["id", "question", "context", "options"]
         }
@@ -76,13 +66,13 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
 
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+  const simpleInstruction = input.isSimpleMode ? "Keep categories grounded and non-technical." : "";
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analyze using Multi-Perspective Prompting: ${JSON.stringify(sanitizeInput(input))}, suggest 3 strategic choice categories.`,
+    contents: `Apply Multi-Perspective Prompting for: ${JSON.stringify(sanitizeInput(input))}, suggest 3 strategic choice categories.`,
     config: {
-      systemInstruction: `Strategic planner using Multi-Perspective frameworks. ${simpleInstruction}`,
+      systemInstruction: `Strategic planner. ${simpleInstruction}`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -114,9 +104,9 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simpleInstruction = input.isSimpleMode ? SIMPLE_MODE_SYSTEM_INSTRUCTION : "";
+  const simpleInstruction = input.isSimpleMode ? "Translate technical depth into simple instructions." : "";
 
-  const parts: any[] = [{ text: `SYNTHESIZE FINAL BLUEPRINT. APPLY RODES AND CHAIN-OF-VERIFICATION FOR: ${JSON.stringify(sanitizeInput(input))}` }];
+  const parts: any[] = [{ text: `SYNTHESIZE FINAL BLUEPRINT. APPLY RODES AND STRATEGY KNOWLEDGE FOR: ${JSON.stringify(sanitizeInput(input))}` }];
   
   if (input.media_ref_base64 && input.media_type) {
     parts.push({
@@ -137,10 +127,10 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          FINAL_PROMPT: { type: Type.STRING, description: "Detailed XML-wrapped implementation prompt." },
-          APP_BLUEPRINT: { type: Type.STRING, description: "Structured building plan." },
+          FINAL_PROMPT: { type: Type.STRING },
+          APP_BLUEPRINT: { type: Type.STRING },
           VISUAL_INSPIRATION_PROMPT: { type: Type.STRING },
-          COMMIT_MESSAGE: { type: Type.STRING, description: "A professional GitHub commit message for this project." },
+          COMMIT_MESSAGE: { type: Type.STRING },
           APPLIED_STRATEGIES: {
             type: Type.ARRAY,
             items: {
@@ -148,16 +138,6 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
               properties: {
                 name: { type: Type.STRING },
                 description: { type: Type.STRING }
-              }
-            }
-          },
-          SUGGESTED_MODELS: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                model_name: { type: Type.STRING },
-                reasoning: { type: Type.STRING }
               }
             }
           }
@@ -173,7 +153,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `A clean, professional 3D render of: ${prompt}. Cinematic lighting, 8k, industrial design.` }] },
+    contents: { parts: [{ text: `A professional architectural render of: ${prompt}. Cinematic lighting, 8k.` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {

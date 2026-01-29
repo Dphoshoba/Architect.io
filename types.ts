@@ -102,8 +102,8 @@ export interface PromptOutput {
   MARKETING_KIT?: MarketingKit;
   SUGGESTED_MODELS?: SuggestedModel[];
   APP_BLUEPRINT?: string;
-  APPLIED_STRATEGIES?: AppliedStrategy[];
-  COMMIT_MESSAGE?: string;
+  APPLIED_STRATEGIES: AppliedStrategy[];
+  COMMIT_MESSAGE: string;
 }
 
 export interface HistoryItem {

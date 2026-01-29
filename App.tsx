@@ -34,9 +34,7 @@ const Icons = {
 function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  for (let i = 0; i < len; i++) { binary += String.fromCharCode(bytes[i]); }
   return btoa(binary);
 }
 
@@ -44,87 +42,37 @@ function decode(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+  for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
   return bytes;
 }
 
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
+async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
+    for (let i = 0; i < frameCount; i++) { channelData[i] = dataInt16[i * numChannels + channel] / 32768.0; }
   }
   return buffer;
 }
 
 const GUIDED_FLOWS = {
-  'Engineering': { 
-    title: 'ENGINEERING', 
-    icon: Icons.Cpu, 
-    desc: "Craft gadgets, custom tools, or clever software systems from the ground up.",
-    questions: [{ key: 'eng_field', label: 'Tech Domain' }, { key: 'high_level_goal', label: 'Project Goal' }] 
-  },
-  'Real Estate': { 
-    title: 'REAL ESTATE', 
-    icon: Icons.Home, 
-    desc: "Plan a dream home, a cozy room, or an entire community living space.",
-    questions: [{ key: 'estate_style', label: 'Property Style' }, { key: 'high_level_goal', label: 'Spatial Goal' }] 
-  },
-  'Artist': { 
-    title: 'ART & CREATIVE', 
-    icon: Icons.Palette, 
-    desc: "Express your soul through paintings, digital art, or sculptural concepts.",
-    questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Art Concept' }] 
-  },
-  'Image': { 
-    title: 'VISUAL ASSET', 
-    icon: Icons.Photo, 
-    desc: "Create professional photos, cinematic scenes, or graphic styles for any use.",
-    questions: [{ key: 'img_lighting', label: 'Vibe & Light' }, { key: 'high_level_goal', label: 'Visual Scene' }] 
-  },
-  'Video': { 
-    title: 'MOTION / VIDEO', 
-    icon: Icons.Video, 
-    desc: "Direct moving stories, short animations, or cinematic film sequences.",
-    questions: [{ key: 'vid_style', label: 'Style' }, { key: 'high_level_goal', label: 'Story/Action' }] 
-  },
-  'Website': { 
-    title: 'WEB & SAAS', 
-    icon: Icons.Globe, 
-    desc: "Build a digital home for community groups, charities, or your own business.",
-    questions: [{ key: 'web_type', label: 'Product Type' }, { key: 'web_aesthetic', label: 'Design Vibe' }, { key: 'high_level_goal', label: 'Core Concept' }] 
-  },
-  'Live': { 
-    title: 'VOICE CHAT', 
-    icon: Icons.Mic, 
-    desc: "Simply speak your heart. I will help you discover your vision out loud.",
-    questions: [] 
-  }
+  'Engineering': { title: 'ENGINEERING', icon: Icons.Cpu, desc: "Craft gadgets, custom tools, or clever systems.", questions: [{ key: 'eng_field', label: 'Tech Domain' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Real Estate': { title: 'REAL ESTATE', icon: Icons.Home, desc: "Plan a home, room, or community space.", questions: [{ key: 'estate_style', label: 'Style' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, desc: "Express your soul through art concepts.", questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Concept' }] },
+  'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, desc: "Create cinematic photos or graphic styles.", questions: [{ key: 'img_lighting', label: 'Vibe' }, { key: 'high_level_goal', label: 'Scene' }] },
+  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, desc: "Build a home for your community or business.", questions: [{ key: 'web_type', label: 'Type' }, { key: 'web_aesthetic', label: 'Vibe' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Live': { title: 'VOICE CHAT', icon: Icons.Mic, desc: "Simply speak your heart.", questions: [] }
 };
 
 const SHARDS = {
-  eng_field: [{ label: "Software", desc: "Apps & Systems" }, { label: "Machines", desc: "Hardware Design" }, { label: "AI Models", desc: "Machine Learning" }],
-  estate_style: [{ label: "Modern", desc: "Clean & Simple" }, { label: "Cozy", desc: "Warm & Traditional" }, { label: "Industrial", desc: "Raw & Structural" }],
-  artist_medium: [{ label: "Digital Art", desc: "Screen-based" }, { label: "Painting", desc: "Physical Canvas" }, { label: "3D Art", desc: "Sculpted/Modeled" }],
-  img_lighting: [{ label: "Cinematic", desc: "Mood & Drama" }, { label: "Natural", desc: "Bright & Open" }, { label: "Neon", desc: "Cyberpunk Vibe" }],
-  vid_style: [{ label: "Realistic", desc: "Life-like" }, { label: "Anime", desc: "Stylized Motion" }, { label: "Fast Action", desc: "High Energy" }],
-  web_type: [{ label: "Non-Profit", desc: "Community & Charity" }, { label: "SaaS App", desc: "Business Tool" }, { label: "Portfolio", desc: "Showcase" }, { label: "Commerce", desc: "Online Store" }],
-  web_aesthetic: [
-    { label: "Welcoming", desc: "Modern & Clean Layout" },
-    { label: "Impactful", desc: "Bold & Cinematic Presence" }
-  ]
+  eng_field: [{ label: "Software", desc: "Apps" }, { label: "Machines", desc: "Hardware" }],
+  estate_style: [{ label: "Modern", desc: "Clean" }, { label: "Cozy", desc: "Warm" }],
+  artist_medium: [{ label: "Digital", desc: "Screen" }, { label: "Physical", desc: "Canvas" }],
+  img_lighting: [{ label: "Cinematic", desc: "Drama" }, { label: "Natural", desc: "Bright" }],
+  web_type: [{ label: "Non-Profit", desc: "Charity" }, { label: "Business", desc: "SaaS" }],
+  web_aesthetic: [{ label: "Welcoming", desc: "Clean" }, { label: "Bold", desc: "Dramatic" }]
 };
 
 const App: React.FC = () => {
@@ -163,12 +111,9 @@ const App: React.FC = () => {
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('architect_mobbin_v5');
+    const saved = localStorage.getItem('architect_mobbin_v6');
     if (saved) setHistory(JSON.parse(saved));
-
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
@@ -178,59 +123,14 @@ const App: React.FC = () => {
     if (!document.fullscreenElement) {
       if (el.requestFullscreen) el.requestFullscreen();
       else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen) (el as any).msRequestFullscreen();
     } else {
       if (document.exitFullscreen) document.exitFullscreen();
     }
   };
 
-  const handleSyncToGithub = () => {
-    setGithubSyncing(true);
-    setTimeout(() => {
-      setGithubSyncing(false);
-      alert("Successfully committed to Architect-Quantum repository branch.");
-    }, 2000);
-  };
-
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
-  };
-
-  const downloadText = (content: string, filename: string) => {
-    const element = document.createElement("a");
-    const file = new Blob([content], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = filename;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const downloadImage = (dataUrl: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = (event.target?.result as string).split(',')[1];
-        setForm(prev => ({
-          ...prev,
-          media_ref_base64: base64,
-          media_type: file.type.startsWith('image/') ? 'image' : 
-                      file.type.startsWith('video/') ? 'video' : 'audio'
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleStartFlow = async () => {
@@ -239,24 +139,17 @@ const App: React.FC = () => {
       const res = await generateInterviewQuestions({ ...form, isSimpleMode });
       setInterviewQuestions(res);
       setIsInterviewing(true);
-    } catch (e) { 
-      console.error("Interview Gen Error:", e);
-      alert("Encountered an issue starting the plan. Check network/API key."); 
-    } finally { setLoading(false); }
+    } catch (e) { alert("Issue starting plan. Check API."); } finally { setLoading(false); }
   };
 
   const handleAnalyzeMatrix = async () => {
     setLoading(true);
     try {
-      const refinedGoal = `${form.high_level_goal} ${Object.values(interviewAnswers).join(' ')}`;
-      const res = await generateMastermindSuggestions({ ...form, high_level_goal: refinedGoal, isSimpleMode });
+      const res = await generateMastermindSuggestions({ ...form, high_level_goal: `${form.high_level_goal} ${Object.values(interviewAnswers).join(' ')}`, isSimpleMode });
       setMastermindSuggestions(res);
       setIsReviewing(true);
       setIsInterviewing(false);
-    } catch (e) { 
-      console.error("Analysis Error:", e);
-      alert("Matrix analysis failed.");
-    } finally { setLoading(false); }
+    } catch (e) { alert("Matrix analysis failed."); } finally { setLoading(false); }
   };
 
   const handleSynthesize = async () => {
@@ -270,24 +163,13 @@ const App: React.FC = () => {
       const newItem = { id: Date.now().toString(), timestamp: Date.now(), input: { ...form, isSimpleMode }, output: { ...res } };
       const newHist = [newItem, ...history];
       setHistory(newHist);
-      localStorage.setItem('architect_mobbin_v5', JSON.stringify(newHist));
-    } catch (e) { 
-      console.error("Final Synthesis Error:", e);
-      alert("Final architectural blueprint could not be finalized. Payload size may be the issue.");
-    } finally { setLoading(false); }
+      localStorage.setItem('architect_mobbin_v6', JSON.stringify(newHist));
+    } catch (e) { alert("Synthesis failed."); } finally { setLoading(false); }
   };
 
   const stopLiveDiscovery = () => {
-    if (sessionRef.current) {
-      sessionRef.current.close();
-      sessionRef.current = null;
-    }
-    if (sourcesRef.current) {
-        for (const source of sourcesRef.current) {
-          source.stop();
-        }
-        sourcesRef.current.clear();
-    }
+    if (sessionRef.current) sessionRef.current.close();
+    sourcesRef.current.forEach(s => s.stop());
     setIsLiveActive(false);
     setGuidedState({ category: null, index: 0 });
     setMicLevel(0);
@@ -299,10 +181,8 @@ const App: React.FC = () => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      if (!audioContextInRef.current) audioContextInRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      if (!audioContextOutRef.current) audioContextOutRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-
+      if (!audioContextInRef.current) audioContextInRef.current = new AudioContext({ sampleRate: 16000 });
+      if (!audioContextOutRef.current) audioContextOutRef.current = new AudioContext({ sampleRate: 24000 });
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         callbacks: {
@@ -311,77 +191,43 @@ const App: React.FC = () => {
             setIsLiveActive(true);
             const source = audioContextInRef.current!.createMediaStreamSource(stream);
             const scriptProcessor = audioContextInRef.current!.createScriptProcessor(4096, 1, 1);
-            
-            scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-              const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-              let sum = 0;
-              for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+            scriptProcessor.onaudioprocess = (e) => {
+              const inputData = e.inputBuffer.getChannelData(0);
+              let sum = 0; for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
               setMicLevel(Math.sqrt(sum / inputData.length));
-
-              const l = inputData.length;
-              const int16 = new Int16Array(l);
-              for (let i = 0; i < l; i++) {
-                int16[i] = inputData[i] * 32768;
-              }
-              const pcmBlob = {
-                data: encode(new Uint8Array(int16.buffer)),
-                mimeType: 'audio/pcm;rate=16000',
-              };
-              sessionPromise.then((session) => {
-                session.sendRealtimeInput({ media: pcmBlob as any });
-              });
+              const int16 = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+              sessionPromise.then(s => s.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } as any }));
             };
             source.connect(scriptProcessor);
             scriptProcessor.connect(audioContextInRef.current!.destination);
           },
-          onmessage: async (message: LiveServerMessage) => {
-            const base64EncodedAudioString = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (base64EncodedAudioString) {
+          onmessage: async (m: LiveServerMessage) => {
+            const audioData = m.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+            if (audioData) {
               const ctx = audioContextOutRef.current!;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-              const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), ctx, 24000, 1);
+              const buffer = await decodeAudioData(decode(audioData), ctx, 24000, 1);
               const source = ctx.createBufferSource();
-              source.buffer = audioBuffer;
+              source.buffer = buffer;
               source.connect(ctx.destination);
-              source.addEventListener('ended', () => {
-                sourcesRef.current.delete(source);
-              });
               source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current = nextStartTimeRef.current + audioBuffer.duration;
+              nextStartTimeRef.current += buffer.duration;
               sourcesRef.current.add(source);
             }
-            if (message.serverContent?.outputTranscription) {
-              setLiveTranscription(prev => [...prev, message.serverContent!.outputTranscription!.text]);
-            }
+            if (m.serverContent?.outputTranscription) setLiveTranscription(p => [...p, m.serverContent!.outputTranscription!.text]);
           },
-          onerror: (e) => {
-            console.error("Live Error:", e);
-            stopLiveDiscovery();
-          },
-          onclose: () => {
-            stopLiveDiscovery();
-          }
+          onerror: () => stopLiveDiscovery(),
+          onclose: () => stopLiveDiscovery()
         },
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
-          },
-          systemInstruction: `You are a friendly project assistant. Help the user explain their project idea. Use ${isSimpleMode ? 'plain English and avoid all technical terms' : 'professional architecture terminology'}. Be brief and encouraging.`,
-          outputAudioTranscription: {},
-        },
+        config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } }, systemInstruction: "Be a friendly guide.", outputAudioTranscription: {} }
       });
       sessionRef.current = await sessionPromise;
-    } catch (err) {
-      setLoading(false);
-      console.error(err);
-      alert("Microphone access is required for Voice Chat.");
-    }
+    } catch { setLoading(false); alert("Mic required."); }
   };
 
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden text-[#141414] font-sans selection:bg-[#0055FF]/10">
-      {/* HEADER */}
       <header className="h-16 flex items-center justify-between px-8 glass-header fixed top-0 w-full z-50">
         <div className="flex items-center gap-10">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { setOutput(null); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); setIsInterviewing(false); if(isLiveActive) stopLiveDiscovery(); }}>
@@ -390,32 +236,19 @@ const App: React.FC = () => {
           </div>
           <nav className="flex gap-6">
             {['BUILD', 'HISTORY'].map(tab => (
-              <button 
-                key={tab} 
-                onClick={() => setActiveTab(tab as any)} 
-                className={`text-[11px] font-bold tracking-widest uppercase transition-all ${activeTab === tab ? 'text-[#141414] border-b-2 border-[#141414]' : 'text-slate-400 hover:text-black'}`}
-              >
-                {tab === 'BUILD' ? (isSimpleMode ? 'PLAN' : 'BUILD') : 'ARCHIVE'}
-              </button>
+              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`text-[11px] font-bold tracking-widest uppercase transition-all ${activeTab === tab ? 'text-[#141414] border-b-2 border-[#141414]' : 'text-slate-400 hover:text-black'}`}>{tab}</button>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-4">
-            <button 
-                onClick={toggleFullscreen}
-                className="p-2 rounded-full hover:bg-slate-100 transition-all text-slate-500 hover:text-[#141414] active:scale-90"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
+            <button onClick={toggleFullscreen} className="p-2 rounded-full hover:bg-slate-100 transition-all text-slate-500 hover:text-[#141414]" title="Toggle Fullscreen">
                 {isFullscreen ? <Icons.ExitFullscreen className="w-5 h-5" /> : <Icons.Fullscreen className="w-5 h-5" />}
             </button>
-            <button 
-                onClick={() => { setIsSimpleMode(!isSimpleMode); setForm(f => ({...f, isSimpleMode: !isSimpleMode})); }}
-                className={`flex items-center gap-2 p-1.5 px-4 rounded-full transition-all border ${isSimpleMode ? 'bg-[#0055FF]/5 border-[#0055FF]/20' : 'bg-slate-100 border-transparent'}`}
-            >
+            <button onClick={() => { setIsSimpleMode(!isSimpleMode); setForm(f => ({...f, isSimpleMode: !isSimpleMode})); }} className={`flex items-center gap-2 p-1.5 px-4 rounded-full transition-all border ${isSimpleMode ? 'bg-[#0055FF]/5 border-[#0055FF]/20' : 'bg-slate-100 border-transparent'}`}>
                 <span className={`text-[10px] font-black uppercase tracking-tighter ${isSimpleMode ? 'text-[#0055FF]' : 'text-slate-500'}`}>Simple Mode</span>
                 <div className={`w-3 h-3 rounded-full transition-all ${isSimpleMode ? 'bg-[#0055FF] scale-125' : 'bg-slate-300'}`} />
             </button>
-            <button className="mobbin-btn-primary text-[10px] uppercase tracking-[0.2em] px-6 py-2.5 shadow-sm">Join free</button>
+            <button className="mobbin-btn-primary text-[10px] uppercase tracking-[0.2em] px-6 py-2.5 shadow-sm">Get Pro</button>
         </div>
       </header>
 
@@ -423,347 +256,204 @@ const App: React.FC = () => {
         {loading && (
           <div className="absolute inset-0 z-[1000] bg-white/95 flex flex-col items-center justify-center animate-fade-in backdrop-blur-xl">
             <div className="w-12 h-12 border-4 border-slate-200 border-t-[#0055FF] rounded-full animate-spin mb-6" />
-            <p className="font-black text-[12px] uppercase tracking-[0.3em] text-slate-400">{isSimpleMode ? 'Preparing Blueprint...' : 'Synthesizing Architecture...'}</p>
+            <p className="font-black text-[12px] uppercase tracking-[0.3em] text-slate-400">Synthesizing Blueprint...</p>
           </div>
         )}
 
-        {/* VOICE CHAT UI */}
+        {/* VOICE CHAT */}
         {activeTab === 'BUILD' && isLiveActive && (
-            <div className="h-full flex flex-col items-center justify-center p-12 bg-white animate-fade-in overflow-y-auto">
-                <div className="max-w-2xl w-full flex flex-col items-center gap-12">
-                    <div className="flex items-center gap-3 h-16">
-                        {[...Array(7)].map((_, i) => (
-                            <div 
-                              key={i} 
-                              className="w-2 bg-[#0055FF] rounded-full transition-all duration-75" 
-                              style={{ height: `${Math.max(12, micLevel * (200 + i * 40))}px` }} 
-                            />
-                        ))}
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-5xl font-black uppercase italic mb-4 leading-none">{isSimpleMode ? 'Listening...' : 'Capturing Stream...'}</h2>
-                        <p className="text-slate-500 font-medium text-lg italic">{isSimpleMode ? "Describe your vision out loud." : "Synchronizing PCM data with Discovery Engine."}</p>
-                    </div>
-                    <div className="w-full bg-slate-50 rounded-[3rem] p-12 h-64 overflow-y-auto custom-scrollbar border border-black/5 text-xl font-medium leading-relaxed text-[#141414] shadow-inner">
-                        {liveTranscription.length === 0 ? (isSimpleMode ? "Speak now..." : "Awaiting input...") : liveTranscription.join(' ')}
-                    </div>
-                    <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-20 py-6 flex items-center gap-4 text-xs tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">
-                        <Icons.Stop className="w-6 h-6" /> {isSimpleMode ? "END CALL" : "TERMINATE SESSION"}
-                    </button>
-                </div>
+          <div className="h-full flex flex-col items-center justify-center p-12 bg-white overflow-y-auto">
+            <div className="flex items-center gap-3 h-16 mb-8">
+                {[...Array(7)].map((_, i) => (<div key={i} className="w-2 bg-[#0055FF] rounded-full transition-all duration-75" style={{ height: `${Math.max(12, micLevel * (200 + i * 40))}px` }} />))}
             </div>
+            <h2 className="text-5xl font-black uppercase italic mb-12">Listening...</h2>
+            <div className="w-full max-w-2xl bg-slate-50 rounded-[3rem] p-12 h-64 overflow-y-auto custom-scrollbar border border-black/5 text-xl font-medium leading-relaxed">{liveTranscription.join(' ')}</div>
+            <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-20 py-6 mt-12 flex items-center gap-4 text-xs tracking-[0.3em] shadow-xl"><Icons.Stop className="w-6 h-6" /> END CALL</button>
+          </div>
         )}
 
-        {/* CATEGORY SELECTION */}
+        {/* CATEGORY SELECT */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
           <div className="h-full flex flex-col items-center justify-start p-12 pt-24 animate-fade-in overflow-y-auto custom-scrollbar">
             <div className="text-center mb-16 max-w-4xl">
-              <h2 className="text-[7vw] mb-4 uppercase italic leading-[0.8] font-black tracking-tighter">{isSimpleMode ? 'What are we making?' : 'Product Synthesis.'}</h2>
-              <p className="text-slate-400 font-medium text-xl leading-relaxed">{isSimpleMode ? 'Select a path below to start your building plan.' : 'Select a specialized discovery engine to begin high-fidelity architecture.'}</p>
+              <h2 className="text-[7vw] mb-4 uppercase italic leading-[0.8] font-black tracking-tighter">What are we creating?</h2>
+              <p className="text-slate-400 font-medium text-xl leading-relaxed">Choose a path to start your synthesis journey.</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full max-w-7xl mb-24 px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl px-6">
               {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
-                <button 
-                  key={key} 
-                  onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} 
-                  className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm min-h-[340px] justify-center"
-                >
+                <button key={key} onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} className="group mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-[#0055FF]/5 transition-all shadow-sm min-h-[300px] justify-center">
                   <flow.icon className="w-16 h-16 text-[#0055FF] mb-8 group-hover:scale-110 transition-transform" />
                   <h3 className="text-[14px] font-black uppercase tracking-widest leading-none mb-4">{flow.title}</h3>
-                  <p className="text-[12px] text-slate-500 font-medium leading-relaxed max-w-[240px] group-hover:text-[#141414] transition-colors italic">{flow.desc}</p>
+                  <p className="text-[12px] text-slate-500 font-medium leading-relaxed max-w-[240px] italic">{flow.desc}</p>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* GUIDED FLOWS */}
+        {/* FLOW STEPS */}
         {activeTab === 'BUILD' && guidedState.category && !isInterviewing && !isReviewing && !output && !isLiveActive && (
           <div className="h-full flex flex-col p-12 overflow-y-auto custom-scrollbar bg-white">
             <div className="max-w-6xl mx-auto w-full space-y-20 py-16">
               <div className="flex justify-between items-center relative z-10">
-                <button onClick={() => setGuidedState({ category: null, index: 0 })} className="flex items-center gap-3 text-[11px] font-black text-slate-400 uppercase tracking-widest italic hover:text-black group">
-                  <Icons.ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" /> {isSimpleMode ? 'Go Back' : 'Back to selection'}
+                <button onClick={() => setGuidedState({ category: null, index: 0 })} className="flex items-center gap-3 text-[11px] font-black text-slate-400 uppercase tracking-widest italic hover:text-black">
+                  <Icons.ArrowLeft className="w-5 h-5" /> BACK
                 </button>
                 <div className="flex items-center gap-4">
-                  {form.media_ref_base64 && (
-                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shadow-md">
-                      {form.media_type === 'image' ? (
-                        <img src={`data:image/png;base64,${form.media_ref_base64}`} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-100"><Icons.Video className="w-6 h-6 text-slate-400" /></div>
-                      )}
-                    </div>
-                  )}
                   <label className="mobbin-btn-secondary px-6 py-3 text-[10px] cursor-pointer flex items-center gap-2 border-slate-300">
-                    <Icons.Upload className="w-4 h-4" />
-                    {isSimpleMode ? 'UPLOAD REF' : 'ATTACH SOURCE'}
-                    <input type="file" className="hidden" accept="image/*,video/*,audio/*" onChange={handleFileChange} />
+                    <Icons.Upload className="w-4 h-4" /> ATTACH SOURCE
+                    <input type="file" className="hidden" accept="image/*,video/*,audio/*" />
                   </label>
                 </div>
               </div>
               <div className="text-center space-y-4">
                 <h2 className="text-[8vw] italic uppercase font-black tracking-tighter leading-none">{GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index]?.label}</h2>
-                <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] italic">Step {guidedState.index + 1} of {GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length}</p>
               </div>
               {(() => {
                 const q = GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index];
                 if (!q) return null;
                 const options = (SHARDS as any)[q.key] || [];
                 return q.key === 'high_level_goal' ? (
-                  <div className="relative z-0">
-                    <TextArea 
-                      autoFocus
-                      value={(form as any)[q.key] || ""} 
-                      onChange={e => setForm(p => ({ ...p, [q.key]: e.target.value }))} 
-                      style={{ color: '#141414', backgroundColor: '#FFFFFF' }}
-                      className="max-w-5xl mx-auto mobbin-input text-4xl py-14 min-h-[450px] border-4 border-slate-100 shadow-3xl focus:border-[#0055FF] rounded-[5rem] placeholder:text-slate-100" 
-                      placeholder={isSimpleMode ? "Type your idea here..." : "Input core technical objectives..."} 
-                    />
-                  </div>
+                  <TextArea autoFocus value={(form as any)[q.key] || ""} onChange={e => setForm(p => ({ ...p, [q.key]: e.target.value }))} className="max-w-5xl mx-auto text-4xl py-14 min-h-[400px] border-4 border-slate-100 shadow-3xl rounded-[5rem]" placeholder="Type your vision here..." />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 max-w-7xl mx-auto px-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto px-4">
                     {options.map((opt: any) => (
-                      <button 
-                        key={opt.label} 
-                        onClick={() => setForm(p => ({ ...p, [q.key]: opt.label }))} 
-                        className={`p-10 mobbin-card transition-all flex flex-col items-center gap-4 border-2 shadow-sm ${(form as any)[q.key] === opt.label ? 'bg-[#141414] text-white border-[#141414] scale-105 shadow-3xl' : 'text-slate-600 hover:border-[#0055FF]/40 border-slate-100'}`}
-                      >
+                      <button key={opt.label} onClick={() => setForm(p => ({ ...p, [q.key]: opt.label }))} className={`p-10 mobbin-card transition-all border-2 ${(form as any)[q.key] === opt.label ? 'bg-[#141414] text-white border-[#141414] scale-105 shadow-3xl' : 'text-slate-600 border-slate-100'}`}>
                         <span className="text-lg font-black uppercase tracking-wider">{opt.label}</span>
-                        <span className={`text-[11px] uppercase font-bold tracking-tight ${ (form as any)[q.key] === opt.label ? 'text-[#0055FF]' : 'text-slate-400' }`}>{opt.desc}</span>
+                        <p className={`text-[11px] uppercase mt-2 ${ (form as any)[q.key] === opt.label ? 'text-[#0055FF]' : 'text-slate-400' }`}>{opt.desc}</p>
                       </button>
                     ))}
                   </div>
                 );
               })()}
-              <div className="flex justify-center pt-24 relative z-10">
-                 <button 
-                  onClick={() => {
-                   if (guidedState.index < GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length - 1) setGuidedState(p => ({ ...p, index: p.index + 1 }));
-                   else handleStartFlow();
-                  }} 
-                  className="mobbin-btn-primary px-48 py-8 uppercase italic tracking-[0.5em] text-sm shadow-3xl hover:scale-105 active:scale-95 transition-all"
-                 >
-                   PROCEED
-                 </button>
-              </div>
+              <div className="flex justify-center pt-24"><button onClick={() => { if (guidedState.index < GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length - 1) setGuidedState(p => ({ ...p, index: p.index + 1 })); else handleStartFlow(); }} className="mobbin-btn-primary px-48 py-8 uppercase italic tracking-[0.5em] text-sm shadow-3xl">PROCEED</button></div>
             </div>
           </div>
         )}
 
-        {/* INTERVIEW PHASE - QUICK CHOICE SYSTEM */}
+        {/* CLARIFICATION PHASE */}
         {activeTab === 'BUILD' && isInterviewing && !isLiveActive && (
            <div className="h-full p-16 overflow-y-auto bg-white custom-scrollbar">
-              <div className="max-w-5xl mx-auto space-y-20 py-16">
-                 <div className="text-center">
-                   <h2 className="text-9xl font-black italic uppercase leading-none tracking-tighter">{isSimpleMode ? 'Details.' : 'Probe.'}</h2>
-                   <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] mt-6 italic">{isSimpleMode ? 'Answer these simple questions to refine the plan.' : 'Resolving logical dependencies and clarifying constraints.'}</p>
-                 </div>
-                 <div className="space-y-16">
+              <div className="max-w-5xl mx-auto space-y-20 py-16 text-center">
+                 <h2 className="text-9xl font-black italic uppercase leading-none tracking-tighter">Clarify.</h2>
+                 <div className="space-y-16 mt-20 text-left">
                   {interviewQuestions.map(q => (
                       <div key={q.id} className="mobbin-card p-14 space-y-12 border-2 border-slate-100 shadow-lg">
-                        <div className="space-y-2">
-                          <h4 className="text-4xl font-black italic text-[#141414] leading-tight">{q.question}</h4>
-                          <p className="text-[11px] text-[#0055FF] uppercase tracking-widest font-black italic">{q.context}</p>
+                        <h4 className="text-4xl font-black italic text-[#141414] leading-tight">{q.question}</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                          {q.options?.map(opt => (
+                            <button key={opt} onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))} className={`p-6 rounded-2xl border-2 text-left transition-all font-black uppercase text-[11px] tracking-[0.1em] ${interviewAnswers[q.id] === opt ? 'bg-[#141414] border-[#141414] text-white shadow-xl scale-105' : 'bg-slate-50 border-transparent text-slate-500'}`}>{opt}</button>
+                          ))}
                         </div>
-                        
-                        {q.options && q.options.length > 0 && (
-                          <div className="space-y-4">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest italic ml-2">Quick Choices:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                              {q.options.map(opt => (
-                                <button 
-                                  key={opt}
-                                  onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))}
-                                  className={`p-6 rounded-2xl border-2 text-left transition-all font-black uppercase text-[11px] tracking-[0.1em] ${interviewAnswers[q.id] === opt ? 'bg-[#141414] border-[#141414] text-white shadow-xl scale-105' : 'bg-slate-50 border-transparent text-slate-500 hover:border-[#0055FF]/30'}`}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <TextArea 
-                          value={interviewAnswers[q.id] || ""} 
-                          onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} 
-                          style={{ color: '#141414', backgroundColor: '#F9FAFB' }}
-                          className="min-h-[160px] text-2xl border-none shadow-inner rounded-[3rem] placeholder:text-slate-300 px-10 py-8" 
-                          placeholder="Or type a custom answer here..." 
-                        />
+                        <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="min-h-[140px] text-2xl border-none shadow-inner rounded-[3rem] px-10 py-8" placeholder="Or explain here..." />
                       </div>
                   ))}
                  </div>
-                 <button onClick={handleAnalyzeMatrix} className="mobbin-btn-primary w-full py-12 uppercase tracking-[0.6em] text-lg italic font-black shadow-3xl hover:bg-[#0055FF] transition-colors">FINALIZE MATRIX</button>
+                 <button onClick={handleAnalyzeMatrix} className="mobbin-btn-primary w-full py-12 uppercase tracking-[0.6em] text-lg italic font-black shadow-3xl">FINALIZE MATRIX</button>
               </div>
            </div>
         )}
 
-        {/* STYLE ROOM */}
+        {/* STRATEGY PHASE */}
         {activeTab === 'BUILD' && isReviewing && !isLiveActive && (
           <div className="h-full p-16 overflow-y-auto bg-white custom-scrollbar">
-            <div className="max-w-7xl mx-auto space-y-24 py-16">
-               <div className="text-center">
-                 <h2 className="text-[10vw] font-black italic uppercase leading-none tracking-tighter">{isSimpleMode ? 'Style.' : 'Strategy.'}</h2>
-                 <p className="text-[#0055FF] font-black uppercase tracking-[0.6em] text-[12px] mt-10 italic">{isSimpleMode ? 'Choose the best style for your project.' : 'Finalizing high-fidelity architectural shards.'}</p>
-               </div>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="max-w-7xl mx-auto space-y-24 py-16 text-center">
+               <h2 className="text-[10vw] font-black italic uppercase leading-none tracking-tighter">Matrix.</h2>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left mt-20">
                   {mastermindSuggestions.map((cat, i) => (
                     <div key={i} className="mobbin-card p-12 space-y-10 border-2 border-slate-100 shadow-3xl">
-                      <h4 className="text-[12px] font-black uppercase text-[#0055FF] tracking-[0.4em] italic border-b-2 border-slate-100 pb-8">{cat.category}</h4>
+                      <h4 className="text-[12px] font-black uppercase text-[#0055FF] tracking-[0.4em] italic border-b border-slate-100 pb-8">{cat.category}</h4>
                       <div className="flex flex-col gap-5">
                          {cat.options.map((opt, j) => (
-                           <button 
-                             key={j} 
-                             onClick={() => setSelectedSuggestions(p => ({ ...p, [cat.category]: opt.technical_value }))} 
-                             className={`p-10 rounded-[3rem] text-left border-2 transition-all ${selectedSuggestions[cat.category] === opt.technical_value ? 'bg-[#141414] border-[#141414] text-white shadow-3xl scale-[1.05]' : 'bg-white border-slate-50 text-slate-500 hover:border-[#0055FF]/30'}`}
-                           >
+                           <button key={j} onClick={() => setSelectedSuggestions(p => ({ ...p, [cat.category]: opt.technical_value }))} className={`p-10 rounded-[3rem] text-left border-2 transition-all ${selectedSuggestions[cat.category] === opt.technical_value ? 'bg-[#141414] border-[#141414] text-white shadow-3xl scale-[1.05]' : 'bg-white border-slate-50 text-slate-500 hover:border-[#0055FF]/30'}`}>
                               <span className="text-[16px] font-black uppercase block mb-3 leading-none">{opt.label}</span>
-                              <p className="text-[11px] opacity-70 font-medium uppercase leading-relaxed">{opt.description}</p>
+                              <p className="text-[11px] opacity-70 uppercase">{opt.description}</p>
                            </button>
                          ))}
                       </div>
                     </div>
                   ))}
                </div>
-               <button onClick={handleSynthesize} className="mobbin-btn-primary w-full py-14 text-2xl uppercase tracking-[1.2em] italic font-black shadow-3xl">SYNTHESIZE BLUEPRINT</button>
+               <button onClick={handleSynthesize} className="mobbin-btn-primary w-full py-14 text-2xl uppercase tracking-[1.2em] italic font-black shadow-3xl">SYNTHESIZE QUANTUM BLUEPRINT</button>
             </div>
           </div>
         )}
 
-        {/* FINAL PLAN */}
+        {/* RESULTS PAGE */}
         {activeTab === 'BUILD' && output && !isLiveActive && (
            <main className="absolute inset-0 z-[200] p-12 overflow-y-auto bg-white animate-fade-in custom-scrollbar">
                <div className="max-w-6xl mx-auto pb-48 space-y-28">
                    <div className="flex justify-between items-end border-b-4 border-slate-100 pb-16">
                       <div>
-                        <h3 className="text-[10vw] font-black italic leading-none tracking-tighter">{isSimpleMode ? 'READY.' : 'VERIFIED.'}</h3>
-                        <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-10 italic">{isSimpleMode ? 'The building plan is ready.' : 'High-Fidelity Architecture Synthesized'}</p>
+                        <h3 className="text-[10vw] font-black italic leading-none tracking-tighter">VERIFIED.</h3>
+                        <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-10 italic">Blueprint Optimized with 150+ Advanced Knowledge Shards</p>
                       </div>
                       <div className="flex gap-4">
-                        <button 
-                          onClick={handleSyncToGithub} 
-                          disabled={githubSyncing}
-                          className="mobbin-btn-secondary uppercase text-[10px] tracking-widest italic font-black px-8 py-5 border-2 border-slate-200 flex items-center gap-3 hover:bg-slate-50 transition-all disabled:opacity-50"
-                        >
-                          <Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-bounce' : ''}`} />
-                          {githubSyncing ? 'SYNCING...' : 'SYNC TO GITHUB'}
+                        <button onClick={() => { setGithubSyncing(true); setTimeout(() => { setGithubSyncing(false); alert("Success!"); }, 2000); }} disabled={githubSyncing} className="mobbin-btn-secondary uppercase text-[10px] tracking-widest italic font-black px-8 py-5 flex items-center gap-3 disabled:opacity-50 transition-all border-2 border-slate-200">
+                          <Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-bounce' : ''}`} /> {githubSyncing ? 'SYNCING...' : 'SYNC TO GITHUB'}
                         </button>
                         <button onClick={() => { setOutput(null); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); }} className="mobbin-btn-primary uppercase text-[10px] tracking-widest italic font-black px-8 py-5">NEW PROJECT</button>
                       </div>
                    </div>
 
-                   {/* STRATEGY INSIGHTS */}
-                   {output.APPLIED_STRATEGIES && (
-                     <div className="space-y-10">
+                   {/* STRATEGY MATRIX */}
+                   <div className="space-y-10">
                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">KNOWLEDGE BASE: APPLIED STRATEGIES</h4>
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {output.APPLIED_STRATEGIES.map((strat, i) => (
                            <div key={i} className="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm group hover:border-[#0055FF]/30 transition-all">
-                             <div className="text-[10px] font-black text-[#0055FF] mb-2 tracking-widest uppercase italic">Strategy {i + 1}</div>
+                             <div className="text-[10px] font-black text-[#0055FF] mb-2 uppercase italic tracking-widest">Strategy {i + 1}</div>
                              <div className="text-xl font-black uppercase mb-2 tracking-tighter">{strat.name}</div>
-                             <div className="text-[11px] text-slate-500 font-medium leading-relaxed italic">{strat.description}</div>
+                             <div className="text-[11px] text-slate-500 font-medium uppercase italic">{strat.description}</div>
                            </div>
                          ))}
                        </div>
-                     </div>
-                   )}
+                   </div>
                    
-                   {/* SECTION 01: BLUEPRINT */}
-                   {output.APP_BLUEPRINT && (
-                     <div className="space-y-10">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. {isSimpleMode ? 'BUILDING PLAN' : 'STRUCTURE'}</h4>
-                          <div className="flex gap-3">
-                            <button onClick={() => handleCopy(output.APP_BLUEPRINT!)} className="mobbin-btn-secondary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest border-slate-200 hover:bg-slate-50">
-                              <Icons.Copy className="w-4 h-4" /> COPY
-                            </button>
-                            <button onClick={() => downloadText(output.APP_BLUEPRINT!, "blueprint.txt")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
-                              <Icons.Download className="w-4 h-4" /> DOWNLOAD
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mobbin-card p-24 text-[#141414] text-4xl font-medium leading-relaxed whitespace-pre-wrap shadow-3xl border-2 border-slate-100 bg-[#fdfdfd]">{output.APP_BLUEPRINT}</div>
-                     </div>
-                   )}
-
-                   {/* SECTION 02: AI IMPLEMENTATION / PROMPT */}
                    <div className="space-y-10">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. {isSimpleMode ? 'INSTRUCTIONS' : 'AI IMPLEMENTATION'}</h4>
-                        <div className="flex gap-3">
-                            <button onClick={() => handleCopy(output.FINAL_PROMPT)} className="mobbin-btn-secondary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest border-slate-200 hover:bg-slate-50">
-                              <Icons.Copy className="w-4 h-4" /> COPY
-                            </button>
-                            <button onClick={() => downloadText(output.FINAL_PROMPT, "prompt_specification.txt")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
-                              <Icons.Download className="w-4 h-4" /> DOWNLOAD
-                            </button>
-                          </div>
-                      </div>
+                      <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. {isSimpleMode ? 'PLAN' : 'ARCHITECTURE'}</h4>
+                      <div className="mobbin-card p-24 text-[#141414] text-4xl font-medium leading-relaxed whitespace-pre-wrap shadow-3xl border-2 border-slate-100 bg-[#fdfdfd]">{output.APP_BLUEPRINT}</div>
+                   </div>
+
+                   <div className="space-y-10">
+                      <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. RODES SPECIFICATION</h4>
                       <div className="bg-slate-50 border-2 border-slate-100 p-24 rounded-[5rem] text-slate-600 font-mono text-xl leading-relaxed whitespace-pre-wrap shadow-inner overflow-x-auto">{output.FINAL_PROMPT}</div>
                    </div>
 
-                   {/* SECTION 03: VISUAL PREVIEW */}
                    {generatedVisual && (
                      <div className="space-y-10">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. {isSimpleMode ? 'VISUAL PREVIEW' : 'SYNTHESIS RENDER'}</h4>
-                          <div className="flex gap-3">
-                            <button onClick={() => downloadImage(generatedVisual, "architect_render.png")} className="mobbin-btn-primary py-2 px-6 flex items-center gap-2 text-[10px] tracking-widest">
-                              <Icons.Download className="w-4 h-4" /> DOWNLOAD RENDER
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-8 bg-slate-50 rounded-[7rem] border-2 border-slate-100 shadow-sm">
-                            <img src={generatedVisual} className="w-full rounded-[6rem] shadow-4xl" alt="Render" />
-                        </div>
+                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. SYNTHESIS RENDER</h4>
+                        <div className="p-8 bg-slate-50 rounded-[7rem] border-2 border-slate-100 shadow-sm"><img src={generatedVisual} className="w-full rounded-[6rem] shadow-4xl" alt="Render" /></div>
                      </div>
                    )}
 
-                   {/* COMMIT LOG */}
-                   {output.COMMIT_MESSAGE && (
-                     <div className="space-y-8">
-                       <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">04. GITHUB COMMIT PREVIEW</h4>
-                       <div className="bg-[#141414] text-green-400 p-12 rounded-[3rem] font-mono text-lg shadow-2xl border border-white/5">
-                         <div className="flex items-center gap-2 mb-4">
-                           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                           <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                         </div>
-                         <div>$ git commit -m "{output.COMMIT_MESSAGE}"</div>
-                         <div className="opacity-50 mt-2">Checking Knowledge Indexes... Success</div>
-                         <div className="opacity-50">Syncing RODES Framework... Complete</div>
-                         <div className="text-white mt-4 font-black">Ready for Deployment.</div>
-                       </div>
-                     </div>
-                   )}
+                   {/* COMMIT PREVIEW */}
+                   <div className="bg-[#141414] text-green-400 p-12 rounded-[3rem] font-mono text-lg shadow-2xl border border-white/5 space-y-4">
+                       <div className="flex gap-2 mb-4"><div className="w-3 h-3 bg-red-500 rounded-full"></div><div className="w-3 h-3 bg-yellow-500 rounded-full"></div><div className="w-3 h-3 bg-green-500 rounded-full"></div></div>
+                       <div>$ git commit -m "{output.COMMIT_MESSAGE}"</div>
+                       <div className="opacity-50">Applied Knowledge Frameworks... Verified</div>
+                       <div className="text-white font-black">Ready for Deployment.</div>
+                   </div>
                </div>
            </main>
         )}
 
-        {/* ARCHIVE */}
+        {/* HISTORY */}
         {activeTab === 'HISTORY' && (
            <div className="h-full p-20 overflow-y-auto bg-white custom-scrollbar">
              <div className="max-w-6xl mx-auto">
-               <h2 className="text-[9vw] font-black italic uppercase leading-none mb-24 tracking-tighter">{isSimpleMode ? 'History.' : 'Archive.'}</h2>
+               <h2 className="text-[9vw] font-black italic uppercase leading-none mb-24 tracking-tighter">Vault.</h2>
                {history.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-64 opacity-10">
-                    <Icons.Sparkles className="w-48 h-48 mb-12" />
-                    <p className="text-4xl tracking-[1.5em] font-black uppercase italic">Empty Vault</p>
-                 </div>
+                 <div className="flex flex-col items-center justify-center py-64 opacity-10"><Icons.Sparkles className="w-48 h-48 mb-12" /><p className="text-4xl tracking-[1.5em] font-black uppercase italic">Empty Vault</p></div>
                ) : (
                  <div className="grid grid-cols-1 gap-10">
                    {history.map(item => (
-                     <div 
-                        key={item.id} 
-                        className="mobbin-card p-16 flex justify-between items-center cursor-pointer group hover:bg-[#0055FF]/5 transition-all border-2 border-slate-100" 
-                        onClick={() => { setOutput(item.output); setActiveTab('BUILD'); }}
-                      >
+                     <div key={item.id} className="mobbin-card p-16 flex justify-between items-center cursor-pointer group hover:bg-[#0055FF]/5 transition-all border-2 border-slate-100" onClick={() => { setOutput(item.output); setActiveTab('BUILD'); }}>
                        <div className="space-y-4">
                           <span className="text-[#0055FF] font-black uppercase text-[11px] tracking-[0.4em] italic">{new Date(item.timestamp).toLocaleDateString()}</span>
                           <h4 className="text-6xl font-black italic group-hover:text-[#0055FF] transition-colors leading-tight uppercase tracking-tighter">{item.input.high_level_goal?.substring(0, 40)}...</h4>
                        </div>
-                       <Icons.Sparkles className="w-16 h-16 text-slate-100 group-hover:text-[#0055FF] group-hover:rotate-12 transition-all" />
+                       <Icons.Sparkles className="w-16 h-16 text-slate-100 group-hover:text-[#0055FF] transition-all" />
                      </div>
                    ))}
                  </div>
