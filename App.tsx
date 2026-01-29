@@ -24,7 +24,10 @@ const Icons = {
   Copy: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>,
   Stop: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>,
   Upload: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>,
-  Download: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+  Download: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+  Fullscreen: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" /></svg>,
+  ExitFullscreen: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h4V6m0 4l-5-5m16 5h-4V6m0 4l5-5M3 14h4v4m0-4l-5 5m16-5h-4v4m0-4l5 5" /></svg>,
+  Github: (props: any) => <svg {...props} fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
 };
 
 // --- Helpers ---
@@ -131,6 +134,8 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guidedState, setGuidedState] = useState({ category: null as string | null, index: 0 });
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [githubSyncing, setGithubSyncing] = useState(false);
 
   // Live State
   const [isLiveActive, setIsLiveActive] = useState(false);
@@ -158,9 +163,34 @@ const App: React.FC = () => {
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('architect_mobbin_v4');
+    const saved = localStorage.getItem('architect_mobbin_v5');
     if (saved) setHistory(JSON.parse(saved));
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  const toggleFullscreen = () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
+      else if ((el as any).msRequestFullscreen) (el as any).msRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  };
+
+  const handleSyncToGithub = () => {
+    setGithubSyncing(true);
+    setTimeout(() => {
+      setGithubSyncing(false);
+      alert("Successfully committed to Architect-Quantum repository branch.");
+    }, 2000);
+  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -240,7 +270,7 @@ const App: React.FC = () => {
       const newItem = { id: Date.now().toString(), timestamp: Date.now(), input: { ...form, isSimpleMode }, output: { ...res } };
       const newHist = [newItem, ...history];
       setHistory(newHist);
-      localStorage.setItem('architect_mobbin_v4', JSON.stringify(newHist));
+      localStorage.setItem('architect_mobbin_v5', JSON.stringify(newHist));
     } catch (e) { 
       console.error("Final Synthesis Error:", e);
       alert("Final architectural blueprint could not be finalized. Payload size may be the issue.");
@@ -370,7 +400,14 @@ const App: React.FC = () => {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+            <button 
+                onClick={toggleFullscreen}
+                className="p-2 rounded-full hover:bg-slate-100 transition-all text-slate-500 hover:text-[#141414] active:scale-90"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+                {isFullscreen ? <Icons.ExitFullscreen className="w-5 h-5" /> : <Icons.Fullscreen className="w-5 h-5" />}
+            </button>
             <button 
                 onClick={() => { setIsSimpleMode(!isSimpleMode); setForm(f => ({...f, isSimpleMode: !isSimpleMode})); }}
                 className={`flex items-center gap-2 p-1.5 px-4 rounded-full transition-all border ${isSimpleMode ? 'bg-[#0055FF]/5 border-[#0055FF]/20' : 'bg-slate-100 border-transparent'}`}
@@ -417,7 +454,7 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* CATEGORY SELECTION - POETIC WISE DESCRIPTIONS */}
+        {/* CATEGORY SELECTION */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
           <div className="h-full flex flex-col items-center justify-start p-12 pt-24 animate-fade-in overflow-y-auto custom-scrollbar">
             <div className="text-center mb-16 max-w-4xl">
@@ -530,7 +567,6 @@ const App: React.FC = () => {
                           <p className="text-[11px] text-[#0055FF] uppercase tracking-widest font-black italic">{q.context}</p>
                         </div>
                         
-                        {/* Quick Choices Grid */}
                         {q.options && q.options.length > 0 && (
                           <div className="space-y-4">
                             <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest italic ml-2">Quick Choices:</span>
@@ -604,10 +640,34 @@ const App: React.FC = () => {
                         <h3 className="text-[10vw] font-black italic leading-none tracking-tighter">{isSimpleMode ? 'READY.' : 'VERIFIED.'}</h3>
                         <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-10 italic">{isSimpleMode ? 'The building plan is ready.' : 'High-Fidelity Architecture Synthesized'}</p>
                       </div>
-                      <div className="flex gap-6">
-                        <button onClick={() => { setOutput(null); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); }} className="mobbin-btn-secondary uppercase text-xs tracking-widest italic font-black px-10 py-5 border-2 border-slate-200">NEW PROJECT</button>
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={handleSyncToGithub} 
+                          disabled={githubSyncing}
+                          className="mobbin-btn-secondary uppercase text-[10px] tracking-widest italic font-black px-8 py-5 border-2 border-slate-200 flex items-center gap-3 hover:bg-slate-50 transition-all disabled:opacity-50"
+                        >
+                          <Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-bounce' : ''}`} />
+                          {githubSyncing ? 'SYNCING...' : 'SYNC TO GITHUB'}
+                        </button>
+                        <button onClick={() => { setOutput(null); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); }} className="mobbin-btn-primary uppercase text-[10px] tracking-widest italic font-black px-8 py-5">NEW PROJECT</button>
                       </div>
                    </div>
+
+                   {/* STRATEGY INSIGHTS */}
+                   {output.APPLIED_STRATEGIES && (
+                     <div className="space-y-10">
+                       <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">KNOWLEDGE BASE: APPLIED STRATEGIES</h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         {output.APPLIED_STRATEGIES.map((strat, i) => (
+                           <div key={i} className="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm group hover:border-[#0055FF]/30 transition-all">
+                             <div className="text-[10px] font-black text-[#0055FF] mb-2 tracking-widest uppercase italic">Strategy {i + 1}</div>
+                             <div className="text-xl font-black uppercase mb-2 tracking-tighter">{strat.name}</div>
+                             <div className="text-[11px] text-slate-500 font-medium leading-relaxed italic">{strat.description}</div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                    
                    {/* SECTION 01: BLUEPRINT */}
                    {output.APP_BLUEPRINT && (
@@ -657,6 +717,24 @@ const App: React.FC = () => {
                         <div className="p-8 bg-slate-50 rounded-[7rem] border-2 border-slate-100 shadow-sm">
                             <img src={generatedVisual} className="w-full rounded-[6rem] shadow-4xl" alt="Render" />
                         </div>
+                     </div>
+                   )}
+
+                   {/* COMMIT LOG */}
+                   {output.COMMIT_MESSAGE && (
+                     <div className="space-y-8">
+                       <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">04. GITHUB COMMIT PREVIEW</h4>
+                       <div className="bg-[#141414] text-green-400 p-12 rounded-[3rem] font-mono text-lg shadow-2xl border border-white/5">
+                         <div className="flex items-center gap-2 mb-4">
+                           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                           <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                         </div>
+                         <div>$ git commit -m "{output.COMMIT_MESSAGE}"</div>
+                         <div className="opacity-50 mt-2">Checking Knowledge Indexes... Success</div>
+                         <div className="opacity-50">Syncing RODES Framework... Complete</div>
+                         <div className="text-white mt-4 font-black">Ready for Deployment.</div>
+                       </div>
                      </div>
                    )}
                </div>

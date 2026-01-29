@@ -1,5 +1,4 @@
 
-
 export type TargetAI = 
   | "Gemini 3 Flash"
   | "Gemini 3 Pro"
@@ -15,10 +14,8 @@ export type TargetAI =
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
 
-// Added missing PlanType for backend service
 export type PlanType = "Starter" | "Professional" | "Enterprise";
 
-// Added missing UserStatus for backend service
 export interface UserStatus {
   userId: string;
   plan: string;
@@ -26,7 +23,6 @@ export interface UserStatus {
   totalCredits: number;
 }
 
-// Added missing WebhookEvent for backend service logs
 export interface WebhookEvent {
   id: string;
   type: string;
@@ -35,7 +31,6 @@ export interface WebhookEvent {
   payload: any;
 }
 
-// Added missing ApiKey for backend service management
 export interface ApiKey {
   id: string;
   key: string;
@@ -46,6 +41,11 @@ export interface ApiKey {
 export interface SuggestedModel {
   model_name: string;
   reasoning: string;
+}
+
+export interface AppliedStrategy {
+  name: string;
+  description: string;
 }
 
 export interface MastermindSuggestionOption {
@@ -64,7 +64,7 @@ export interface InterviewQuestion {
   id: string;
   question: string;
   context: string;
-  options?: string[]; // Added for non-technical quick selections
+  options?: string[];
 }
 
 export interface PromptInput {
@@ -102,6 +102,8 @@ export interface PromptOutput {
   MARKETING_KIT?: MarketingKit;
   SUGGESTED_MODELS?: SuggestedModel[];
   APP_BLUEPRINT?: string;
+  APPLIED_STRATEGIES?: AppliedStrategy[];
+  COMMIT_MESSAGE?: string;
 }
 
 export interface HistoryItem {
