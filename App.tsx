@@ -75,21 +75,81 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 }
 
 const GUIDED_FLOWS = {
-  'Engineering': { title: 'ENGINEERING', icon: Icons.Cpu, desc: "Gadgets, tools, or complex systems.", questions: [{ key: 'eng_field', label: 'Domain' }, { key: 'high_level_goal', label: 'Goal' }] },
-  'Real Estate': { title: 'REAL ESTATE', icon: Icons.Home, desc: "Dream homes or spatial concepts.", questions: [{ key: 'estate_style', label: 'Style' }, { key: 'high_level_goal', label: 'Goal' }] },
-  'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, desc: "High-fidelity biblical narrative prompts.", questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Concept' }] },
-  'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, desc: "Chiaroscuro lighting & cinematic styles.", questions: [{ key: 'img_lighting', label: 'Vibe' }, { key: 'high_level_goal', label: 'Scene' }] },
-  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, desc: "Build a digital home for your mission.", questions: [{ key: 'web_type', label: 'Type' }, { key: 'web_aesthetic', label: 'Vibe' }, { key: 'high_level_goal', label: 'Goal' }] },
-  'Live': { title: 'VOICE CHAT', icon: Icons.Mic, desc: "Simply talk to the architect.", questions: [] }
+  'Engineering': { 
+    title: 'ENGINEERING', 
+    icon: Icons.Cpu, 
+    desc: "Synthesize industrial prototypes, IoT hardware, or complex mechanical blueprints.", 
+    questions: [{ key: 'eng_field', label: 'Domain' }, { key: 'high_level_goal', label: 'Goal' }] 
+  },
+  'Real Estate': { 
+    title: 'REAL ESTATE', 
+    icon: Icons.Home, 
+    desc: "Architect luxury modern estates, urban spatial plans, or minimalist interior concepts.", 
+    questions: [{ key: 'estate_style', label: 'Style' }, { key: 'high_level_goal', label: 'Goal' }] 
+  },
+  'Artist': { 
+    title: 'ART & CREATIVE', 
+    icon: Icons.Palette, 
+    desc: "Mythological epics, biblical narratives, or high-concept conceptual digital art.", 
+    questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Concept' }] 
+  },
+  'Image': { 
+    title: 'VISUAL ASSET', 
+    icon: Icons.Photo, 
+    desc: "Cinematic chiaroscuro lighting, photorealistic portraits, or hyper-real textures.", 
+    questions: [{ key: 'img_lighting', label: 'Vibe' }, { key: 'high_level_goal', label: 'Scene' }] 
+  },
+  'Website': { 
+    title: 'WEB & SAAS', 
+    icon: Icons.Globe, 
+    desc: "Design high-conversion SaaS landing pages, impact-driven portals, or global storefronts.", 
+    questions: [{ key: 'web_type', label: 'Type' }, { key: 'web_aesthetic', label: 'Vibe' }, { key: 'high_level_goal', label: 'Goal' }] 
+  },
+  'Live': { 
+    title: 'VOICE CHAT', 
+    icon: Icons.Mic, 
+    desc: "Engage in real-time voice synthesis and strategic architectural brainstorming.", 
+    questions: [] 
+  }
 };
 
 const SHARDS = {
-  eng_field: [{ label: "Software", desc: "Apps" }, { label: "Machines", desc: "Hardware" }],
-  estate_style: [{ label: "Modern", desc: "Clean" }, { label: "Cozy", desc: "Warm" }],
-  artist_medium: [{ label: "Biblical Narrative", desc: "Theology & Story" }, { label: "Digital Paint", desc: "Visual Arts" }],
-  img_lighting: [{ label: "Chiaroscuro", desc: "High Contrast" }, { label: "Cinematic", desc: "Mood & Vibe" }],
-  web_type: [{ label: "Non-Profit", desc: "Charity" }, { label: "SaaS", desc: "Product" }],
-  web_aesthetic: [{ label: "Impactful", desc: "Bold" }, { label: "Welcoming", desc: "Clean" }]
+  eng_field: [
+    { label: "Software Architecture", desc: "Microservices & Cloud" }, 
+    { label: "Hardware / IoT", desc: "Mechanical & Systems" },
+    { label: "Industrial Design", desc: "CAD & Prototypes" },
+    { label: "Network Security", desc: "Infra & Defense" }
+  ],
+  estate_style: [
+    { label: "Ultra-Modern", desc: "Glass & Steel" }, 
+    { label: "Organic Minimalist", desc: "Warm & Clean" },
+    { label: "Industrial Loft", desc: "Raw & Urban" },
+    { label: "Classic Estate", desc: "Timeless & Grand" }
+  ],
+  artist_medium: [
+    { label: "Biblical / Epic", desc: "Mythology & Story" }, 
+    { label: "Conceptual Modern", desc: "Abstract & High-Theory" },
+    { label: "Digital Painterly", desc: "Brushwork & Texture" },
+    { label: "Surrealist / Dream", desc: "Otherworldly & Logic" }
+  ],
+  img_lighting: [
+    { label: "Chiaroscuro", desc: "High Contrast Shadows" }, 
+    { label: "Golden Hour", desc: "Soft & Atmospheric" },
+    { label: "Studio High-Key", desc: "Commercial & Sharp" },
+    { label: "Neon / Cyber", desc: "Vibrant & Dynamic" }
+  ],
+  web_type: [
+    { label: "SaaS Landing Page", desc: "Conversion & Scale" }, 
+    { label: "Non-Profit Portal", desc: "Impact & Community" },
+    { label: "E-Commerce Store", desc: "Retail & Checkout" },
+    { label: "Artist Portfolio", desc: "Visual & Unique" }
+  ],
+  web_aesthetic: [
+    { label: "Bold & High-Contrast", desc: "Impactful" }, 
+    { label: "Clean & Welcoming", desc: "Accessible" },
+    { label: "Glassmorphic / Glossy", desc: "Modern & Tech" },
+    { label: "Brutalist / Raw", desc: "Minimal & Edgy" }
+  ]
 };
 
 const App: React.FC = () => {
@@ -297,38 +357,42 @@ const App: React.FC = () => {
 
         {/* VOICE DISCOVERY */}
         {isLiveActive && (
-          <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 bg-white animate-fade-in">
-            <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mb-8 relative">
-              <div className="absolute inset-0 rounded-full border-2 border-blue-200 animate-ping opacity-25" />
-              <Icons.Mic className="w-12 h-12 text-blue-500 animate-bounce" />
+          <div className="h-full overflow-y-auto custom-scrollbar bg-white animate-fade-in">
+            <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12">
+              <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mb-8 relative">
+                <div className="absolute inset-0 rounded-full border-2 border-blue-200 animate-ping opacity-25" />
+                <Icons.Mic className="w-12 h-12 text-blue-500 animate-bounce" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-8 tracking-tighter text-center">Architect is Listening...</h2>
+              <div className="w-full max-w-2xl bg-slate-50 rounded-[2.5rem] p-8 md:p-12 h-64 border border-black/5 overflow-y-auto text-xl italic text-slate-500 shadow-inner custom-scrollbar">{liveTranscription.length > 0 ? liveTranscription.join(' ') : "Initializing quantum voice field..."}</div>
+              <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-12 md:px-16 py-5 md:py-6 mt-12 flex items-center gap-4 text-xs tracking-[0.3em] shadow-xl hover:bg-red-500 transition-colors"><Icons.Stop className="w-6 h-6" /> END DISCOVERY</button>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-8 tracking-tighter text-center">Architect is Listening...</h2>
-            <div className="w-full max-w-2xl bg-slate-50 rounded-[2.5rem] p-8 md:p-12 h-64 border border-black/5 overflow-y-auto text-xl italic text-slate-500 shadow-inner custom-scrollbar">{liveTranscription.length > 0 ? liveTranscription.join(' ') : "Initializing quantum voice field..."}</div>
-            <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-12 md:px-16 py-5 md:py-6 mt-12 flex items-center gap-4 text-xs tracking-[0.3em] shadow-xl hover:bg-red-500 transition-colors"><Icons.Stop className="w-6 h-6" /> END DISCOVERY</button>
           </div>
         )}
 
         {/* START SCREEN */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
-          <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 md:pt-24 overflow-y-auto custom-scrollbar animate-fade-in">
-            <h2 className="text-[12vw] md:text-[7vw] mb-4 uppercase italic leading-none font-black tracking-tighter text-center">Narrative Architect.</h2>
-            <p className="text-slate-400 font-medium text-lg md:text-xl mb-12 md:mb-16 italic text-center max-w-2xl">Select an industrial engine to synthesize your quantum vision into high-fidelity prompts.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full max-w-7xl px-4 md:px-6">
-              {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
-                <button key={key} onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} className="mobbin-card p-8 md:p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-blue-50 transition-all min-h-[260px] md:min-h-[300px] justify-center group">
-                  <flow.icon className="w-12 h-12 md:w-16 md:h-16 text-[#0055FF] mb-6 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-sm font-black uppercase tracking-widest mb-3">{flow.title}</h3>
-                  <p className="text-[11px] md:text-[12px] text-slate-500 italic max-w-[220px]">{flow.desc}</p>
-                </button>
-              ))}
+          <div className="h-full overflow-y-auto custom-scrollbar animate-fade-in">
+            <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 py-12 md:py-24">
+              <h2 className="text-[12vw] md:text-[7vw] mb-4 uppercase italic leading-none font-black tracking-tighter text-center">Narrative Architect.</h2>
+              <p className="text-slate-400 font-medium text-lg md:text-xl mb-12 md:mb-16 italic text-center max-w-2xl">Select an industrial engine to synthesize your quantum vision into high-fidelity prompts.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full max-w-7xl px-4 md:px-6">
+                {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
+                  <button key={key} onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} className="mobbin-card p-8 md:p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-blue-50 transition-all min-h-[260px] md:min-h-[300px] justify-center group">
+                    <flow.icon className="w-12 h-12 md:w-16 md:h-16 text-[#0055FF] mb-6 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-3">{flow.title}</h3>
+                    <p className="text-[11px] md:text-[12px] text-slate-500 italic max-w-[220px]">{flow.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* GUIDED STEPS */}
         {guidedState.category && !isInterviewing && !isReviewing && !output && !isLiveActive && (
-          <div className="h-full p-6 md:p-12 overflow-y-auto custom-scrollbar bg-white animate-fade-in">
-            <div className="max-w-5xl mx-auto space-y-12 md:space-y-16 py-8 md:py-12">
+          <div className="h-full overflow-y-auto custom-scrollbar bg-white animate-fade-in">
+            <div className="max-w-5xl mx-auto space-y-12 md:space-y-16 py-12 md:py-20 px-6">
               <div className="flex justify-between items-center">
                 <button onClick={() => setGuidedState({ category: null, index: 0 })} className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic hover:text-black flex items-center gap-2 transition-colors"><Icons.ArrowLeft className="w-4 h-4" /> Back</button>
                 <div className="flex gap-4">
@@ -363,8 +427,8 @@ const App: React.FC = () => {
 
         {/* INTERVIEW */}
         {isInterviewing && (
-           <div className="h-full p-6 md:p-16 overflow-y-auto bg-white custom-scrollbar animate-fade-in">
-              <div className="max-w-5xl mx-auto space-y-12 md:space-y-16 text-center py-8 md:py-12">
+           <div className="h-full overflow-y-auto custom-scrollbar bg-white animate-fade-in">
+              <div className="max-w-5xl mx-auto space-y-12 md:space-y-16 text-center py-12 md:py-24 px-6">
                  <div className="space-y-4">
                   <span className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">Quantum Discovery Phase</span>
                   <h2 className="text-7xl md:text-9xl font-black italic uppercase leading-none tracking-tighter">PROBE.</h2>
@@ -392,8 +456,8 @@ const App: React.FC = () => {
 
         {/* STRATEGY MATRIX */}
         {isReviewing && (
-          <div className="h-full p-6 md:p-16 overflow-y-auto bg-white custom-scrollbar animate-fade-in">
-            <div className="max-w-7xl mx-auto space-y-12 md:space-y-16 text-center py-8 md:py-12">
+          <div className="h-full overflow-y-auto custom-scrollbar bg-white animate-fade-in">
+            <div className="max-w-7xl mx-auto space-y-12 md:space-y-16 text-center py-12 md:py-24 px-6">
                <div className="space-y-4">
                 <span className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">Engineering Refinement</span>
                 <h2 className="text-8xl md:text-[10vw] font-black italic uppercase leading-none tracking-tighter">MATRIX.</h2>
@@ -518,8 +582,8 @@ const App: React.FC = () => {
 
         {/* ARCHIVE */}
         {activeTab === 'HISTORY' && (
-           <div className="h-full p-8 md:p-20 overflow-y-auto bg-white custom-scrollbar animate-fade-in">
-             <div className="max-w-6xl mx-auto">
+           <div className="h-full overflow-y-auto bg-white custom-scrollbar animate-fade-in">
+             <div className="max-w-6xl mx-auto py-12 md:py-20 px-8">
                <h2 className="text-7xl md:text-[9vw] font-black italic uppercase leading-none mb-16 md:mb-24 tracking-tighter">Vault.</h2>
                {history.length === 0 ? (
                  <div className="flex flex-col items-center justify-center py-64 opacity-10"><Icons.Sparkles className="w-48 h-48 mb-12" /><p className="text-4xl tracking-[1.5em] font-black uppercase italic">Empty Vault</p></div>
