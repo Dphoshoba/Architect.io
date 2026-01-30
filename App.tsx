@@ -58,21 +58,21 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 }
 
 const GUIDED_FLOWS = {
-  'Engineering': { title: 'ENGINEERING', icon: Icons.Cpu, desc: "Gadgets, custom tools, or clever systems.", questions: [{ key: 'eng_field', label: 'Domain' }, { key: 'high_level_goal', label: 'Goal' }] },
-  'Real Estate': { title: 'REAL ESTATE', icon: Icons.Home, desc: "Dream homes or spatial layouts.", questions: [{ key: 'estate_style', label: 'Style' }, { key: 'high_level_goal', label: 'Goal' }] },
-  'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, desc: "Express your soul through art concepts.", questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Concept' }] },
-  'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, desc: "Cinematic photos or graphic styles.", questions: [{ key: 'img_lighting', label: 'Vibe' }, { key: 'high_level_goal', label: 'Scene' }] },
-  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, desc: "Digital homes for communities or business.", questions: [{ key: 'web_type', label: 'Type' }, { key: 'web_aesthetic', label: 'Vibe' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Engineering': { title: 'ENGINEERING', icon: Icons.Cpu, desc: "Gadgets, tools, or complex systems.", questions: [{ key: 'eng_field', label: 'Domain' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Real Estate': { title: 'REAL ESTATE', icon: Icons.Home, desc: "Dream homes or spatial concepts.", questions: [{ key: 'estate_style', label: 'Style' }, { key: 'high_level_goal', label: 'Goal' }] },
+  'Artist': { title: 'ART & CREATIVE', icon: Icons.Palette, desc: "High-fidelity biblical narrative prompts.", questions: [{ key: 'artist_medium', label: 'Medium' }, { key: 'high_level_goal', label: 'Concept' }] },
+  'Image': { title: 'VISUAL ASSET', icon: Icons.Photo, desc: "Chiaroscuro lighting & cinematic styles.", questions: [{ key: 'img_lighting', label: 'Vibe' }, { key: 'high_level_goal', label: 'Scene' }] },
+  'Website': { title: 'WEB & SAAS', icon: Icons.Globe, desc: "Build a digital home for your mission.", questions: [{ key: 'web_type', label: 'Type' }, { key: 'web_aesthetic', label: 'Vibe' }, { key: 'high_level_goal', label: 'Goal' }] },
   'Live': { title: 'VOICE CHAT', icon: Icons.Mic, desc: "Simply talk to the architect.", questions: [] }
 };
 
 const SHARDS = {
   eng_field: [{ label: "Software", desc: "Apps" }, { label: "Machines", desc: "Hardware" }],
   estate_style: [{ label: "Modern", desc: "Clean" }, { label: "Cozy", desc: "Warm" }],
-  artist_medium: [{ label: "Digital", desc: "Screen" }, { label: "Canvas", desc: "Physical" }],
-  img_lighting: [{ label: "Cinematic", desc: "Drama" }, { label: "Natural", desc: "Bright" }],
-  web_type: [{ label: "Non-Profit", desc: "Charity" }, { label: "SaaS", desc: "Business" }],
-  web_aesthetic: [{ label: "Welcoming", desc: "Clean" }, { label: "Impactful", desc: "Bold" }]
+  artist_medium: [{ label: "Biblical Narrative", desc: "Theology & Story" }, { label: "Digital Paint", desc: "Visual Arts" }],
+  img_lighting: [{ label: "Chiaroscuro", desc: "High Contrast" }, { label: "Cinematic", desc: "Mood & Vibe" }],
+  web_type: [{ label: "Non-Profit", desc: "Charity" }, { label: "SaaS", desc: "Product" }],
+  web_aesthetic: [{ label: "Impactful", desc: "Bold" }, { label: "Welcoming", desc: "Clean" }]
 };
 
 const App: React.FC = () => {
@@ -81,7 +81,7 @@ const App: React.FC = () => {
   const [output, setOutput] = useState<PromptOutput | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guidedState, setGuidedState] = useState({ category: null as string | null, index: 0 });
-  const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [githubSyncing, setGithubSyncing] = useState(false);
 
@@ -97,9 +97,9 @@ const App: React.FC = () => {
 
   const [form, setForm] = useState<PromptInput>({
     target_AI: "Gemini 3 Flash", high_level_goal: "", task_type: "Synthesis", domain_context: "",
-    user_persona: "Architect", tone_style: "Professional", output_format: "Markdown",
+    user_persona: "Lead Architect", tone_style: "Professional", output_format: "Markdown",
     length_and_depth: "Detailed", reasoning_visibility: "detailed", language: "English",
-    visual_inspiration_mode: true, isSimpleMode: true
+    visual_inspiration_mode: true, isSimpleMode: false
   });
 
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
@@ -111,7 +111,7 @@ const App: React.FC = () => {
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('arch_quantum_v1');
+    const saved = localStorage.getItem('arch_biblical_v1');
     if (saved) setHistory(JSON.parse(saved));
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -122,10 +122,68 @@ const App: React.FC = () => {
     const el = document.documentElement;
     if (!document.fullscreenElement) {
       if (el.requestFullscreen) el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
     } else {
       if (document.exitFullscreen) document.exitFullscreen();
     }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
+  };
+
+  const handleCopyImage = async (dataUrl: string) => {
+    try {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob })
+      ]);
+      alert("Image copied to clipboard!");
+    } catch (err) {
+      // Fallback for browsers that don't support ClipboardItem
+      const textArea = document.createElement("textarea");
+      textArea.value = dataUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      alert("Image Data URL copied to clipboard!");
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = (event.target?.result as string).split(',')[1];
+        setForm(prev => ({
+          ...prev,
+          media_ref_base64: base64,
+          media_type: file.type.startsWith('image/') ? 'image' : 
+                      file.type.startsWith('video/') ? 'video' : 'audio'
+        }));
+        alert("Reference source attached.");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const downloadText = (content: string, filename: string) => {
+    const blob = new Blob([content], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = filename; link.click();
+  };
+
+  const downloadImage = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleStartFlow = async () => {
@@ -134,7 +192,7 @@ const App: React.FC = () => {
       const res = await generateInterviewQuestions({ ...form, isSimpleMode });
       setInterviewQuestions(res);
       setIsInterviewing(true);
-    } catch { alert("API Error. Check keys."); } finally { setLoading(false); }
+    } catch { alert("Error starting synthesis."); } finally { setLoading(false); }
   };
 
   const handleAnalyzeMatrix = async () => {
@@ -158,7 +216,7 @@ const App: React.FC = () => {
       const newItem = { id: Date.now().toString(), timestamp: Date.now(), input: { ...form, isSimpleMode }, output: res };
       const newHist = [newItem, ...history];
       setHistory(newHist);
-      localStorage.setItem('arch_quantum_v1', JSON.stringify(newHist));
+      localStorage.setItem('arch_biblical_v1', JSON.stringify(newHist));
     } catch { alert("Synthesis failed."); } finally { setLoading(false); }
   };
 
@@ -208,12 +266,12 @@ const App: React.FC = () => {
       <header className="h-16 flex items-center justify-between px-8 glass-header fixed top-0 w-full z-50">
         <div className="flex items-center gap-10">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { setOutput(null); setIsReviewing(false); setIsInterviewing(false); setGuidedState({ category: null, index: 0 }); }}>
-            <div className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center text-white font-black text-xs">A</div>
+            <div className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center text-white font-black text-xs">B</div>
             <h1 className="text-xl font-black uppercase tracking-tighter">ARCHITECT<span className="text-[#0055FF]">.QUANTUM</span></h1>
           </div>
           <nav className="flex gap-6">
             <button onClick={() => setActiveTab('BUILD')} className={`text-[11px] font-bold uppercase tracking-widest ${activeTab === 'BUILD' ? 'text-black border-b-2 border-black' : 'text-slate-400'}`}>Synthesis</button>
-            <button onClick={() => setActiveTab('HISTORY')} className={`text-[11px] font-bold uppercase tracking-widest ${activeTab === 'HISTORY' ? 'text-black border-b-2 border-black' : 'text-slate-400'}`}>Archive</button>
+            <button onClick={() => setActiveTab('HISTORY')} className={`text-[11px] font-bold uppercase tracking-widest ${activeTab === 'HISTORY' ? 'text-black border-b-2 border-black' : 'text-slate-400'}`}>Vault</button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -224,15 +282,15 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-black uppercase tracking-tighter">Simple Mode</span>
                 <div className={`w-3 h-3 rounded-full ${isSimpleMode ? 'bg-[#0055FF]' : 'bg-slate-300'}`} />
             </button>
-            <button className="mobbin-btn-primary text-[10px] uppercase tracking-widest px-6 py-2.5">Get Enterprise</button>
+            <button className="mobbin-btn-primary text-[10px] uppercase tracking-widest px-6 py-2.5">Enterprise</button>
         </div>
       </header>
 
       <div className="flex-1 mt-16 overflow-hidden relative">
         {loading && (
-          <div className="absolute inset-0 z-[1000] bg-white/90 flex flex-col items-center justify-center backdrop-blur-md">
+          <div className="absolute inset-0 z-[1000] bg-white/95 flex flex-col items-center justify-center backdrop-blur-xl">
             <div className="w-12 h-12 border-4 border-slate-200 border-t-[#0055FF] rounded-full animate-spin mb-6" />
-            <p className="font-black text-[12px] uppercase tracking-[0.3em] text-slate-400">Synthesizing Logic Shards...</p>
+            <p className="font-black text-[12px] uppercase tracking-[0.3em] text-slate-400 italic">Synthesizing Narrative Shards...</p>
           </div>
         )}
 
@@ -240,16 +298,16 @@ const App: React.FC = () => {
         {isLiveActive && (
           <div className="h-full flex flex-col items-center justify-center p-12 bg-white animate-fade-in">
             <h2 className="text-5xl font-black uppercase italic mb-8">Listening...</h2>
-            <div className="w-full max-w-2xl bg-slate-50 rounded-[3rem] p-12 h-64 border border-black/5 overflow-y-auto text-xl">{liveTranscription.join(' ')}</div>
-            <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-16 py-6 mt-12 flex items-center gap-4 text-xs tracking-[0.3em]"><Icons.Stop className="w-6 h-6" /> END DISCOVERY</button>
+            <div className="w-full max-w-2xl bg-slate-50 rounded-[3rem] p-12 h-64 border border-black/5 overflow-y-auto text-xl italic text-slate-500">{liveTranscription.join(' ')}</div>
+            <button onClick={stopLiveDiscovery} className="mobbin-btn-primary px-16 py-6 mt-12 flex items-center gap-4 text-xs tracking-[0.3em] shadow-xl"><Icons.Stop className="w-6 h-6" /> END DISCOVERY</button>
           </div>
         )}
 
         {/* START SCREEN */}
         {activeTab === 'BUILD' && !guidedState.category && !output && !isLiveActive && (
           <div className="h-full flex flex-col items-center justify-center p-12 pt-24 overflow-y-auto custom-scrollbar">
-            <h2 className="text-[7vw] mb-4 uppercase italic leading-none font-black tracking-tighter">New Blueprint.</h2>
-            <p className="text-slate-400 font-medium text-xl mb-16">Select an industrial synthesis engine to begin.</p>
+            <h2 className="text-[7vw] mb-4 uppercase italic leading-none font-black tracking-tighter">Narrative Architect.</h2>
+            <p className="text-slate-400 font-medium text-xl mb-16 italic">Select an industrial engine to synthesize your vision.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl px-6">
               {Object.entries(GUIDED_FLOWS).map(([key, flow]) => (
                 <button key={key} onClick={() => { setGuidedState({ category: key, index: 0 }); if(key === 'Live') startLiveDiscovery(); }} className="mobbin-card p-10 flex flex-col items-center text-center hover:border-[#0055FF] hover:bg-blue-50 transition-all min-h-[300px] justify-center">
@@ -266,16 +324,22 @@ const App: React.FC = () => {
         {guidedState.category && !isInterviewing && !isReviewing && !output && !isLiveActive && (
           <div className="h-full p-12 overflow-y-auto custom-scrollbar bg-white">
             <div className="max-w-5xl mx-auto space-y-16 py-12">
-              <button onClick={() => setGuidedState({ category: null, index: 0 })} className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic hover:text-black flex items-center gap-2"><Icons.ArrowLeft className="w-4 h-4" /> Back</button>
+              <div className="flex justify-between items-center">
+                <button onClick={() => setGuidedState({ category: null, index: 0 })} className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic hover:text-black flex items-center gap-2"><Icons.ArrowLeft className="w-4 h-4" /> Back</button>
+                <label className="mobbin-btn-secondary px-6 py-3 text-[10px] cursor-pointer flex items-center gap-2 border-slate-300 hover:bg-slate-50">
+                  <Icons.Upload className="w-4 h-4" /> ATTACH REF
+                  <input type="file" className="hidden" accept="image/*,video/*,audio/*" onChange={handleFileChange} />
+                </label>
+              </div>
               <h2 className="text-[8vw] uppercase font-black italic tracking-tighter leading-none">{GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index]?.label}</h2>
               {GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index]?.key === 'high_level_goal' ? (
-                <TextArea autoFocus value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} className="text-4xl py-14 min-h-[400px] rounded-[4rem] border-4 border-slate-100 shadow-xl" placeholder="Describe the goal..." />
+                <TextArea autoFocus value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} className="text-4xl py-14 min-h-[400px] rounded-[4rem] border-4 border-slate-100 shadow-xl" placeholder="Describe the theology or narrative..." />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   {(SHARDS as any)[GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index]?.key]?.map((opt: any) => (
                     <button key={opt.label} onClick={() => { setForm(p => ({ ...p, [GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions[guidedState.index].key]: opt.label })); if(guidedState.index < GUIDED_FLOWS[guidedState.category as keyof typeof GUIDED_FLOWS].questions.length - 1) setGuidedState(p => ({...p, index: p.index + 1})); else handleStartFlow(); }} className="mobbin-card p-12 text-left border-2 hover:border-[#0055FF] hover:bg-blue-50 transition-all">
                       <span className="text-xl font-black uppercase block mb-2">{opt.label}</span>
-                      <p className="text-xs text-slate-400 uppercase">{opt.desc}</p>
+                      <p className="text-xs text-slate-400 uppercase italic">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -294,18 +358,18 @@ const App: React.FC = () => {
                  <h2 className="text-9xl font-black italic uppercase leading-none tracking-tighter">Probe.</h2>
                  <div className="space-y-12 text-left mt-20">
                   {interviewQuestions.map(q => (
-                      <div key={q.id} className="mobbin-card p-12 space-y-8 border-2 border-slate-100">
+                      <div key={q.id} className="mobbin-card p-12 space-y-8 border-2 border-slate-100 shadow-xl">
                         <h4 className="text-3xl font-black italic">{q.question}</h4>
                         <div className="flex flex-wrap gap-4">
                           {q.options?.map(opt => (
-                            <button key={opt} onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))} className={`px-8 py-4 rounded-2xl border-2 font-black uppercase text-xs tracking-widest ${interviewAnswers[q.id] === opt ? 'bg-black border-black text-white shadow-lg' : 'bg-slate-50 border-transparent text-slate-500'}`}>{opt}</button>
+                            <button key={opt} onClick={() => setInterviewAnswers(p => ({ ...p, [q.id]: opt }))} className={`px-8 py-4 rounded-2xl border-2 font-black uppercase text-xs tracking-widest transition-all ${interviewAnswers[q.id] === opt ? 'bg-black border-black text-white shadow-lg' : 'bg-slate-50 border-transparent text-slate-500 hover:border-blue-200'}`}>{opt}</button>
                           ))}
                         </div>
-                        <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="min-h-[120px] rounded-[2rem] border-slate-100" placeholder="Custom response..." />
+                        <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="min-h-[120px] rounded-[2rem] border-slate-100 italic" placeholder="Custom response..." />
                       </div>
                   ))}
                  </div>
-                 <button onClick={handleAnalyzeMatrix} className="mobbin-btn-primary w-full py-12 uppercase tracking-[0.6em] text-lg font-black italic shadow-2xl">Refine Shards</button>
+                 <button onClick={handleAnalyzeMatrix} className="mobbin-btn-primary w-full py-12 uppercase tracking-[0.6em] text-lg font-black italic shadow-2xl">Finalize Shards</button>
               </div>
            </div>
         )}
@@ -317,20 +381,20 @@ const App: React.FC = () => {
                <h2 className="text-[10vw] font-black italic uppercase leading-none tracking-tighter">Matrix.</h2>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left mt-16">
                   {mastermindSuggestions.map((cat, i) => (
-                    <div key={i} className="mobbin-card p-10 space-y-8 border-2 border-slate-100 shadow-xl">
+                    <div key={i} className="mobbin-card p-10 space-y-8 border-2 border-slate-100 shadow-2xl">
                       <h4 className="text-[11px] font-black uppercase text-[#0055FF] tracking-[0.4em] italic border-b border-slate-100 pb-6">{cat.category}</h4>
                       <div className="space-y-4">
                          {cat.options.map((opt, j) => (
                            <button key={j} onClick={() => setSelectedSuggestions(p => ({ ...p, [cat.category]: opt.technical_value }))} className={`w-full p-8 rounded-[2rem] text-left border-2 transition-all ${selectedSuggestions[cat.category] === opt.technical_value ? 'bg-black border-black text-white scale-105' : 'bg-white border-slate-50 hover:border-blue-200'}`}>
                               <span className="text-sm font-black uppercase block mb-1">{opt.label}</span>
-                              <p className="text-[10px] opacity-70 uppercase tracking-tighter">{opt.description}</p>
+                              <p className="text-[10px] opacity-70 uppercase tracking-tighter italic">{opt.description}</p>
                            </button>
                          ))}
                       </div>
                     </div>
                   ))}
                </div>
-               <button onClick={handleSynthesize} className="mobbin-btn-primary w-full py-14 text-2xl uppercase tracking-[1em] italic font-black">Generate Synthesis</button>
+               <button onClick={handleSynthesize} className="mobbin-btn-primary w-full py-14 text-2xl uppercase tracking-[1em] italic font-black">Generate Narrative</button>
             </div>
           </div>
         )}
@@ -342,20 +406,20 @@ const App: React.FC = () => {
                    <div className="flex justify-between items-end border-b-4 border-slate-100 pb-12">
                       <div>
                         <h3 className="text-[10vw] font-black italic leading-none tracking-tighter">FINAL.</h3>
-                        <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-6 italic">Architecture Verified via Knowledge Base v2.5</p>
+                        <p className="text-[#0055FF] font-black uppercase tracking-[0.5em] text-[12px] mt-6 italic">Architecture Verified via Quantum Biblical Shards</p>
                       </div>
                       <div className="flex gap-4">
-                        <button onClick={() => { setGithubSyncing(true); setTimeout(() => { setGithubSyncing(false); alert("Success!"); }, 2000); }} className="mobbin-btn-secondary uppercase text-[10px] tracking-widest font-black px-8 py-5 flex items-center gap-3 border-2 border-slate-200 hover:bg-slate-50"><Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-bounce' : ''}`} /> {githubSyncing ? 'Syncing...' : 'Sync GitHub'}</button>
-                        <button onClick={() => setOutput(null)} className="mobbin-btn-primary uppercase text-[10px] tracking-widest font-black px-8 py-5">New Start</button>
+                        <button onClick={() => { setGithubSyncing(true); setTimeout(() => { setGithubSyncing(false); alert("Synchronized!"); }, 2000); }} className="mobbin-btn-secondary uppercase text-[10px] tracking-widest font-black px-8 py-5 flex items-center gap-3 border-2 border-slate-200 hover:bg-slate-50"><Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-bounce' : ''}`} /> {githubSyncing ? 'Syncing...' : 'Sync GitHub'}</button>
+                        <button onClick={() => setOutput(null)} className="mobbin-btn-primary uppercase text-[10px] tracking-widest font-black px-8 py-5 shadow-lg">New Plan</button>
                       </div>
                    </div>
 
-                   {/* APPLIED STRATEGIES MATRIX */}
+                   {/* STRATEGY SHARDS */}
                    <div className="space-y-10">
                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">Quantum Strategy Shards</h4>
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {output.APPLIED_STRATEGIES.map((strat, i) => (
-                           <div key={i} className="bg-slate-50 p-8 rounded-3xl border border-slate-200 hover:border-blue-300 transition-all">
+                           <div key={i} className="bg-slate-50 p-8 rounded-3xl border border-slate-200 hover:border-blue-400 transition-all shadow-sm">
                              <div className="text-[10px] font-black text-blue-500 mb-2 uppercase tracking-widest italic">Shard {i + 1}</div>
                              <div className="text-xl font-black uppercase mb-2 leading-none">{strat.name}</div>
                              <p className="text-[11px] text-slate-500 uppercase italic font-medium">{strat.description}</p>
@@ -365,29 +429,61 @@ const App: React.FC = () => {
                    </div>
 
                    <div className="space-y-8">
-                      <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. {isSimpleMode ? 'Guide' : 'Architecture'}</h4>
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">01. Narrative Architecture</h4>
+                        <div className="flex gap-4">
+                          <button onClick={() => handleCopy(output.APP_BLUEPRINT || '')} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] transition-colors"><Icons.Copy className="w-4 h-4" /> Copy</button>
+                          <button onClick={() => downloadText(output.APP_BLUEPRINT || '', "architecture.txt")} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] transition-colors"><Icons.Download className="w-4 h-4" /> Download</button>
+                        </div>
+                      </div>
                       <div className="mobbin-card p-16 text-3xl font-medium leading-relaxed bg-[#FDFDFD] border-2 border-slate-100 shadow-2xl whitespace-pre-wrap">{output.APP_BLUEPRINT}</div>
                    </div>
 
                    <div className="space-y-8">
-                      <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. RODES Implementation</h4>
-                      <div className="bg-[#141414] text-white/70 p-16 rounded-[4rem] font-mono text-lg leading-relaxed whitespace-pre-wrap shadow-2xl overflow-x-auto">{output.FINAL_PROMPT}</div>
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">02. RODES Implementation Specification</h4>
+                        <div className="flex gap-4">
+                          <button onClick={() => handleCopy(output.FINAL_PROMPT)} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] transition-colors"><Icons.Copy className="w-4 h-4" /> Copy</button>
+                          <button onClick={() => downloadText(output.FINAL_PROMPT, "rodes_prompt.xml")} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] transition-colors"><Icons.Download className="w-4 h-4" /> Download XML</button>
+                        </div>
+                      </div>
+                      <div className="bg-[#141414] text-white/70 p-16 rounded-[4rem] font-mono text-lg leading-relaxed whitespace-pre-wrap shadow-2xl overflow-x-auto border border-white/5">{output.FINAL_PROMPT}</div>
                    </div>
 
                    {generatedVisual && (
                      <div className="space-y-8">
-                        <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. Synthesis Render</h4>
-                        <div className="p-4 bg-slate-50 rounded-[6rem] border-2 border-slate-100 shadow-sm"><img src={generatedVisual} className="w-full rounded-[5rem] shadow-2xl" alt="Synthesis" /></div>
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[#0055FF] text-[12px] font-black tracking-[1em] uppercase italic">03. Chiaroscuro Render</h4>
+                          <div className="flex gap-4">
+                            <button onClick={() => handleCopyImage(generatedVisual!)} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] p-2 hover:bg-blue-50 rounded-xl transition-all"><Icons.Copy className="w-4 h-4" /> Copy Image</button>
+                            <button onClick={() => downloadImage(generatedVisual!, "synthesis_render.png")} className="text-[10px] font-black uppercase flex items-center gap-2 hover:text-[#0055FF] p-2 hover:bg-blue-50 rounded-xl transition-all"><Icons.Download className="w-4 h-4" /> Download PNG</button>
+                          </div>
+                        </div>
+                        <div className="relative p-4 bg-slate-50 rounded-[6rem] border-2 border-slate-100 shadow-xl group overflow-hidden">
+                          <img src={generatedVisual} className="w-full rounded-[5rem] shadow-2xl transition-all duration-700 group-hover:scale-[1.02] group-hover:brightness-75" alt="Synthesis" />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                             <div className="flex gap-4">
+                               <button onClick={() => handleCopyImage(generatedVisual!)} className="bg-white text-black px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2 scale-90 group-hover:scale-100 duration-300"><Icons.Copy className="w-4 h-4" /> Copy</button>
+                               <button onClick={() => downloadImage(generatedVisual!, "synthesis_render.png")} className="bg-white text-black px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2 scale-90 group-hover:scale-100 duration-300"><Icons.Download className="w-4 h-4" /> Download</button>
+                             </div>
+                             <p className="text-white font-black text-[10px] uppercase tracking-[0.5em] italic">High Resolution 8K Render</p>
+                          </div>
+                        </div>
                      </div>
                    )}
 
-                   {/* GITHUB TERMINAL */}
-                   <div className="bg-[#141414] text-green-400 p-12 rounded-[3rem] font-mono text-lg shadow-2xl border border-white/5 space-y-4">
-                       <div className="flex gap-2 mb-4"><div className="w-3 h-3 bg-red-500 rounded-full"></div><div className="w-3 h-3 bg-yellow-500 rounded-full"></div><div className="w-3 h-3 bg-green-500 rounded-full"></div></div>
-                       <div>$ git commit -m "{output.COMMIT_MESSAGE}"</div>
-                       <div className="opacity-50">Pushing architectural shards to remote: origin...</div>
-                       <div className="opacity-50">Verified integrity of RODES framework... Done</div>
-                       <div className="text-white font-black mt-4">✓ Synthesis Branch Synchronized.</div>
+                   {/* GITHUB TERMINAL MOCKUP */}
+                   <div className="bg-[#141414] text-[#4ADE80] p-12 rounded-[3rem] font-mono text-lg shadow-3xl border border-white/5 space-y-4 relative overflow-hidden">
+                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-green-500 opacity-50"></div>
+                       <div className="flex gap-2 mb-6"><div className="w-3 h-3 bg-[#FF5F56] rounded-full shadow-[0_0_8px_rgba(255,95,86,0.5)]"></div><div className="w-3 h-3 bg-[#FFBD2E] rounded-full shadow-[0_0_8px_rgba(255,189,46,0.5)]"></div><div className="w-3 h-3 bg-[#27C93F] rounded-full shadow-[0_0_8px_rgba(39,201,63,0.5)]"></div></div>
+                       <div className="animate-pulse">
+                         <span className="text-blue-400">architect@quantum</span>:<span className="text-slate-400">~</span>$ git commit -m "feat: synthesize high-fidelity biblical narrative prompt with chiaroscuro lighting architecture for Gemini 3 Flash."
+                       </div>
+                       <div className="opacity-70 flex items-center gap-2"><span className="animate-spin-slow text-slate-500">⟳</span> Pushing architectural shards to remote: origin...</div>
+                       <div className="opacity-70 flex items-center gap-2"><span className="text-blue-500">ℹ</span> Verified integrity of RODES framework... Done</div>
+                       <div className="text-white font-black mt-6 flex items-center gap-2 border-t border-white/10 pt-6">
+                         <span className="text-[#4ADE80]">✓</span> Synthesis Branch Synchronized.
+                       </div>
                    </div>
                </div>
            </main>
@@ -406,9 +502,11 @@ const App: React.FC = () => {
                      <div key={item.id} className="mobbin-card p-16 flex justify-between items-center cursor-pointer group hover:bg-blue-50 transition-all border-2 border-slate-100" onClick={() => { setOutput(item.output); setActiveTab('BUILD'); }}>
                        <div className="space-y-4">
                           <span className="text-[#0055FF] font-black uppercase text-[11px] tracking-[0.4em] italic">{new Date(item.timestamp).toLocaleDateString()}</span>
-                          <h4 className="text-6xl font-black italic group-hover:text-[#0055FF] leading-tight uppercase tracking-tighter">{item.input.high_level_goal?.substring(0, 40)}...</h4>
+                          <h4 className="text-6xl font-black italic group-hover:text-[#0055FF] leading-tight uppercase tracking-tighter transition-colors">{item.input.high_level_goal?.substring(0, 40)}...</h4>
                        </div>
-                       <Icons.Sparkles className="w-16 h-16 text-slate-100 group-hover:text-[#0055FF] transition-all" />
+                       <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Icons.Sparkles className="w-16 h-16 text-[#0055FF]" />
+                       </div>
                      </div>
                    ))}
                  </div>
