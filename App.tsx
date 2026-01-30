@@ -21,7 +21,7 @@ const Icons = {
   Video: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
   Mic: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19 10v1a7 7 0 01-14 0v-1M12 19v4m-4 0h8" /></svg>,
   ArrowLeft: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
-  Copy: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>,
+  Copy: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>,
   Stop: (props: any) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>,
   Upload: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>,
   Download: (props: any) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
@@ -203,6 +203,16 @@ const App: React.FC = () => {
     }
   };
 
+  const resetSynthesisState = () => {
+    setInterviewQuestions([]);
+    setInterviewAnswers({});
+    setMastermindSuggestions([]);
+    setSelectedSuggestions({});
+    setOutput(null);
+    setGeneratedVisual(null);
+    setLiveTranscription([]);
+  };
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
@@ -247,6 +257,7 @@ const App: React.FC = () => {
   };
 
   const handleStartFlow = async () => {
+    resetSynthesisState();
     setLoading(true);
     try {
       const res = await generateInterviewQuestions({ ...form, isSimpleMode });
@@ -257,6 +268,7 @@ const App: React.FC = () => {
 
   const handleAnalyzeMatrix = async () => {
     setLoading(true);
+    setMastermindSuggestions([]); 
     try {
       const res = await generateMastermindSuggestions({ ...form, high_level_goal: `${form.high_level_goal} ${Object.values(interviewAnswers).join(' ')}`, isSimpleMode });
       setMastermindSuggestions(res);
@@ -323,7 +335,7 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen bg-white overflow-hidden text-[#141414] font-sans selection:bg-blue-500 selection:text-white">
       <header className="h-16 flex items-center justify-between px-8 glass-header fixed top-0 w-full z-[100]">
         <div className="flex items-center gap-10">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { setOutput(null); setIsReviewing(false); setIsInterviewing(false); setGuidedState({ category: null, index: 0 }); }}>
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { resetSynthesisState(); setGuidedState({ category: null, index: 0 }); setIsReviewing(false); setIsInterviewing(false); }}>
             <div className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center text-white font-black text-xs transition-transform group-hover:scale-110">B</div>
             <h1 className="text-xl font-black uppercase tracking-tighter">ARCHITECT<span className="text-[#0055FF] animate-pulse">.QUANTUM</span></h1>
           </div>
@@ -434,7 +446,7 @@ const App: React.FC = () => {
                   <h2 className="text-7xl md:text-9xl font-black italic uppercase leading-none tracking-tighter">PROBE.</h2>
                  </div>
                  <div className="space-y-8 md:space-y-12 text-left mt-12 md:mt-20">
-                  {interviewQuestions.map(q => (
+                  {interviewQuestions.length > 0 ? interviewQuestions.map(q => (
                       <div key={q.id} className="mobbin-card p-8 md:p-12 space-y-8 border-2 border-slate-100 shadow-xl hover:border-blue-100 transition-all">
                         <div className="space-y-2">
                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">{q.context}</span>
@@ -447,7 +459,9 @@ const App: React.FC = () => {
                         </div>
                         <TextArea value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="min-h-[120px] rounded-[2rem] border-slate-100 italic focus:bg-slate-50 transition-all" placeholder="Refine response further..." />
                       </div>
-                  ))}
+                  )) : (
+                    <div className="py-20 flex items-center justify-center"><div className="w-12 h-12 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div></div>
+                  )}
                  </div>
                  <button onClick={handleAnalyzeMatrix} className="mobbin-btn-primary w-full py-10 md:py-12 uppercase tracking-[0.6em] text-lg font-black italic shadow-2xl active:scale-95 transition-all">Engage Strategy Matrix</button>
               </div>
@@ -463,7 +477,7 @@ const App: React.FC = () => {
                 <h2 className="text-8xl md:text-[10vw] font-black italic uppercase leading-none tracking-tighter">MATRIX.</h2>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-left mt-12 md:mt-16">
-                  {mastermindSuggestions.map((cat, i) => (
+                  {mastermindSuggestions.length > 0 ? mastermindSuggestions.map((cat, i) => (
                     <div key={i} className="mobbin-card p-8 md:p-10 space-y-8 border-2 border-slate-100 shadow-2xl hover:border-blue-100 transition-all bg-gradient-to-b from-white to-slate-50/50">
                       <h4 className="text-[11px] font-black uppercase text-[#0055FF] tracking-[0.4em] italic border-b border-slate-100 pb-6">{cat.category}</h4>
                       <div className="space-y-4">
@@ -475,7 +489,9 @@ const App: React.FC = () => {
                          ))}
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="col-span-full py-20 flex items-center justify-center"><div className="w-12 h-12 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div></div>
+                  )}
                </div>
                <button onClick={handleSynthesize} className="mobbin-btn-primary w-full py-10 md:py-14 text-xl md:text-2xl uppercase tracking-[1em] italic font-black shadow-[0_20px_50px_rgba(0,0,0,0.15)] active:scale-95 transition-all">Finalize Quantum Synthesis</button>
             </div>
@@ -496,7 +512,7 @@ const App: React.FC = () => {
                       </div>
                       <div className="flex gap-4 w-full md:w-auto">
                         <button onClick={() => { setGithubSyncing(true); setTimeout(() => { setGithubSyncing(false); alert("GitHub Repository Synchronized!"); }, 2000); }} className="flex-1 md:flex-none mobbin-btn-secondary uppercase text-[10px] tracking-widest font-black px-6 md:px-8 py-4 md:py-5 flex items-center justify-center gap-3 border-2 border-slate-200 hover:bg-slate-50 active:scale-95 transition-all"><Icons.Github className={`w-5 h-5 ${githubSyncing ? 'animate-spin' : ''}`} /> {githubSyncing ? 'Syncing...' : 'Sync GitHub'}</button>
-                        <button onClick={() => setOutput(null)} className="flex-1 md:flex-none mobbin-btn-primary uppercase text-[10px] tracking-widest font-black px-6 md:px-8 py-4 md:py-5 shadow-lg active:scale-95 transition-all">New Shard</button>
+                        <button onClick={() => { resetSynthesisState(); setGuidedState({ category: null, index: 0 }); }} className="flex-1 md:flex-none mobbin-btn-primary uppercase text-[10px] tracking-widest font-black px-6 md:px-8 py-4 md:py-5 shadow-lg active:scale-95 transition-all">New Shard</button>
                       </div>
                    </div>
 

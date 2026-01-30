@@ -16,20 +16,18 @@ ADVANCED STRATEGIES (150+ SHARDS):
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: Universal Product Architect & Advanced Prompt Engineer.
+ROLE: Universal Product Architect & Advanced Prompt Engineering Engine.
 MISSION: Convert user intent into high-fidelity, industrial-strength implementation prompts and structural blueprints.
 
+STRICT CONTEXT ADHERENCE (DOMAIN MIRRORING):
+1. You MUST derive all logic, themes, metaphors, and examples EXCLUSIVELY from the user's current 'high_level_goal'.
+2. DOMAIN LOCK: If the goal is technical (Software, IoT, Engineering), you MUST NOT use religious, biblical, or classical art metaphors (e.g., no "divine", "biblical", "bronze serpents", "wine", "altars").
+3. NEVER use default or cached examples. If building a SaaS, use SaaS terminology. If building a House, use Architectural terminology.
+4. HALLUCINATION PREVENTION: Do not inject "Chiaroscuro" descriptions into technical code prompts unless it is a UI/Visual task.
+
 EXECUTIVE INSTRUCTIONS:
-1. Internalize the ADVANCED_PROMPTING_KNOWLEDGE shards.
-2. Every output must be structured using the RODES framework:
-   - ROLE: Assign a specific expert persona.
-   - OBJECTIVE: State the goal with surgical precision.
-   - DETAILS: Provide high-signal technical or narrative constraints.
-   - EXAMPLES: Include few-shot examples or structural templates.
-   - SENSE-CHECK: Add a validation loop for the AI to perform before outputting.
-3. For narrative/visual prompts, integrate "Chiaroscuro Lighting Architecture" (High Contrast, dramatic lighting, Baroque-style atmosphere).
-4. For technical prompts, use XML tag structure for better model adherence.
-5. Provide a succinct, professional GIT COMMIT message that captures the essence of the synthesis.
+1. Every output must be structured using the RODES framework.
+2. Provide a succinct, professional GIT COMMIT message.
 
 ${ADVANCED_PROMPTING_KNOWLEDGE}
 `;
@@ -45,9 +43,9 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Discovery Phase: CPE Analysis for ${JSON.stringify(sanitizeInput(input))}. Ask 3 high-signal questions with Quick Choice options to remove prompt ambiguity.`,
+    contents: `Discovery Phase Analysis for ${JSON.stringify(sanitizeInput(input))}. Provide 3 questions.`,
     config: {
-      systemInstruction: `Project discovery assistant. ${simpleInstruction} Identify missing constraints in the user's high-level goal.`,
+      systemInstruction: `Project discovery assistant. ${simpleInstruction} Identify missing constraints. STICK STRICTLY TO THE USER'S DOMAIN: ${input.task_type || 'General'}. DO NOT use biblical, wine, or serpent examples. Mirror the user's industry.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -56,7 +54,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING, description: "Why this question matters for prompt engineering." },
+            context: { type: Type.STRING },
             options: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
           required: ["id", "question", "context", "options"]
@@ -71,9 +69,9 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Step-Back Strategic Analysis for ${JSON.stringify(sanitizeInput(input))}. Suggest 3 choice categories for high-level technical/narrative direction.`,
+    contents: `Strategic Refinement Matrix for Objective: "${input.high_level_goal}".`,
     config: {
-      systemInstruction: `Strategic planner for prompt architecture. Use principles like Step-Back and Chain-of-Thought.`,
+      systemInstruction: `Strategic planner. STICK 100% TO THE USER OBJECTIVE. If the user is building a website, do NOT talk about "biblical superimposition" or "wine elementals". If they are building an app, use software metaphors. PROHIBITED TERMS: wine, biblical, serpent, bronze, encampment, renaissance, theological. Use pure industrial and design vocabulary relevant to the user input.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -89,7 +87,7 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
                 properties: {
                   label: { type: Type.STRING },
                   description: { type: Type.STRING },
-                  technical_value: { type: Type.STRING, description: "The specific constraint or instruction to add to the prompt." }
+                  technical_value: { type: Type.STRING }
                 },
                 required: ["label", "description", "technical_value"]
               }
@@ -105,7 +103,7 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const parts: any[] = [{ text: `SYNTHESIZE QUANTUM BLUEPRINT. APPLY RODES, CoD, AND CHIAROSCURO LIGHTING FOR: ${JSON.stringify(sanitizeInput(input))}` }];
+  const parts: any[] = [{ text: `SYNTHESIZE QUANTUM BLUEPRINT. APPLY RODES. DOMAIN: ${input.task_type}. OBJECTIVE: ${JSON.stringify(sanitizeInput(input))}` }];
   
   if (input.media_ref_base64 && input.media_type) {
     parts.push({
@@ -152,7 +150,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `A professional, high-fidelity architectural render with chiaroscuro lighting architecture: ${prompt}. Cinematic masterpiece, 8k, detailed shadows, dramatic highlights, Baroque aesthetics.` }] },
+    contents: { parts: [{ text: `A high-fidelity industrial/architectural render: ${prompt}. Cinematic, detailed, 8k.` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
