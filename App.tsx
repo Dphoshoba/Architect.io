@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
-import { PromptInput, PromptOutput, HistoryItem, MastermindSuggestionCategory, InterviewQuestion } from './types.ts';
-import { TextArea } from './components/InputGroup.tsx';
+import { PromptInput, PromptOutput, HistoryItem, MastermindSuggestionCategory, InterviewQuestion } from './types';
+import { TextArea } from './components/InputGroup';
 import { 
   generateArchitectPrompt, 
   generateVisualImage, 
   generateMastermindSuggestions,
   generateInterviewQuestions
-} from './services/geminiService.ts';
+} from './services/geminiService';
 
 // --- Icons ---
 const Icons = {
