@@ -14,6 +14,15 @@ export type TargetAI =
 
 export type ReasoningVisibility = "hidden" | "brief" | "detailed";
 
+export type ProjectCategory = 
+  | "ENGINEERING" 
+  | "REAL_ESTATE" 
+  | "INTERIOR_DESIGN" 
+  | "ART_CREATIVE" 
+  | "VISUAL_ASSET"
+  | "GENERIC";
+
+// Adding missing types for Backend and Convex services
 export type PlanType = "Starter" | "Professional" | "Enterprise";
 
 export interface UserStatus {
@@ -38,9 +47,16 @@ export interface ApiKey {
   created: number;
 }
 
-export interface SuggestedModel {
-  model_name: string;
-  reasoning: string;
+export interface CategoryConfig {
+  scale?: string;
+  material?: string;
+  industry?: string;
+  propertyType?: string;
+  aesthetic?: string;
+  lighting?: string;
+  medium?: string;
+  era?: string;
+  resolution?: string;
 }
 
 export interface AppliedStrategy {
@@ -81,34 +97,14 @@ export interface PromptInput {
   reasoning_visibility: ReasoningVisibility;
   language: string;
   visual_inspiration_mode: boolean;
-  isSimpleMode?: boolean; 
-  media_ref_base64?: string;
-  media_type?: 'image' | 'video' | 'audio';
-}
-
-export interface MarketingKit {
-  social_ads: string;
-  landing_page: string;
-  email_sequence: string;
-  video_script: string;
-  audio_script: string;
-  visual_style_guide: string;
+  category?: ProjectCategory;
+  config?: CategoryConfig;
 }
 
 export interface PromptOutput {
   FINAL_PROMPT: string;
-  NOTES_FOR_HUMAN_PROMPT_ENGINEER?: string[];
   VISUAL_INSPIRATION_PROMPT?: string;
-  MARKETING_KIT?: MarketingKit;
-  SUGGESTED_MODELS?: SuggestedModel[];
   APP_BLUEPRINT?: string;
   APPLIED_STRATEGIES: AppliedStrategy[];
   COMMIT_MESSAGE: string;
-}
-
-export interface HistoryItem {
-  id: string;
-  timestamp: number;
-  input: PromptInput;
-  output: PromptOutput;
 }

@@ -1,5 +1,4 @@
-
-import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types';
+import { PlanType, UserStatus, WebhookEvent, ApiKey } from '../types.ts';
 
 /**
  * ARCHITECT.IO BACKEND SERVICE

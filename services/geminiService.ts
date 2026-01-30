@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MastermindSuggestionCategory, InterviewQuestion } from "../types.ts";
 
@@ -8,31 +7,37 @@ ADVANCED STRATEGIES:
 - Chain of Density: Maximize signal-to-noise in narratives.
 - XML Structuring: Use machine-readable tags for boundary control.
 - Step-Back Prompting: Identify core principles first.
+- Few-Shot Reasoning: Provide multiple high-quality input-output pairs.
+- Multi-Prompt Orchestration: Breaking complex tasks into modular prompt chains.
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
-ROLE: Universal Product Architect.
-MISSION: Synthesize intent into structural blueprints and RODES prompts.
+ROLE: Universal Prompt & Product Architect (Quantum AI).
+MISSION: Synthesize raw user intent and specialized configuration into high-fidelity structural blueprints and production-ready RODES prompts.
 
-STATELESSNESS: You have no memory of previous tasks. Mirror the current domain perfectly.
-DOMAIN MIRRORING: If technical, use engineering jargon. If creative, use art vocabulary.
-PROHIBITED: Never use wine or biblical metaphors unless requested.
+CORE DIRECTIVES:
+1. DOMAIN EXPERTISE: Adapt vocabulary to the specific category (Engineering, Real Estate, Art, etc.).
+2. PRECISION: Avoid "fluff" or "delving". Use architectural and industry-specific terminology.
+3. STRUCTURE: Ensure the output follows the RODES framework and utilizes XML tags for boundaries where appropriate.
+4. VISUALIZATION: Provide an evocative image generation prompt that captures the essence of the architecture.
+
+DOMAIN KNOWLEDGE:
+- Engineering: Focus on kinematics, stress tests, material properties, and industrial standards.
+- Real Estate: Focus on emotional resonance, spatial flow, market positioning, and architectural charm.
+- Art/Creative: Focus on lighting, narrative weight, character archetypes, and aesthetic movements.
 
 ${ADVANCED_PROMPTING_KNOWLEDGE}
 `;
 
-const sanitizeInput = (input: PromptInput) => {
-  const { media_ref_base64, ...cleanInput } = input;
-  return cleanInput;
-};
-
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const categoryContext = input.category ? `Category: ${input.category}. Specifics: ${JSON.stringify(input.config)}.` : "";
+  
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Discovery Phase for: "${input.high_level_goal}". Generate 3 discovery questions.`,
+    contents: `Initiate discovery phase for: "${input.high_level_goal}". ${categoryContext} Identify the 3 most critical missing constraints to build a master prompt.`,
     config: {
-      systemInstruction: `Strategic assistant. Identify missing constraints. Stick strictly to the industry relevant to the goal. No religious or art-history terminology for tech tasks.`,
+      systemInstruction: `Strategic Product Architect. Identify critical ambiguities in the user's vision. Ask 3 high-impact, short questions.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -41,24 +46,25 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
           properties: {
             id: { type: Type.STRING },
             question: { type: Type.STRING },
-            context: { type: Type.STRING },
-            options: { type: Type.ARRAY, items: { type: Type.STRING } }
+            context: { type: Type.STRING }
           },
-          required: ["id", "question", "context", "options"]
+          required: ["id", "question", "context"]
         }
       }
     }
   });
-  return JSON.parse(response.text);
+  
+  const text = response.text || "[]";
+  return JSON.parse(text);
 };
 
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Refinement Matrix for: "${input.high_level_goal}". Industry: ${input.task_type}.`,
+    contents: `Generate Strategy Matrix for: "${input.high_level_goal}". Category: ${input.category}. Config: ${JSON.stringify(input.config)}.`,
     config: {
-      systemInstruction: `Strategic planner. YOU ARE STATELESS. Mirror industry terminology. No wine/biblical metaphors.`,
+      systemInstruction: `Strategic Planner. Provide 3 categories of decisions for the final prompt structure (e.g. Narrative Style, Technical Depth, Framing). Each category has 3 distinct options.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -85,14 +91,16 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
       }
     }
   });
-  return JSON.parse(response.text);
+  
+  const text = response.text || "[]";
+  return JSON.parse(text);
 };
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `SYNTHESIZE BLUEPRINT. GOAL: ${JSON.stringify(sanitizeInput(input))}`,
+    model: 'gemini-3-pro-preview',
+    contents: `SYNTHESIZE QUANTUM ARCHITECTURE. CONTEXT: ${JSON.stringify(input)}`,
     config: {
       systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
       responseMimeType: "application/json",
@@ -118,16 +126,24 @@ export const generateArchitectPrompt = async (input: PromptInput): Promise<Promp
       }
     }
   });
-  return JSON.parse(response.text);
+  
+  const text = response.text;
+  if (!text) throw new Error("Synthesis failure: No content generated.");
+  return JSON.parse(text);
 };
 
 export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: `Industrial architectural render: ${prompt}. High-fidelity, cinematic.`,
-    config: { imageConfig: { aspectRatio: "16:9" } }
+    contents: `Architectural blueprint, cinematic product render, or artistic masterwork: ${prompt}. Ultra-high definition, studio lighting, professional photography.`,
+    config: { 
+      imageConfig: { 
+        aspectRatio: "16:9" 
+      } 
+    }
   });
+  
   for (const part of response.candidates?.[0]?.content?.parts || []) {
     if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
   }

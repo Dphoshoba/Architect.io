@@ -1,8 +1,8 @@
 {
   "requestFramePermissions": [
-    "microphone",
-    "camera"
+    "camera",
+    "microphone"
   ],
   "name": "Architect.io Quantum",
-  "description": "High-fidelity product synthesis and architectural prompt engineering."
+  "description": "High-fidelity professional prompt synthesis and neural architecture suite."
 }
