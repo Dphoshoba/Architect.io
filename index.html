@@ -43,26 +43,6 @@
             transition: all 0.3s ease-out;
         }
         .mobbin-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .mobbin-btn-secondary {
-            background: transparent;
-            color: var(--mobbin-black);
-            border: 1px solid var(--mobbin-black);
-            border-radius: 9999px;
-            font-weight: 600;
-            padding: 12px 24px;
-            transition: all 0.3s ease-out;
-        }
-        .mobbin-input {
-            background: #FFFFFF;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-        .mobbin-input:focus {
-            outline: 2px solid var(--mobbin-blue);
-            outline-offset: 2px;
-        }
         .glass-header {
             background: var(--mobbin-glass);
             backdrop-filter: blur(10px);
@@ -79,20 +59,20 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "dotenv/": "https://esm.sh/dotenv@^17.2.3/",
     "express": "https://esm.sh/express@^5.2.1",
-    "stripe": "https://esm.sh/stripe@^20.2.0",
-    "cors": "https://esm.sh/cors@^2.8.6",
     "body-parser": "https://esm.sh/body-parser@^2.2.2",
-    "convex/": "https://esm.sh/convex@^1.31.6/",
+    "cors": "https://esm.sh/cors@^2.8.6",
+    "stripe": "https://esm.sh/stripe@^20.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "dotenv/": "https://esm.sh/dotenv@^17.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "convex/": "https://esm.sh/convex@^1.31.7/"
   }
 }
 </script>
 </head>
 <body class="overflow-hidden">
     <div id="root" class="h-screen"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
