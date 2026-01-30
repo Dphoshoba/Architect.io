@@ -10,24 +10,25 @@ ADVANCED STRATEGIES (150+ SHARDS):
 - XML Structuring: Use machine-readable tags for boundary control.
 - Step-Back Prompting: Identify high-level principles before details.
 - Conversational Prompt Engineering (CPE): Use clarifying discovery questions to remove ambiguity.
-- Chiaroscuro Lighting Architecture: Specifically apply high-contrast visual descriptions, emphasizing "deep shadows" and "divine highlights."
+- Chiaroscuro Lighting Architecture: Apply high-contrast visual descriptions ONLY if the task is creative/visual.
 - Attention Budgeting: Remove low-signal tokens from context to maximize focus.
-- Delimiters: Use strictly defined XML tags or Markdown headers for component separation.
+- Delimiters: Use strictly defined XML tags for component separation.
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Universal Product Architect & Advanced Prompt Engineering Engine.
 MISSION: Convert user intent into high-fidelity, industrial-strength implementation prompts and structural blueprints.
 
-STRICT CONTEXT ADHERENCE (DOMAIN MIRRORING):
-1. You MUST derive all logic, themes, metaphors, and examples EXCLUSIVELY from the user's current 'high_level_goal'.
-2. DOMAIN LOCK: If the goal is technical (Software, IoT, Engineering), you MUST NOT use religious, biblical, or classical art metaphors (e.g., no "divine", "biblical", "bronze serpents", "wine", "altars").
-3. NEVER use default or cached examples. If building a SaaS, use SaaS terminology. If building a House, use Architectural terminology.
-4. HALLUCINATION PREVENTION: Do not inject "Chiaroscuro" descriptions into technical code prompts unless it is a UI/Visual task.
+STRICT STATELESS ISOLATION (DOMAIN MIRRORING):
+1. You have NO memory of previous sessions. 
+2. Identify the industry of the current 'high_level_goal' (e.g., SaaS, Engineering, Real Estate).
+3. MIRROR THE DOMAIN: Use vocabulary, metaphors, and examples EXCLUSIVELY from that industry.
+4. PROHIBITED ANALOGIES: Unless specifically requested, never use analogies related to: wine, religion, biblical narratives, serpents, renaissance art, or alchemy.
+5. If the goal is technical, keep the blueprint and prompt strictly technical.
 
 EXECUTIVE INSTRUCTIONS:
-1. Every output must be structured using the RODES framework.
-2. Provide a succinct, professional GIT COMMIT message.
+- Structure everything using the RODES framework.
+- Provide a succinct, professional GIT COMMIT message.
 
 ${ADVANCED_PROMPTING_KNOWLEDGE}
 `;
@@ -43,9 +44,9 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Discovery Phase Analysis for ${JSON.stringify(sanitizeInput(input))}. Provide 3 questions.`,
+    contents: `Discovery Phase Analysis for: "${input.high_level_goal}". Generate 3 high-signal domain-specific questions.`,
     config: {
-      systemInstruction: `Project discovery assistant. ${simpleInstruction} Identify missing constraints. STICK STRICTLY TO THE USER'S DOMAIN: ${input.task_type || 'General'}. DO NOT use biblical, wine, or serpent examples. Mirror the user's industry.`,
+      systemInstruction: `Project discovery assistant. ${simpleInstruction} Identify missing constraints. STICK 100% TO THE USER'S DOMAIN. No irrelevant metaphors. Mirror the user's industry terminology perfectly.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -69,9 +70,13 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Strategic Refinement Matrix for Objective: "${input.high_level_goal}".`,
+    contents: `Strategic Refinement Matrix for Objective: "${input.high_level_goal}". Suggested industry context: ${input.task_type}.`,
     config: {
-      systemInstruction: `Strategic planner. STICK 100% TO THE USER OBJECTIVE. If the user is building a website, do NOT talk about "biblical superimposition" or "wine elementals". If they are building an app, use software metaphors. PROHIBITED TERMS: wine, biblical, serpent, bronze, encampment, renaissance, theological. Use pure industrial and design vocabulary relevant to the user input.`,
+      systemInstruction: `Strategic planner. YOU ARE STATELESS. Mirror the industry vocabulary. 
+      - If building a Website: suggestions must be about SEO, UI/UX, Backend, and SaaS. 
+      - If building Engineering: suggestions must be about modularity, hardware, and physics. 
+      - FORBIDDEN THEMES: wine, biblical, religious, art-history, serpents, bronze.
+      - Generate DYNAMIC HEADERS that sound professional for the specific domain.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -103,7 +108,7 @@ export const generateMastermindSuggestions = async (input: PromptInput): Promise
 
 export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const parts: any[] = [{ text: `SYNTHESIZE QUANTUM BLUEPRINT. APPLY RODES. DOMAIN: ${input.task_type}. OBJECTIVE: ${JSON.stringify(sanitizeInput(input))}` }];
+  const parts: any[] = [{ text: `SYNTHESIZE QUANTUM BLUEPRINT. APPLY RODES. INDUSTRY: ${input.task_type}. GOAL: ${JSON.stringify(sanitizeInput(input))}` }];
   
   if (input.media_ref_base64 && input.media_type) {
     parts.push({
@@ -150,7 +155,7 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `A high-fidelity industrial/architectural render: ${prompt}. Cinematic, detailed, 8k.` }] },
+    contents: { parts: [{ text: `A professional industrial/architectural render: ${prompt}. Cinematic masterpiece, high resolution, industrial aesthetics.` }] },
     config: { imageConfig: { aspectRatio: "16:9" } }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
