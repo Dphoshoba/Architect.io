@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   PromptInput, 
@@ -49,6 +50,19 @@ const CategoryIcon = ({ type }: { type: ProjectCategory }) => {
           <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
         </svg>
       );
+    case 'WEB_DEVELOPMENT':
+      return (
+        <svg className={base} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /><line x1="14" y1="4" x2="10" y2="20" />
+        </svg>
+      );
+    case 'BUSINESS_WEB':
+      return (
+        <svg className={base} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <rect x="14" y="14" width="8" height="6" rx="2" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -85,6 +99,17 @@ const App: React.FC = () => {
       alert("Prompt copied to clipboard!");
     } catch (err) {
       console.error("Failed to copy!", err);
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert("Prompt copied to clipboard! (Fallback)");
+      } catch (err) {
+        alert("Failed to copy prompt.");
+      }
+      document.body.removeChild(textArea);
     }
   };
 
@@ -118,7 +143,6 @@ const App: React.FC = () => {
     try {
       const res = await generateMastermindSuggestions(form);
       setMastermindSuggestions(res);
-      // Initialize selections with first option from each category
       const initial: Record<string, string> = {};
       res.forEach(cat => {
         initial[cat.category] = cat.options[0].technical_value;
@@ -134,7 +158,6 @@ const App: React.FC = () => {
   const synthesizeFinal = async () => {
     setLoading(true);
     try {
-      // Append matrix selections to prompt context
       const enrichedInput = {
         ...form,
         matrix_selections: selectedSuggestions
@@ -155,6 +178,8 @@ const App: React.FC = () => {
   const categories = [
     { id: 'ENGINEERING' as ProjectCategory, title: 'ENGINEERING', desc: 'Gadgets, tools, or complex mechanical systems.' },
     { id: 'REAL_ESTATE' as ProjectCategory, title: 'REAL ESTATE', desc: 'Property listings, site descriptions, or floor plans.' },
+    { id: 'BUSINESS_WEB' as ProjectCategory, title: 'BUSINESS WEB', desc: 'Commercial landing pages, e-commerce, and corporate portals.' },
+    { id: 'WEB_DEVELOPMENT' as ProjectCategory, title: 'WEB DEVELOPMENT', desc: 'SaaS, portfolios, or full-stack architectures.' },
     { id: 'INTERIOR_DESIGN' as ProjectCategory, title: 'INTERIOR DESIGN', desc: 'Spatial concepts, material moodboards, and furniture.' },
     { id: 'ART_CREATIVE' as ProjectCategory, title: 'ART & CREATIVE', desc: 'Narrative storytelling, character design, and lore.' },
     { id: 'VISUAL_ASSET' as ProjectCategory, title: 'VISUAL ASSET', desc: 'Cinematic lighting, camera settings, and 8k renders.' }
@@ -226,13 +251,63 @@ const App: React.FC = () => {
               <div className="md:col-span-2">
                 <TextArea 
                   label="HIGH LEVEL GOAL" 
-                  placeholder="Describe your vision, product, or complex task..."
+                  placeholder="Define your business objective or product vision..."
                   value={form.high_level_goal}
                   onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))}
                   className="text-lg py-8 min-h-[200px] rounded-[40px] px-10 border-slate-100 bg-slate-50/30"
                 />
               </div>
-              {/* Specialized fields remain here as configured in previous step */}
+
+              {form.category === 'BUSINESS_WEB' && (
+                <>
+                  <Select label="Site Type" value={form.config?.siteType} onChange={e => updateConfig('siteType', e.target.value)}>
+                    <option value="Landing Page">Landing Page (Single Goal)</option>
+                    <option value="Corporate Site">Corporate Portal (Brand focused)</option>
+                    <option value="E-commerce">E-commerce Storefront</option>
+                    <option value="B2B Platform">B2B SaaS / Solution</option>
+                  </Select>
+                  <Select label="Conversion Goal" value={form.config?.conversionGoal} onChange={e => updateConfig('conversionGoal', e.target.value)}>
+                    <option value="Lead Generation">Lead Generation (Form completions)</option>
+                    <option value="Direct Sales">Direct Sales (Revenue)</option>
+                    <option value="Brand Awareness">Brand Awareness (Engagement)</option>
+                    <option value="User Onboarding">User Onboarding (Registrations)</option>
+                  </Select>
+                  <TextInput label="Business Sector" placeholder="e.g. Fintech, Healthcare, Logistics" value={form.config?.businessSector} onChange={e => updateConfig('businessSector', e.target.value)} />
+                  <Select label="Brand Voice" value={form.config?.brandVoice} onChange={e => updateConfig('brandVoice', e.target.value)}>
+                    <option value="Authoritative">Authoritative & Secure</option>
+                    <option value="Friendly">Friendly & Approachable</option>
+                    <option value="Disruptive">Disruptive & Bold</option>
+                    <option value="Minimalist">Minimalist & Luxury</option>
+                  </Select>
+                </>
+              )}
+
+              {form.category === 'WEB_DEVELOPMENT' && (
+                <>
+                  <Select label="Framework" value={form.config?.framework} onChange={e => updateConfig('framework', e.target.value)}>
+                    <option value="React">React / Next.js</option>
+                    <option value="Vue">Vue / Nuxt</option>
+                    <option value="Svelte">SvelteKit</option>
+                    <option value="Vanilla">Vanilla JS / TS</option>
+                  </Select>
+                  <Select label="Stack Type" value={form.config?.stackType} onChange={e => updateConfig('stackType', e.target.value)}>
+                    <option value="Frontend Only">Frontend Focused</option>
+                    <option value="Fullstack">Fullstack Application</option>
+                    <option value="API Focused">API / Backend Focused</option>
+                    <option value="Static Site">Static Site Generator</option>
+                  </Select>
+                </>
+              )}
+              {form.category === 'ENGINEERING' && (
+                <>
+                  <Select label="Scale" value={form.config?.scale} onChange={e => updateConfig('scale', e.target.value)}>
+                    <option value="Micro">Micro (Electronic components)</option>
+                    <option value="Human">Human (Handheld tools)</option>
+                    <option value="Industrial">Industrial (Machinery)</option>
+                  </Select>
+                  <TextInput label="Primary Material" placeholder="e.g. Carbon Fiber, Graphene" value={form.config?.material} onChange={e => updateConfig('material', e.target.value)} />
+                </>
+              )}
             </div>
             <button onClick={startDiscovery} className="mobbin-btn-primary w-full py-8 text-xl">Continue Discovery</button>
           </div>

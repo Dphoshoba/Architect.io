@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MastermindSuggestionCategory, InterviewQuestion } from "../types.ts";
 
@@ -16,7 +17,7 @@ ROLE: Universal Prompt & Product Architect (Quantum AI).
 MISSION: Synthesize raw user intent and specialized configuration into high-fidelity structural blueprints and production-ready RODES prompts.
 
 CORE DIRECTIVES:
-1. DOMAIN EXPERTISE: Adapt vocabulary to the specific category (Engineering, Real Estate, Art, etc.).
+1. DOMAIN EXPERTISE: Adapt vocabulary to the specific category (Engineering, Real Estate, Art, Web Development, Business Web, etc.).
 2. PRECISION: Avoid "fluff" or "delving". Use architectural and industry-specific terminology.
 3. STRUCTURE: Ensure the output follows the RODES framework and utilizes XML tags for boundaries where appropriate.
 4. VISUALIZATION: Provide an evocative image generation prompt that captures the essence of the architecture.
@@ -25,6 +26,8 @@ DOMAIN KNOWLEDGE:
 - Engineering: Focus on kinematics, stress tests, material properties, and industrial standards.
 - Real Estate: Focus on emotional resonance, spatial flow, market positioning, and architectural charm.
 - Art/Creative: Focus on lighting, narrative weight, character archetypes, and aesthetic movements.
+- Web Development: Focus on scalability, tech stack interoperability, performance optimization, and UX/UI principles.
+- Business Web: Focus on conversion rate optimization (CRO), search engine optimization (SEO), brand positioning, user acquisition funnels, and corporate identity.
 
 ${ADVANCED_PROMPTING_KNOWLEDGE}
 `;

@@ -20,6 +20,8 @@ export type ProjectCategory =
   | "INTERIOR_DESIGN" 
   | "ART_CREATIVE" 
   | "VISUAL_ASSET"
+  | "WEB_DEVELOPMENT"
+  | "BUSINESS_WEB"
   | "GENERIC";
 
 // Adding missing types for Backend and Convex services
@@ -57,6 +59,14 @@ export interface CategoryConfig {
   medium?: string;
   era?: string;
   resolution?: string;
+  framework?: string;
+  language?: string;
+  stackType?: string;
+  apiType?: string;
+  businessSector?: string;
+  conversionGoal?: string;
+  brandVoice?: string;
+  siteType?: string;
 }
 
 export interface AppliedStrategy {
@@ -99,6 +109,7 @@ export interface PromptInput {
   visual_inspiration_mode: boolean;
   category?: ProjectCategory;
   config?: CategoryConfig;
+  matrix_selections?: Record<string, string>;
 }
 
 export interface PromptOutput {
