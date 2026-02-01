@@ -1,8 +1,5 @@
 {
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ],
   "name": "Architect.io Quantum",
-  "description": "High-fidelity professional prompt synthesis and neural architecture suite."
+  "description": "High-fidelity professional prompt synthesis and neural architecture suite.",
+  "requestFramePermissions": []
 }

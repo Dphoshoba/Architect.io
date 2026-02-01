@@ -2,153 +2,163 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PromptInput, PromptOutput, MastermindSuggestionCategory, InterviewQuestion } from "../types.ts";
 
-const ADVANCED_PROMPTING_KNOWLEDGE = `
-ADVANCED STRATEGIES:
-- RODES: Role, Objective, Details, Examples, Sense-check.
-- Chain of Density: Maximize signal-to-noise in narratives.
-- XML Structuring: Use machine-readable tags for boundary control.
-- Step-Back Prompting: Identify core principles first.
-- Few-Shot Reasoning: Provide multiple high-quality input-output pairs.
-- Multi-Prompt Orchestration: Breaking complex tasks into modular prompt chains.
+/**
+ * MASTERMIND KNOWLEDGE BASE
+ * Encapsulating 150+ advanced prompting strategies into a compressed architectural framework.
+ */
+const STRATEGIC_KNOWLEDGE_BASE = `
+KNOWLEDGE_CORE:
+1. ARCHITECTURES: Meta-Prompting, Automatic Prompt Engineer (APE), Chain of Density (CoD), Chain of Verification (CoVe), Step-Back Prompting, Analogical Reasoning, Thread of Thought (ThoT), TextGrad Optimization.
+2. AGENTIC FLOWS: Attention Budget Management, Tool Preamble/Planning Blocks, Context Compaction, Global Scratchpad State, Multi-Agent Orchestration.
+3. MODEL OPTIMIZATION: 
+   - OpenAI: Developer Messages, Snapshot pinning, Leading-word nudging.
+   - Claude: XML Sandboxing (<context>, <rules>), Recency Bias mitigation.
+   - Gemini: Multimodal Anchoring (Media-first), Token Probability Narrowing.
+4. RAG & CODING: HyDE (Hypothetical Document Embeddings), Query Expansion, Test-Driven Prompting, Fill-In-The-Middle (FIM) logic.
+5. QUALITY: Delimiter Sandboxing, Negative Constraint Enforcement, Output Priming, Socratic Guidance.
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
 ROLE: Universal Prompt & Product Architect (Quantum AI).
-MISSION: Synthesize raw user intent and specialized configuration into high-fidelity structural blueprints and production-ready RODES prompts.
+MISSION: Synthesize raw user intent into high-fidelity "RODES" production prompts.
 
 CORE DIRECTIVES:
-1. DOMAIN EXPERTISE: Adapt vocabulary to the specific category (Engineering, Real Estate, Art, Web Development, Business Web, etc.).
-2. PRECISION: Avoid "fluff" or "delving". Use architectural and industry-specific terminology.
-3. STRUCTURE: Ensure the output follows the RODES framework and utilizes XML tags for boundaries where appropriate.
-4. VISUALIZATION: Provide an evocative image generation prompt that captures the essence of the architecture.
+1. NO SELF-TALK: Do not output your own mission or config. Output the PROJECT artifacts.
+2. FINAL_PROMPT: This must be a STANDALONE, high-end instruction set (Role, Context, Rules, Examples) ready to be pasted into GPT-4o, Claude 3.5, or Gemini Pro.
+3. VISUAL_PROMPT: Evocative, technical description for an image generator (DALL-E 3/Midjourney).
+4. STRATEGY: You MUST apply relevant patterns from your STRATEGIC_KNOWLEDGE_BASE (e.g., XML tagging for rules, Chain of Density for summaries) inside the FINAL_PROMPT itself.
 
-DOMAIN KNOWLEDGE:
-- Engineering: Focus on kinematics, stress tests, material properties, and industrial standards.
-- Real Estate: Focus on emotional resonance, spatial flow, market positioning, and architectural charm.
-- Art/Creative: Focus on lighting, narrative weight, character archetypes, and aesthetic movements.
-- Web Development: Focus on scalability, tech stack interoperability, performance optimization, and UX/UI principles.
-- Business Web: Focus on conversion rate optimization (CRO), search engine optimization (SEO), brand positioning, user acquisition funnels, and corporate identity.
+DOMAIN EXPERTISE:
+- Engineering: Kinematics, industrial standards, material stress.
+- Business Web: CRO (Conversion Rate Optimization), SEO, Brand Voice consistency, User Acquisition Funnels.
+- Web Dev: Interoperability, Scalability, Full-stack architecture.
+- Real Estate: Emotional resonance, spatial narrative, market positioning.
 
-${ADVANCED_PROMPTING_KNOWLEDGE}
+${STRATEGIC_KNOWLEDGE_BASE}
 `;
 
+const handleApiError = (e: any) => {
+  console.error("Gemini API Error:", e);
+  const msg = e.message || "";
+  if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED")) {
+    throw new Error("QUOTA_EXCEEDED: Neural capacity reached. Please wait 60 seconds for synchronization.");
+  }
+  if (msg.includes("Requested entity was not found")) {
+    throw new Error("API_KEY_INVALID: The current API key is invalid or lacks permissions.");
+  }
+  throw new Error(`SYNTHESIS_ERROR: ${msg || "An unexpected error occurred."}`);
+};
+
 export const generateInterviewQuestions = async (input: PromptInput): Promise<InterviewQuestion[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const categoryContext = input.category ? `Category: ${input.category}. Specifics: ${JSON.stringify(input.config)}.` : "";
-  
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Initiate discovery phase for: "${input.high_level_goal}". ${categoryContext} Identify the 3 most critical missing constraints to build a master prompt.`,
-    config: {
-      systemInstruction: `Strategic Product Architect. Identify critical ambiguities in the user's vision. Ask 3 high-impact, short questions.`,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            question: { type: Type.STRING },
-            context: { type: Type.STRING }
-          },
-          required: ["id", "question", "context"]
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Initiate Discovery: "${input.high_level_goal}". Category: ${input.category}. Config: ${JSON.stringify(input.config)}.`,
+      config: {
+        systemInstruction: "Strategic Product Architect. Identify 3 critical ambiguities. Output JSON: {id, question, context}.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              question: { type: Type.STRING },
+              context: { type: Type.STRING }
+            },
+            required: ["id", "question", "context"]
+          }
         }
       }
-    }
-  });
-  
-  const text = response.text || "[]";
-  return JSON.parse(text);
+    });
+    return JSON.parse(response.text || "[]");
+  } catch (e) { return handleApiError(e); }
 };
 
 export const generateMastermindSuggestions = async (input: PromptInput): Promise<MastermindSuggestionCategory[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Generate Strategy Matrix for: "${input.high_level_goal}". Category: ${input.category}. Config: ${JSON.stringify(input.config)}.`,
-    config: {
-      systemInstruction: `Strategic Planner. Provide 3 categories of decisions for the final prompt structure (e.g. Narrative Style, Technical Depth, Framing). Each category has 3 distinct options.`,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate Strategy Matrix for: "${input.high_level_goal}".`,
+      config: {
+        systemInstruction: "Strategic Planner. Provide 3 categories of decisions (e.g. Logic, Framing, Tone) with 3 technical options each. Output JSON.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              category: { type: Type.STRING },
+              reasoning: { type: Type.STRING },
+              options: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    label: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    technical_value: { type: Type.STRING }
+                  },
+                  required: ["label", "description", "technical_value"]
+                }
+              }
+            },
+            required: ["category", "reasoning", "options"]
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text || "[]");
+  } catch (e) { return handleApiError(e); }
+};
+
+export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `SYNTHESIZE ARCHITECTURE. INPUT: ${JSON.stringify(input)}`,
+      config: {
+        systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        responseSchema: {
           type: Type.OBJECT,
           properties: {
-            category: { type: Type.STRING },
-            reasoning: { type: Type.STRING },
-            options: {
+            FINAL_PROMPT: { type: Type.STRING, description: "Standalone RODES prompt for external LLM use." },
+            APP_BLUEPRINT: { type: Type.STRING, description: "Architectural overview of the solution." },
+            VISUAL_INSPIRATION_PROMPT: { type: Type.STRING, description: "Text description for an image generator." },
+            COMMIT_MESSAGE: { type: Type.STRING, description: "Neural changelog summary." },
+            APPLIED_STRATEGIES: {
               type: Type.ARRAY,
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  label: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  technical_value: { type: Type.STRING }
-                },
-                required: ["label", "description", "technical_value"]
+                  name: { type: Type.STRING },
+                  description: { type: Type.STRING }
+                }
               }
             }
           },
-          required: ["category", "reasoning", "options"]
+          required: ["FINAL_PROMPT", "APP_BLUEPRINT", "VISUAL_INSPIRATION_PROMPT", "APPLIED_STRATEGIES", "COMMIT_MESSAGE"]
         }
       }
-    }
-  });
-  
-  const text = response.text || "[]";
-  return JSON.parse(text);
-};
-
-export const generateArchitectPrompt = async (input: PromptInput): Promise<PromptOutput> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: `SYNTHESIZE QUANTUM ARCHITECTURE. CONTEXT: ${JSON.stringify(input)}`,
-    config: {
-      systemInstruction: MASTER_ARCHITECT_SYSTEM_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          FINAL_PROMPT: { type: Type.STRING },
-          APP_BLUEPRINT: { type: Type.STRING },
-          VISUAL_INSPIRATION_PROMPT: { type: Type.STRING },
-          COMMIT_MESSAGE: { type: Type.STRING },
-          APPLIED_STRATEGIES: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                description: { type: Type.STRING }
-              }
-            }
-          }
-        },
-        required: ["FINAL_PROMPT", "APP_BLUEPRINT", "VISUAL_INSPIRATION_PROMPT", "APPLIED_STRATEGIES", "COMMIT_MESSAGE"]
-      }
-    }
-  });
-  
-  const text = response.text;
-  if (!text) throw new Error("Synthesis failure: No content generated.");
-  return JSON.parse(text);
+    });
+    if (!response.text) throw new Error("Synthesis failure: empty result.");
+    return JSON.parse(response.text);
+  } catch (e) { return handleApiError(e); }
 };
 
 export const generateVisualImage = async (prompt: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: `Architectural blueprint, cinematic product render, or artistic masterwork: ${prompt}. Ultra-high definition, studio lighting, professional photography.`,
-    config: { 
-      imageConfig: { 
-        aspectRatio: "16:9" 
-      } 
-    }
-  });
-  
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-  }
-  return "";
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: `Professional architectural render: ${prompt}. Studio lighting, 8k, photorealistic, cinematic.`,
+      config: { imageConfig: { aspectRatio: "16:9" } }
+    });
+    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+    return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : "";
+  } catch (e) { return handleApiError(e); }
 };
