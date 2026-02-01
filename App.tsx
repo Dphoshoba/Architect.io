@@ -119,6 +119,27 @@ const App: React.FC = () => {
     } else { fallbackCopy(text); }
   };
 
+  const downloadPrompt = (text: string) => {
+    const blob = new Blob([text], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `architect-quantum-prompt-${Date.now()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadImage = (base64: string) => {
+    const a = document.createElement('a');
+    a.href = base64;
+    a.download = `architect-quantum-visual-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const startDiscovery = async () => {
     if (!form.high_level_goal) return alert("High Level Goal required.");
     setLoading(true);
@@ -162,6 +183,14 @@ const App: React.FC = () => {
       setStep('FINAL');
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
+  };
+
+  const handleAppendOption = (questionId: string, option: string) => {
+    setInterviewAnswers(prev => {
+      const current = prev[questionId] || "";
+      const prefix = current ? (current.endsWith(' ') ? '' : ' ') : '';
+      return { ...prev, [questionId]: current + prefix + option };
+    });
   };
 
   const categories = [
@@ -252,7 +281,27 @@ const App: React.FC = () => {
                     <h4 className="text-4xl md:text-5xl font-black italic tracking-tighter text-slate-900 leading-[1.1]">{q.question}</h4>
                     <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0055FF]">{q.context}</p>
                   </div>
-                  <TextArea placeholder="Depth for precision..." value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="bg-slate-50/50 border-none rounded-[32px] min-h-[140px] text-center px-12" />
+                  
+                  {q.options && q.options.length > 0 && (
+                    <div className="flex flex-wrap justify-center gap-3 px-8">
+                      {q.options.map((opt, idx) => (
+                        <button 
+                          key={idx}
+                          onClick={() => handleAppendOption(q.id, opt)}
+                          className="px-5 py-2.5 bg-slate-100 hover:bg-[#0055FF] hover:text-white transition-all rounded-full text-xs font-black uppercase tracking-wider text-slate-500 shadow-sm"
+                        >
+                          + {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <TextArea 
+                    placeholder="Provide details or select from options above..." 
+                    value={interviewAnswers[q.id] || ""} 
+                    onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} 
+                    className="bg-slate-50/50 border-none rounded-[32px] min-h-[140px] text-center px-12" 
+                  />
                 </div>
               ))}
             </div>
@@ -289,17 +338,55 @@ const App: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
               <div className="space-y-12">
+                {/* Production Prompt Card */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Production Prompt</h4>
-                    <button onClick={() => copyToClipboard(output.FINAL_PROMPT)} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors">Copy to clipboard</button>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => copyToClipboard(output.FINAL_PROMPT)} 
+                        className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline decoration-2 underline-offset-4"
+                      >
+                        Copy
+                      </button>
+                      <button 
+                        onClick={() => downloadPrompt(output.FINAL_PROMPT)} 
+                        className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline decoration-2 underline-offset-4"
+                      >
+                        Download (.md)
+                      </button>
+                    </div>
                   </div>
                   <div className="mobbin-card p-12 bg-black text-white/90 font-mono text-sm leading-relaxed custom-scrollbar max-h-[700px] overflow-y-auto select-all shadow-3xl border-none">
                     {output.FINAL_PROMPT}
                   </div>
                 </div>
-                {generatedVisual && <img src={generatedVisual} className="w-full rounded-[60px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Output Reference" />}
+
+                {/* Visual Reference Frame Card */}
+                {generatedVisual && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Reference Frame</h4>
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => copyToClipboard(generatedVisual)} 
+                          className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline decoration-2 underline-offset-4"
+                        >
+                          Copy Link
+                        </button>
+                        <button 
+                          onClick={() => downloadImage(generatedVisual)} 
+                          className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline decoration-2 underline-offset-4"
+                        >
+                          Download (PNG)
+                        </button>
+                      </div>
+                    </div>
+                    <img src={generatedVisual} className="w-full rounded-[60px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Output Reference" />
+                  </div>
+                )}
               </div>
+
               <div className="space-y-16">
                 <div className="space-y-6">
                   <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Changelog / Neural Commit</h4>

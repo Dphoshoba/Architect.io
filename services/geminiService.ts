@@ -56,7 +56,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
       model: 'gemini-3-flash-preview',
       contents: `Initiate Discovery: "${input.high_level_goal}". Category: ${input.category}. Config: ${JSON.stringify(input.config)}.`,
       config: {
-        systemInstruction: "Strategic Product Architect. Identify 3 critical ambiguities. Output JSON: {id, question, context}.",
+        systemInstruction: "Strategic Product Architect. Identify 3 critical ambiguities. For each question, provide 3-4 suggested options or answers that the user can click to quickly build their response. Output JSON: {id, question, context, options: string[]}.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -65,9 +65,13 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
             properties: {
               id: { type: Type.STRING },
               question: { type: Type.STRING },
-              context: { type: Type.STRING }
+              context: { type: Type.STRING },
+              options: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
             },
-            required: ["id", "question", "context"]
+            required: ["id", "question", "context", "options"]
           }
         }
       }
