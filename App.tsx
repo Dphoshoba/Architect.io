@@ -213,14 +213,14 @@ const App: React.FC = () => {
                   {q.options && q.options.length > 0 && (
                     <div className="flex flex-wrap justify-center gap-3 px-8">
                       {q.options.map((opt, idx) => (
-                        <button key={idx} onClick={() => handleAppendOption(q.id, opt)} className="px-5 py-2 bg-slate-100 hover:bg-[#0055FF] hover:text-white transition-all rounded-full text-[10px] font-black uppercase tracking-wider text-slate-500 shadow-sm border border-slate-200/50">
+                        <button key={idx} onClick={() => handleAppendOption(q.id, opt)} className="px-5 py-2.5 bg-slate-50 hover:bg-[#0055FF] hover:text-white transition-all rounded-full text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm border border-slate-200 hover:scale-105 active:scale-95">
                           + {opt}
                         </button>
                       ))}
                     </div>
                   )}
 
-                  <TextArea placeholder="Add clarification or click options above..." value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="bg-slate-50/50 border-none rounded-[32px] min-h-[140px] text-center px-12" />
+                  <TextArea placeholder="Add clarification or select options above..." value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="bg-slate-50/50 border-none rounded-[32px] min-h-[140px] text-center px-12" />
                 </div>
               ))}
             </div>
@@ -252,7 +252,9 @@ const App: React.FC = () => {
 
         {step === 'FINAL' && output && (
           <div className="animate-fade-in space-y-16 py-8">
-            <h2 className="text-[10vw] font-black italic uppercase tracking-tighter leading-none border-b-8 border-black pb-8">Release.</h2>
+            <div className="flex justify-between items-end border-b-8 border-black pb-8">
+              <h2 className="text-[10vw] font-black italic uppercase tracking-tighter leading-none">Release.</h2>
+            </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
               <div className="space-y-12">
@@ -260,7 +262,7 @@ const App: React.FC = () => {
                   <div className="flex justify-between items-center px-4">
                     <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Production Prompt</h4>
                     <div className="flex gap-4">
-                      <button onClick={() => copyToClipboard(output.FINAL_PROMPT, "Prompt")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy</button>
+                      <button onClick={() => copyToClipboard(output.FINAL_PROMPT, "Production Prompt")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy</button>
                       <button onClick={() => downloadFile(output.FINAL_PROMPT, `prompt-${Date.now()}.md`, 'text/markdown')} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Download (.md)</button>
                     </div>
                   </div>
@@ -274,8 +276,8 @@ const App: React.FC = () => {
                     <div className="flex justify-between items-center px-4">
                       <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Reference Frame</h4>
                       <div className="flex gap-4">
-                        <button onClick={() => copyToClipboard(generatedVisual, "Image Data URI")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy URI</button>
-                        <button onClick={() => downloadBase64Image(generatedVisual, `visual-${Date.now()}.png`)} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Download (PNG)</button>
+                        <button onClick={() => copyToClipboard(output.VISUAL_INSPIRATION_PROMPT || "", "Image Prompt")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy Prompt</button>
+                        <button onClick={() => downloadBase64Image(generatedVisual, `reference-${Date.now()}.png`)} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Download (PNG)</button>
                       </div>
                     </div>
                     <img src={generatedVisual} className="w-full rounded-[60px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Output Reference" />
@@ -292,9 +294,23 @@ const App: React.FC = () => {
                   <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Structural Blueprint</h4>
                   <div className="mobbin-card p-10 text-2xl italic font-black leading-tight text-slate-800 border-l-[16px] border-[#0055FF]">{output.APP_BLUEPRINT}</div>
                 </div>
+                <div className="space-y-8">
+                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Applied Logic Stacks</h4>
+                  <div className="space-y-6">
+                    {output.APPLIED_STRATEGIES.map(s => (
+                      <div key={s.name} className="mobbin-card p-8 border-none bg-white shadow-sm">
+                        <h5 className="text-lg font-black uppercase mb-1 italic tracking-tight">{s.name}</h5>
+                        <p className="text-sm text-slate-400 italic font-bold">{s.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-            <button onClick={() => setStep('INITIAL')} className="mobbin-btn-primary w-full">New Project Initiation</button>
+            <div className="flex gap-4 pt-12">
+              <button onClick={() => setStep('INITIAL')} className="mobbin-btn-primary flex-1">New Project Initiation</button>
+              <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="px-12 rounded-full border-4 border-black font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all">Back to top</button>
+            </div>
           </div>
         )}
       </main>
