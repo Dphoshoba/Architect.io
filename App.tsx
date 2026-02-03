@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   PromptInput, 
@@ -80,6 +79,17 @@ const App: React.FC = () => {
     const prev = stepHistory[stepHistory.length - 1];
     setStepHistory(prevHistory => prevHistory.slice(0, -1));
     setStep(prev);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetSession = () => {
+    setStep('INITIAL');
+    setStepHistory([]);
+    setInterviewAnswers({});
+    setSelectedSuggestions({});
+    setOutput(null);
+    setGeneratedVisual(null);
+    setError(null);
   };
 
   const copyToClipboard = async (text: string, label: string = "Content") => {
@@ -99,6 +109,15 @@ const App: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const downloadBase64Image = (base64: string, filename: string) => {
+    const a = document.createElement('a');
+    a.href = base64;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleAppendOption = (questionId: string, fullOption: string) => {
@@ -170,8 +189,11 @@ const App: React.FC = () => {
   };
 
   const renderBackBtn = () => (
-    <button onClick={goBack} className="fixed top-28 left-8 z-40 group flex items-center gap-2 px-6 py-3 bg-white/50 backdrop-blur-md border border-black/5 rounded-full shadow-sm hover:bg-black hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
-      <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+    <button 
+      onClick={goBack} 
+      className="flex items-center gap-2 px-6 py-2 bg-white hover:bg-black hover:text-white border border-black/10 rounded-full shadow-sm transition-all text-[10px] font-black uppercase tracking-widest group"
+    >
+      <svg className="w-3 h-3 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
       Back
     </button>
   );
@@ -179,11 +201,19 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#F3F4F6] relative">
       <header className="h-24 px-12 flex items-center justify-between sticky top-0 bg-white/70 backdrop-blur-xl z-50 border-b border-white/20">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => { setStep('INITIAL'); setStepHistory([]); }}>
-          <div className="bg-black text-white w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-lg">B</div>
-          <h1 className="text-xl font-black uppercase tracking-tight">Architect<span className="text-[#0055FF]">.Quantum</span></h1>
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 cursor-pointer" onClick={resetSession}>
+            <div className="bg-black text-white w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-lg">B</div>
+            <h1 className="text-xl font-black uppercase tracking-tight">Architect<span className="text-[#0055FF]">.Quantum</span></h1>
+          </div>
+          {step !== 'INITIAL' && renderBackBtn()}
         </div>
-        <button className="btn-enterprise">Enterprise Access</button>
+        <div className="flex items-center gap-6">
+          {step !== 'INITIAL' && (
+            <button onClick={resetSession} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-black transition-colors">New Session</button>
+          )}
+          <button className="btn-enterprise">Enterprise Access</button>
+        </div>
       </header>
 
       <main className="max-w-[1400px] mx-auto w-full px-12 py-12 flex-1 relative">
@@ -201,8 +231,6 @@ const App: React.FC = () => {
             <p className="font-medium mb-6 opacity-70">{error}</p>
           </div>
         )}
-
-        {step !== 'INITIAL' && renderBackBtn()}
 
         {step === 'INITIAL' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 animate-fade-in pt-8">
@@ -300,7 +328,10 @@ const App: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center px-6">
                     <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Production Prompt</h4>
-                    <button onClick={() => copyToClipboard(output.FINAL_PROMPT)} className="text-[11px] font-black uppercase text-slate-400 hover:text-black underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Copy String</button>
+                    <div className="flex gap-6">
+                      <button onClick={() => copyToClipboard(output.FINAL_PROMPT, "Production Prompt")} className="text-[11px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Copy String</button>
+                      <button onClick={() => downloadFile(output.FINAL_PROMPT, `prompt-${Date.now()}.md`, 'text/markdown')} className="text-[11px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Download (.md)</button>
+                    </div>
                   </div>
                   <div className="mobbin-card p-14 bg-black text-white/90 font-mono text-sm leading-relaxed max-h-[800px] overflow-y-auto select-all shadow-3xl border-none custom-scrollbar">
                     {output.FINAL_PROMPT}
@@ -311,18 +342,21 @@ const App: React.FC = () => {
                   <div className="space-y-10">
                     <div className="flex justify-between items-center px-6">
                       <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Neural Visualization</h4>
+                      <div className="flex gap-6">
+                        <button onClick={() => copyToClipboard(output.VISUAL_INSPIRATION_PROMPT || "", "Image Prompt")} className="text-[11px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Copy Prompt</button>
+                        <button onClick={() => downloadBase64Image(generatedVisual, `visual-ref-${Date.now()}.png`)} className="text-[11px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Download (PNG)</button>
+                      </div>
                     </div>
                     <img src={generatedVisual} className="w-full rounded-[64px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Architectural Reference" />
                     
-                    {/* REPROMPT FEATURE */}
                     <div className="mobbin-card p-10 bg-white border-2 border-blue-100/20 space-y-6">
                       <div className="space-y-2">
-                        <h5 className="text-xs font-black uppercase tracking-widest text-slate-800">Adjust Visualization</h5>
-                        <p className="text-[10px] text-slate-400 font-bold italic">Request specific corrections or atmospheric shifts.</p>
+                        <h5 className="text-xs font-black uppercase tracking-widest text-slate-800">Neural Reprompt</h5>
+                        <p className="text-[10px] text-slate-400 font-bold italic">Request adjustments or stylistic shifts for the asset above.</p>
                       </div>
                       <div className="flex flex-col gap-4">
-                        <TextArea placeholder="e.g. 'Make it more brutalist', 'Add sunset lighting', 'Change materials to black marble'..." value={refinementPrompt} onChange={e => setRefinementPrompt(e.target.value)} className="bg-slate-50 min-h-[120px] text-sm py-5 px-8 rounded-[32px] border-none" />
-                        <button onClick={handleImageRefinement} disabled={!refinementPrompt} className={`w-full py-5 rounded-full font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl ${refinementPrompt ? 'bg-black text-white hover:scale-105 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Refine Neural Assets</button>
+                        <TextArea placeholder="e.g. 'Make it more brutalist', 'Add sunset lighting', 'Change materials to steel'..." value={refinementPrompt} onChange={e => setRefinementPrompt(e.target.value)} className="bg-slate-50 min-h-[120px] text-sm py-5 px-8 rounded-[32px] border-none" />
+                        <button onClick={handleImageRefinement} disabled={!refinementPrompt} className={`w-full py-5 rounded-full font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl ${refinementPrompt ? 'bg-black text-white hover:scale-105 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Refine Neural Asset</button>
                       </div>
                     </div>
                   </div>
@@ -356,7 +390,7 @@ const App: React.FC = () => {
               </div>
             </div>
             
-            <button onClick={() => { setStep('INITIAL'); setStepHistory([]); }} className="mobbin-btn-primary w-full py-12 text-2xl shadow-2xl mt-20">Initiate New Synthesis</button>
+            <button onClick={resetSession} className="mobbin-btn-primary w-full py-12 text-2xl shadow-2xl mt-20">Initiate New Synthesis</button>
           </div>
         )}
       </main>
