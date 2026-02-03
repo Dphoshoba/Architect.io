@@ -7,13 +7,16 @@ import {
   InterviewQuestion,
   ProjectCategory
 } from './types.ts';
-import { TextArea, Select, TextInput } from './components/InputGroup.tsx';
+import { TextArea } from './components/InputGroup.tsx';
 import { 
   generateArchitectPrompt, 
   generateVisualImage, 
+  refineVisualImage,
   generateMastermindSuggestions,
   generateInterviewQuestions
 } from './services/geminiService.ts';
+
+type Step = 'INITIAL' | 'CONFIG' | 'DISCOVERY' | 'MATRIX' | 'FINAL';
 
 const CategoryIcon = ({ type }: { type: ProjectCategory }) => {
   const base = "w-16 h-16 text-[#0055FF] mb-6 transition-transform group-hover:scale-110";
@@ -40,7 +43,9 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<PromptOutput | null>(null);
-  const [step, setStep] = useState<'INITIAL' | 'CONFIG' | 'DISCOVERY' | 'MATRIX' | 'FINAL'>('INITIAL');
+  const [step, setStep] = useState<Step>('INITIAL');
+  const [stepHistory, setStepHistory] = useState<Step[]>([]);
+  
   const [form, setForm] = useState<PromptInput>({
     target_AI: "Gemini 3 Flash", 
     high_level_goal: "", 
@@ -56,24 +61,30 @@ const App: React.FC = () => {
     category: "GENERIC",
     config: {}
   });
+
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
   const [mastermindSuggestions, setMastermindSuggestions] = useState<MastermindSuggestionCategory[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Record<string, string>>({});
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
+  const [refinementPrompt, setRefinementPrompt] = useState("");
+
+  const navigateTo = (next: Step) => {
+    setStepHistory(prev => [...prev, step]);
+    setStep(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goBack = () => {
+    if (stepHistory.length === 0) return;
+    const prev = stepHistory[stepHistory.length - 1];
+    setStepHistory(prevHistory => prevHistory.slice(0, -1));
+    setStep(prev);
+  };
 
   const copyToClipboard = async (text: string, label: string = "Content") => {
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const el = document.createElement('textarea');
-        el.value = text;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      }
+      await navigator.clipboard.writeText(text);
       alert(`${label} copied to clipboard!`);
     } catch (e) { alert("Copy failed."); }
   };
@@ -90,21 +101,18 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const downloadBase64Image = (base64: string, filename: string) => {
-    const a = document.createElement('a');
-    a.href = base64;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleAppendOption = (questionId: string, fullOption: string) => {
+    setInterviewAnswers(prev => {
+      const current = (prev[questionId] || "").trim();
+      const separator = current ? (current.endsWith('.') || current.endsWith('?') ? ' ' : ', ') : '';
+      return { ...prev, [questionId]: current + separator + fullOption };
+    });
   };
 
-  const handleAppendOption = (questionId: string, option: string) => {
-    setInterviewAnswers(prev => {
-      const current = prev[questionId] || "";
-      const prefix = current ? (current.endsWith(' ') || current.endsWith('.') ? ' ' : '. ') : '';
-      return { ...prev, [questionId]: current + prefix + option };
-    });
+  const parseOption = (opt: string) => {
+    const match = opt.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) return { technical: match[1], simple: match[2] };
+    return { technical: opt, simple: null };
   };
 
   const startDiscovery = async () => {
@@ -113,7 +121,7 @@ const App: React.FC = () => {
     try {
       const res = await generateInterviewQuestions(form);
       setInterviewQuestions(res);
-      setStep('DISCOVERY');
+      navigateTo('DISCOVERY');
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -126,7 +134,7 @@ const App: React.FC = () => {
       const initial: Record<string, string> = {};
       res.forEach(cat => { initial[cat.category] = cat.options[0].technical_value; });
       setSelectedSuggestions(initial);
-      setStep('MATRIX');
+      navigateTo('MATRIX');
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -138,52 +146,76 @@ const App: React.FC = () => {
       const res = await generateArchitectPrompt(enrichedInput);
       setOutput(res);
       if (form.visual_inspiration_mode) {
-        const img = await generateVisualImage(res.VISUAL_INSPIRATION_PROMPT || form.high_level_goal);
-        setGeneratedVisual(img);
+        try {
+          const img = await generateVisualImage(res.VISUAL_INSPIRATION_PROMPT || form.high_level_goal);
+          setGeneratedVisual(img);
+        } catch (e) { console.warn("Visual generation failed."); }
       }
-      setStep('FINAL');
+      navigateTo('FINAL');
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
 
+  const handleImageRefinement = async () => {
+    if (!refinementPrompt || !generatedVisual) return;
+    setLoading(true);
+    try {
+      const newImg = await refineVisualImage(generatedVisual, refinementPrompt);
+      if (newImg) {
+        setGeneratedVisual(newImg);
+        setRefinementPrompt("");
+      }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const renderBackBtn = () => (
+    <button onClick={goBack} className="fixed top-28 left-8 z-40 group flex items-center gap-2 px-6 py-3 bg-white/50 backdrop-blur-md border border-black/5 rounded-full shadow-sm hover:bg-black hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
+      <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+      Back
+    </button>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#F3F4F6]">
+    <div className="min-h-screen flex flex-col bg-[#F3F4F6] relative">
       <header className="h-24 px-12 flex items-center justify-between sticky top-0 bg-white/70 backdrop-blur-xl z-50 border-b border-white/20">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setStep('INITIAL')}>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => { setStep('INITIAL'); setStepHistory([]); }}>
           <div className="bg-black text-white w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-lg">B</div>
           <h1 className="text-xl font-black uppercase tracking-tight">Architect<span className="text-[#0055FF]">.Quantum</span></h1>
         </div>
         <button className="btn-enterprise">Enterprise Access</button>
       </header>
 
-      <main className="max-w-[1400px] mx-auto w-full px-12 py-12 flex-1">
+      <main className="max-w-[1400px] mx-auto w-full px-12 py-12 flex-1 relative">
         {loading && (
           <div className="fixed inset-0 bg-white/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center">
             <div className="w-16 h-16 border-4 border-[#0055FF]/10 border-t-[#0055FF] rounded-full animate-spin mb-8" />
-            <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 italic">Neural Synthesis Active...</span>
+            <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 italic animate-pulse">Neural Synthesis Active...</span>
           </div>
         )}
 
         {error && (
-          <div className="max-w-2xl mx-auto mb-12 p-8 bg-red-50 border-2 border-red-100 rounded-[32px] text-red-600 animate-fade-in">
-            <h3 className="text-xl font-black mb-2 uppercase italic tracking-tight">Interrupted.</h3>
+          <div className="max-w-2xl mx-auto mb-12 p-8 bg-red-50 border-2 border-red-100 rounded-[32px] text-red-600 animate-fade-in relative">
+            <button onClick={() => setError(null)} className="absolute top-4 right-4 text-red-300 hover:text-red-600 transition-colors">✕</button>
+            <h3 className="text-xl font-black mb-2 uppercase italic tracking-tight">Synthesis Interrupted.</h3>
             <p className="font-medium mb-6 opacity-70">{error}</p>
-            <button onClick={() => setError(null)} className="px-8 py-3 bg-red-600 text-white rounded-full text-xs font-black uppercase tracking-widest">Dismiss</button>
           </div>
         )}
+
+        {step !== 'INITIAL' && renderBackBtn()}
 
         {step === 'INITIAL' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 animate-fade-in pt-8">
             {[
-              { id: 'ENGINEERING', title: 'ENGINEERING', desc: 'Mechanical systems and industrial tools.' },
-              { id: 'REAL_ESTATE', title: 'REAL ESTATE', desc: 'Property listings and spatial narratives.' },
-              { id: 'BUSINESS_WEB', title: 'BUSINESS WEB', desc: 'Conversion portals and SaaS landing pages.' },
-              { id: 'WEB_DEVELOPMENT', title: 'WEB DEVELOPMENT', desc: 'Full-stack architectures and UI systems.' },
-              { id: 'INTERIOR_DESIGN', title: 'INTERIOR DESIGN', desc: 'Material boards and spatial concepts.' },
-              { id: 'ART_CREATIVE', title: 'ART & CREATIVE', desc: 'Narrative storytelling and character lore.' },
-              { id: 'VISUAL_ASSET', title: 'VISUAL ASSET', desc: 'Cinematic lighting and 8k renders.' }
+              { id: 'ENGINEERING', title: 'ENGINEERING', desc: 'Precision industrial systems and logic.' },
+              { id: 'REAL_ESTATE', title: 'REAL ESTATE', desc: 'Luxury spatial marketing and narrative.' },
+              { id: 'BUSINESS_WEB', title: 'BUSINESS WEB', desc: 'CRO-optimized SaaS and digital portals.' },
+              { id: 'WEB_DEVELOPMENT', title: 'WEB DEVELOPMENT', desc: 'Full-stack infrastructure and modules.' },
+              { id: 'INTERIOR_DESIGN', title: 'INTERIOR DESIGN', desc: 'Atmospheric spatial flow and materials.' },
+              { id: 'ART_CREATIVE', title: 'ART & CREATIVE', desc: 'High-concept lore and world building.' },
+              { id: 'VISUAL_ASSET', title: 'VISUAL ASSET', desc: 'Photorealistic 8k cinematic lighting.' }
             ].map(cat => (
-              <button key={cat.id} onClick={() => { setForm(f => ({ ...f, category: cat.id as ProjectCategory })); setStep('CONFIG'); }} className="mobbin-card p-12 flex flex-col items-center text-center group bg-white shadow-sm hover:border-[#0055FF]/20">
+              <button key={cat.id} onClick={() => { setForm(f => ({ ...f, category: cat.id as ProjectCategory })); navigateTo('CONFIG'); }} className="mobbin-card p-12 flex flex-col items-center text-center group bg-white shadow-sm">
                 <CategoryIcon type={cat.id as ProjectCategory} />
                 <h3 className="text-2xl font-black uppercase mb-4 group-hover:text-[#0055FF] transition-colors">{cat.title}</h3>
                 <p className="text-gray-500 italic font-medium leading-relaxed max-w-[240px]">{cat.desc}</p>
@@ -194,50 +226,54 @@ const App: React.FC = () => {
 
         {step === 'CONFIG' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in py-12 text-center">
-            <h2 className="text-[10vw] font-black italic uppercase tracking-tighter leading-[0.85] mb-16">Architecture.</h2>
-            <TextArea label="HIGH LEVEL GOAL" placeholder="Describe your vision..." value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} className="text-lg py-8 min-h-[200px] rounded-[40px] px-10 bg-white" />
-            <button onClick={startDiscovery} className="mobbin-btn-primary w-full">Continue Discovery</button>
+            <h2 className="text-[10vw] font-black italic uppercase tracking-tighter leading-[0.85] mb-16">Vision.</h2>
+            <TextArea label="HIGH LEVEL GOAL" placeholder="What architectural goal are we synthesizing?" value={form.high_level_goal} onChange={e => setForm(p => ({ ...p, high_level_goal: e.target.value }))} className="text-lg py-12 min-h-[300px] rounded-[48px] px-14 bg-white" />
+            <button onClick={startDiscovery} className="mobbin-btn-primary w-full text-xl py-10 shadow-2xl">Initiate Discovery</button>
           </div>
         )}
 
         {step === 'DISCOVERY' && (
-          <div className="animate-fade-in space-y-12 max-w-4xl mx-auto py-8">
+          <div className="animate-fade-in space-y-12 max-w-5xl mx-auto py-8">
             <div className="space-y-16">
               {interviewQuestions.map(q => (
-                <div key={q.id} className="mobbin-card p-12 space-y-8 flex flex-col items-center text-center">
-                  <div className="space-y-4">
+                <div key={q.id} className="mobbin-card p-12 space-y-10 flex flex-col items-center text-center">
+                  <div className="space-y-4 max-w-3xl">
                     <h4 className="text-4xl md:text-5xl font-black italic tracking-tighter text-slate-900 leading-[1.1]">{q.question}</h4>
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0055FF]">{q.context}</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0055FF] bg-blue-50 px-4 py-1.5 rounded-full inline-block">{q.context}</p>
                   </div>
                   
                   {q.options && q.options.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-3 px-8">
-                      {q.options.map((opt, idx) => (
-                        <button key={idx} onClick={() => handleAppendOption(q.id, opt)} className="px-5 py-2.5 bg-slate-50 hover:bg-[#0055FF] hover:text-white transition-all rounded-full text-[10px] font-black uppercase tracking-wider text-slate-600 shadow-sm border border-slate-200 hover:scale-105 active:scale-95">
-                          + {opt}
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap justify-center gap-5 px-4 md:px-12">
+                      {q.options.map((opt, idx) => {
+                        const { technical, simple } = parseOption(opt);
+                        return (
+                          <button key={idx} onClick={() => handleAppendOption(q.id, opt)} className="group flex flex-col items-center px-10 py-6 bg-white hover:bg-black hover:text-white transition-all rounded-[32px] shadow-sm border-2 border-slate-100 hover:border-black hover:scale-105 active:scale-95 text-center min-w-[220px]">
+                            <span className="text-[12px] font-black uppercase tracking-widest transition-colors">+ {technical}</span>
+                            {simple && <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white/60 mt-2 italic">{simple}</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
-                  <TextArea placeholder="Add clarification or select options above..." value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="bg-slate-50/50 border-none rounded-[32px] min-h-[140px] text-center px-12" />
+                  <TextArea placeholder="Elaborate or select options above..." value={interviewAnswers[q.id] || ""} onChange={e => setInterviewAnswers(p => ({ ...p, [q.id]: e.target.value }))} className="bg-slate-50/50 border-none rounded-[40px] min-h-[160px] text-center px-14 text-lg font-medium" />
                 </div>
               ))}
             </div>
-            <button onClick={startMatrix} className="mobbin-btn-primary w-full py-8 text-xl shadow-xl">Synthesize Matrix</button>
+            <button onClick={startMatrix} className="mobbin-btn-primary w-full py-12 text-2xl shadow-2xl mt-12">Finalize Strategy Matrix</button>
           </div>
         )}
 
         {step === 'MATRIX' && (
           <div className="animate-fade-in space-y-12">
-            <h2 className="text-7xl font-black italic uppercase tracking-tighter mb-12">Strategy Matrix.</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <h2 className="text-[8vw] font-black italic uppercase tracking-tighter mb-16 leading-none">Logic Matrix.</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {mastermindSuggestions.map(cat => (
                 <div key={cat.category} className="space-y-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic ml-4">{cat.category}</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 italic ml-4">{cat.category}</h4>
                   <div className="space-y-6">
                     {cat.options.map(opt => (
-                      <button key={opt.label} onClick={() => setSelectedSuggestions(p => ({ ...p, [cat.category]: opt.technical_value }))} className={selectedSuggestions[cat.category] === opt.technical_value ? 'matrix-card-black' : 'matrix-card-white'}>
+                      <button key={opt.label} onClick={() => setSelectedSuggestions(p => ({ ...p, [cat.category]: opt.technical_value }))} className={selectedSuggestions[cat.category] === opt.technical_value ? 'matrix-card-black ring-8 ring-blue-500/10' : 'matrix-card-white'}>
                         <h5 className="text-2xl font-black uppercase mb-4 leading-tight">{opt.label}</h5>
                         <p className={`text-sm font-bold uppercase italic leading-relaxed ${selectedSuggestions[cat.category] === opt.technical_value ? 'opacity-80' : 'text-gray-400'}`}>{opt.description}</p>
                       </button>
@@ -246,71 +282,81 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-            <button onClick={synthesizeFinal} className="mobbin-btn-primary w-full py-10 mt-12">Finalize Release</button>
+            <button onClick={synthesizeFinal} className="mobbin-btn-primary w-full py-12 mt-16 text-3xl shadow-3xl">Synthesize Neural Release</button>
           </div>
         )}
 
         {step === 'FINAL' && output && (
-          <div className="animate-fade-in space-y-16 py-8">
-            <div className="flex justify-between items-end border-b-8 border-black pb-8">
+          <div className="animate-fade-in space-y-20 py-8 relative">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-8 border-black pb-10 gap-8">
               <h2 className="text-[10vw] font-black italic uppercase tracking-tighter leading-none">Release.</h2>
+              <div className="flex gap-4">
+                <button onClick={() => downloadFile(output.FINAL_PROMPT, `release-${Date.now()}.md`, 'text/markdown')} className="px-8 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-transform shadow-xl">Export MD</button>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
-              <div className="space-y-12">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
+              <div className="space-y-16">
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center px-4">
+                  <div className="flex justify-between items-center px-6">
                     <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Production Prompt</h4>
-                    <div className="flex gap-4">
-                      <button onClick={() => copyToClipboard(output.FINAL_PROMPT, "Production Prompt")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy</button>
-                      <button onClick={() => downloadFile(output.FINAL_PROMPT, `prompt-${Date.now()}.md`, 'text/markdown')} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Download (.md)</button>
-                    </div>
+                    <button onClick={() => copyToClipboard(output.FINAL_PROMPT)} className="text-[11px] font-black uppercase text-slate-400 hover:text-black underline underline-offset-8 decoration-2 hover:decoration-[#0055FF]">Copy String</button>
                   </div>
-                  <div className="mobbin-card p-12 bg-black text-white/90 font-mono text-sm leading-relaxed max-h-[700px] overflow-y-auto select-all shadow-3xl border-none custom-scrollbar">
+                  <div className="mobbin-card p-14 bg-black text-white/90 font-mono text-sm leading-relaxed max-h-[800px] overflow-y-auto select-all shadow-3xl border-none custom-scrollbar">
                     {output.FINAL_PROMPT}
                   </div>
                 </div>
 
                 {generatedVisual && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center px-4">
-                      <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Reference Frame</h4>
-                      <div className="flex gap-4">
-                        <button onClick={() => copyToClipboard(output.VISUAL_INSPIRATION_PROMPT || "", "Image Prompt")} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Copy Prompt</button>
-                        <button onClick={() => downloadBase64Image(generatedVisual, `reference-${Date.now()}.png`)} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors underline underline-offset-4 decoration-2">Download (PNG)</button>
+                  <div className="space-y-10">
+                    <div className="flex justify-between items-center px-6">
+                      <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Neural Visualization</h4>
+                    </div>
+                    <img src={generatedVisual} className="w-full rounded-[64px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Architectural Reference" />
+                    
+                    {/* REPROMPT FEATURE */}
+                    <div className="mobbin-card p-10 bg-white border-2 border-blue-100/20 space-y-6">
+                      <div className="space-y-2">
+                        <h5 className="text-xs font-black uppercase tracking-widest text-slate-800">Adjust Visualization</h5>
+                        <p className="text-[10px] text-slate-400 font-bold italic">Request specific corrections or atmospheric shifts.</p>
+                      </div>
+                      <div className="flex flex-col gap-4">
+                        <TextArea placeholder="e.g. 'Make it more brutalist', 'Add sunset lighting', 'Change materials to black marble'..." value={refinementPrompt} onChange={e => setRefinementPrompt(e.target.value)} className="bg-slate-50 min-h-[120px] text-sm py-5 px-8 rounded-[32px] border-none" />
+                        <button onClick={handleImageRefinement} disabled={!refinementPrompt} className={`w-full py-5 rounded-full font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl ${refinementPrompt ? 'bg-black text-white hover:scale-105 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Refine Neural Assets</button>
                       </div>
                     </div>
-                    <img src={generatedVisual} className="w-full rounded-[60px] shadow-3xl border-8 border-white aspect-video object-cover" alt="Output Reference" />
                   </div>
                 )}
               </div>
 
-              <div className="space-y-16">
-                <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Changelog / Neural Commit</h4>
-                  <div className="mobbin-card p-8 border-none bg-slate-100/50 font-mono text-xs text-slate-600 leading-relaxed italic">{output.COMMIT_MESSAGE}</div>
-                </div>
-                <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Structural Blueprint</h4>
-                  <div className="mobbin-card p-10 text-2xl italic font-black leading-tight text-slate-800 border-l-[16px] border-[#0055FF]">{output.APP_BLUEPRINT}</div>
+              <div className="space-y-20">
+                <div className="space-y-8">
+                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Neural Changelog</h4>
+                  <div className="mobbin-card p-10 border-none bg-slate-100/50 font-mono text-[11px] text-slate-600 leading-relaxed italic border-l-[12px] border-slate-300">
+                    {output.COMMIT_MESSAGE}
+                  </div>
                 </div>
                 <div className="space-y-8">
-                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Applied Logic Stacks</h4>
-                  <div className="space-y-6">
+                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Architectural Blueprint</h4>
+                  <div className="mobbin-card p-12 text-3xl italic font-black leading-tight text-slate-800 border-l-[24px] border-[#0055FF] shadow-xl">
+                    {output.APP_BLUEPRINT}
+                  </div>
+                </div>
+                <div className="space-y-10">
+                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-[#0055FF] italic">Integrated Logic Stacks</h4>
+                  <div className="space-y-8">
                     {output.APPLIED_STRATEGIES.map(s => (
-                      <div key={s.name} className="mobbin-card p-8 border-none bg-white shadow-sm">
-                        <h5 className="text-lg font-black uppercase mb-1 italic tracking-tight">{s.name}</h5>
-                        <p className="text-sm text-slate-400 italic font-bold">{s.description}</p>
+                      <div key={s.name} className="mobbin-card p-10 border-none bg-white shadow-md hover:translate-x-4 transition-transform border-l-4 border-slate-50">
+                        <h5 className="text-xl font-black uppercase mb-2 italic tracking-tight">{s.name}</h5>
+                        <p className="text-sm text-slate-400 italic font-bold leading-relaxed">{s.description}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex gap-4 pt-12">
-              <button onClick={() => setStep('INITIAL')} className="mobbin-btn-primary flex-1">New Project Initiation</button>
-              <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="px-12 rounded-full border-4 border-black font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all">Back to top</button>
-            </div>
+            
+            <button onClick={() => { setStep('INITIAL'); setStepHistory([]); }} className="mobbin-btn-primary w-full py-12 text-2xl shadow-2xl mt-20">Initiate New Synthesis</button>
           </div>
         )}
       </main>

@@ -4,14 +4,14 @@ import { PromptInput, PromptOutput, MastermindSuggestionCategory, InterviewQuest
 
 /**
  * MASTERMIND KNOWLEDGE BASE
- * Encapsulating 150+ advanced prompting strategies.
+ * Encapsulating 150+ advanced prompting strategies into a compressed architectural framework.
  */
 const STRATEGIC_KNOWLEDGE_BASE = `
 KNOWLEDGE_CORE:
-1. ARCHITECTURES: Meta-Prompting, CoD, CoVe, Step-Back, ThoT, TextGrad.
-2. AGENTIC FLOWS: Attention Budgeting, Preamble/Planning, Context Compaction.
-3. MODEL OPTIMIZATION: XML Sandboxing (<context>, <rules>), Recency Bias mitigation.
-4. QUALITY: Delimiter Sandboxing, Negative Constraint Enforcement, Output Priming.
+1. ARCHITECTURES: Meta-Prompting, CoD (Chain of Density), CoVe (Chain of Verification), Step-Back, ThoT (Thread of Thought).
+2. AGENTIC FLOWS: Context Compaction, Global Scratchpad State, Multi-Agent Orchestration.
+3. MODEL OPTIMIZATION: XML Sandboxing (<context>, <rules>), Negative Constraint Enforcement.
+4. QUALITY: Delimiter Sandboxing, Output Priming, Socratic Guidance.
 `;
 
 const MASTER_ARCHITECT_SYSTEM_PROMPT = `
@@ -19,9 +19,15 @@ ROLE: Universal Prompt & Product Architect (Quantum AI).
 MISSION: Synthesize raw user intent into high-fidelity "RODES" production prompts.
 
 CORE DIRECTIVES:
-1. OUTPUT: Standalone, professional instruction set for GPT-4o/Claude/Gemini.
-2. STRATEGY: Apply XML tagging, RODES framework, and Chain of Density.
-3. VISUALS: Provide a cinematic architectural render prompt.
+1. NO SELF-TALK: Output the PROJECT artifacts only.
+2. FINAL_PROMPT: A standalone, high-end instruction set ready for production LLMs.
+3. VISUAL_PROMPT: Technical description for an image generator (DALL-E 3/Midjourney).
+4. STRATEGY: Apply relevant patterns (e.g., XML tagging, CoD) inside the FINAL_PROMPT itself.
+
+DOMAIN EXPERTISE:
+Engineering, Real Estate, Web Dev, Business Strategy, Interior Design, Art & Narrative.
+
+${STRATEGIC_KNOWLEDGE_BASE}
 `;
 
 const handleApiError = (e: any) => {
@@ -40,7 +46,7 @@ export const generateInterviewQuestions = async (input: PromptInput): Promise<In
       model: 'gemini-3-flash-preview',
       contents: `Initiate Discovery for: "${input.high_level_goal}". Category: ${input.category}.`,
       config: {
-        systemInstruction: "Strategic Product Architect. Identify 3 critical ambiguities. For each question, provide 5 short technical suggestions (2-4 words each) that serve as ready-to-use answers or clarifications. Output JSON: {id, question, context, options: string[]}.",
+        systemInstruction: "Strategic Product Architect. Identify 3 critical ambiguities. For each question, provide 5 options. CRITICAL: Every option MUST follow the 'Technical Term (Simplified Meaning)' format. This is mandatory for non-technical users. Examples: 'Non-Literal Allegory (Symbolic Storytelling)', 'Stylized Low-Poly (Simple 3D Shapes)', 'Latent Space (AI Memory)'. Output JSON: {id, question, context, options: string[]}.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -139,7 +145,33 @@ export const generateVisualImage = async (prompt: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: `Architectural masterpiece: ${prompt}. Professional studio photography, 8k, ultra-detailed.`,
+      contents: `High-fidelity architectural visualization: ${prompt}. Professional studio lighting, 8k resolution, cinematic composition.`,
+      config: { imageConfig: { aspectRatio: "16:9" } }
+    });
+    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+    return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : "";
+  } catch (e) { return handleApiError(e); }
+};
+
+export const refineVisualImage = async (base64Image: string, adjustmentPrompt: string): Promise<string> => {
+  try {
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: 'image/png'
+            }
+          },
+          {
+            text: `Please adjust this architectural image according to the following refinement request: "${adjustmentPrompt}". Preserve the overall core structure but apply these specific modifications with high fidelity.`
+          }
+        ]
+      },
       config: { imageConfig: { aspectRatio: "16:9" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
